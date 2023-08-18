@@ -22,7 +22,10 @@ target_link_libraries(convert_model
     $<$<NOT:$<BOOL:${WIN32}>>:~/fbx/lib/gcc/x64/debug/libfbxsdk.so>
     $<$<BOOL:${WIN32}>:Boost::boost>
     $<$<BOOL:${WIN32}>:Boost::program_options>
-    $<$<BOOL:${WIN32}>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/lib/vs2019/x64/debug/libfbxsdk-md.lib>
-    $<$<BOOL:${WIN32}>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/lib/vs2019/x64/debug/libxml2-md.lib>
-    $<$<BOOL:${WIN32}>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/lib/vs2019/x64/debug/zlib-md.lib>
+    $<$<BOOL:${WIN32}>:$<$<CONFIG:RELEASE>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/lib/vs2019/x64/release/libfbxsdk-md.lib>>
+    $<$<BOOL:${WIN32}>:$<$<CONFIG:RELEASE>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/lib/vs2019/x64/release/libxml2-md.lib>>
+    $<$<BOOL:${WIN32}>:$<$<CONFIG:RELEASE>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/lib/vs2019/x64/release/zlib-md.lib>>
+    $<$<BOOL:${WIN32}>:$<$<CONFIG:DEBUG>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/lib/vs2019/x64/debug/libfbxsdk-md.lib>>
+    $<$<BOOL:${WIN32}>:$<$<CONFIG:DEBUG>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/lib/vs2019/x64/debug/libxml2-md.lib>>
+    $<$<BOOL:${WIN32}>:$<$<CONFIG:DEBUG>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/lib/vs2019/x64/debug/zlib-md.lib>>
 )
