@@ -26,14 +26,11 @@ add_library(marionette
     ${CMAKE_CURRENT_LIST_DIR}/motion_tracker.cpp
 )
 
-# add_dependencies(marionette
-# nuklear
-# nanoflann
-# )
 target_link_libraries(marionette
     ${CUDA_LIBRARIES}
     ${CUDA_cusolver_LIBRARY}
     PRIVATE nanoflann::nanoflann
+    PRIVATE nlohmann_json::nlohmann_json
 
     # ${CUDA_CUFFT_LIBRARIES}
     # ${CUDA_CUBLAS_LIBRARIES}

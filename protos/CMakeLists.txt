@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-find_program(_PROTOBUF_PROTOC protoc PATHS "${CMAKE_CURRENT_LIST_DIR}/../third-party/windows/vcpkg/installed/x64-windows/tools/protobuf")
-find_program(_GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin PATHS "${CMAKE_CURRENT_LIST_DIR}/../third-party/windows/vcpkg/installed/x64-windows/tools/grpc")
+find_program(_PROTOBUF_PROTOC protoc PATHS "${CMAKE_CURRENT_LIST_DIR}/../third-party/vcpkg/installed/x64-windows/tools/protobuf")
+find_program(_GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin PATHS "${CMAKE_CURRENT_LIST_DIR}/../third-party/vcpkg/installed/x64-windows/tools/grpc")
 
 message("${_PROTOBUF_PROTOC}")
 message("${_GRPC_CPP_PLUGIN_EXECUTABLE}")

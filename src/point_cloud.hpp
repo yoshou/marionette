@@ -7,12 +7,14 @@ struct point_cloud
 {
     using point_type = glm::vec3;
     using index_type = std::uint32_t;
+    using distance_type = float;
 
 private:
     typedef nanoflann::KDTreeSingleIndexAdaptor<
-        nanoflann::L2_Simple_Adaptor<float, point_cloud>,
+        nanoflann::L2_Simple_Adaptor<distance_type, point_cloud>,
         point_cloud,
-        3 /* dim */
+        3, /* dim */
+        index_type
         >
         kd_tree_t;
 
@@ -54,16 +56,25 @@ public:
     }
 
     std::size_t knn_search(const glm::vec3 &query_pt, std::size_t num_points,
-                           index_type *result_index, float *result_distsq) const
+                           index_type *result_index, distance_type *result_distsq) const
     {
         return index->knnSearch(&query_pt[0], num_points, &result_index[0], &result_distsq[0]);
     }
 
-    std::size_t radius_search(const glm::vec3 &query_pt, float radius,
-                              std::vector<std::pair<index_type, float>> &result) const
+    std::size_t radius_search(const glm::vec3 &query_pt, distance_type radius,
+                              std::vector<std::pair<index_type, distance_type>> &result) const
     {
-        nanoflann::SearchParams params;
+        nanoflann::SearchParameters params;
         params.sorted = true;
-        return index->radiusSearch(&query_pt[0], radius, result, params);
+
+        std::vector<nanoflann::ResultItem<index_type, distance_type>> founds;
+        const auto found_size = index->radiusSearch(&query_pt[0], radius, founds, params);
+
+        for (const auto& found : founds)
+        {
+            result.push_back(std::make_pair(found.first, found.second));
+        }
+
+        return found_size;
     }
 };

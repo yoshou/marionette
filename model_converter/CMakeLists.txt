@@ -11,10 +11,6 @@ target_include_directories(convert_model
     $<$<BOOL:${WIN32}>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/include>
 )
 
-add_dependencies(convert_model
-    json
-)
-
 target_link_libraries(convert_model
     $<$<NOT:$<BOOL:${WIN32}>>:boost_program_options>
     $<$<NOT:$<BOOL:${WIN32}>>:pthread>
@@ -28,4 +24,5 @@ target_link_libraries(convert_model
     $<$<BOOL:${WIN32}>:$<$<CONFIG:DEBUG>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/lib/vs2019/x64/debug/libfbxsdk-md.lib>>
     $<$<BOOL:${WIN32}>:$<$<CONFIG:DEBUG>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/lib/vs2019/x64/debug/libxml2-md.lib>>
     $<$<BOOL:${WIN32}>:$<$<CONFIG:DEBUG>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/lib/vs2019/x64/debug/zlib-md.lib>>
+    nlohmann_json::nlohmann_json
 )

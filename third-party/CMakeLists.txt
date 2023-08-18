@@ -1,28 +1,11 @@
 if(WIN32)
-    set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/third-party/windows/vcpkg/installed/x64-windows")
+    set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/third-party/vcpkg/installed/x64-windows")
 
     find_package(OpenCV REQUIRED)
     find_package(Ceres CONFIG REQUIRED)
 
     set_target_properties(glog::glog PROPERTIES
         INTERFACE_LINK_LIBRARIES "gflags"
-    )
-
-    add_custom_target(tinygltf)
-    add_custom_target(nuklear)
-    add_custom_target(nanoflann)
-    add_custom_target(glm)
-    add_custom_target(eigen)
-    add_custom_target(json)
-
-    include_directories(
-        ${CMAKE_SOURCE_DIR}/third-party/windows/tinygltf
-        ${CMAKE_SOURCE_DIR}/third-party/windows/nuklear
-        ${CMAKE_SOURCE_DIR}/third-party/windows/nanoflann/include
-        ${CMAKE_SOURCE_DIR}/third-party/windows/glm
-        ${CMAKE_SOURCE_DIR}/third-party/windows/eigen
-        ${CMAKE_SOURCE_DIR}/third-party/windows/json/include
-        ${CMAKE_SOURCE_DIR}/third-party/windows/vcpkg/installed/x64-windows/include
     )
 
     find_package(Boost REQUIRED COMPONENTS program_options)
@@ -32,9 +15,16 @@ if(WIN32)
     find_package(flann CONFIG REQUIRED)
     find_package(PCL CONFIG REQUIRED)
     find_package(nanoflann CONFIG REQUIRED)
-    # find_package(unofficial-nuklear CONFIG REQUIRED)
+    find_package(unofficial-nuklear CONFIG REQUIRED)
     find_package(glm CONFIG REQUIRED)
     find_package(gRPC CONFIG REQUIRED)
+    find_package(nlohmann_json CONFIG REQUIRED)
+
+    find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
+
+    include_directories(
+        ${CMAKE_SOURCE_DIR}/third-party/vcpkg/installed/x64-include
+    )
 else()
     include(ExternalProject)
 

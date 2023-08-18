@@ -35,10 +35,13 @@ target_compile_definitions(ir_viewer
 )
 
 add_dependencies(ir_viewer
-    json
     marionette
     stargazer_sensor_grpc_proto
-    tinygltf
+)
+
+target_include_directories(ir_viewer
+    SYSTEM PRIVATE
+    ${TINYGLTF_INCLUDE_DIRS}
 )
 
 target_link_libraries(ir_viewer
@@ -57,6 +60,7 @@ target_link_libraries(ir_viewer
     $<$<NOT:$<BOOL:${WIN32}>>:protobuf::libprotobuf>
     $<$<NOT:$<BOOL:${WIN32}>>:gRPC::grpc++_unsecure>
     $<$<NOT:$<BOOL:${WIN32}>>:gRPC::grpc++_reflection>
+    nlohmann_json::nlohmann_json
 )
 
 target_compile_options(ir_viewer
@@ -99,10 +103,8 @@ target_compile_definitions(log_viewer_app
 )
 
 add_dependencies(log_viewer_app
-    json
     marionette
     stargazer_sensor_grpc_proto
-    tinygltf
 )
 
 target_link_libraries(log_viewer_app
@@ -165,10 +167,8 @@ target_compile_definitions(imu_viewer_app
 )
 
 add_dependencies(imu_viewer_app
-    json
     marionette
     stargazer_sensor_grpc_proto
-    tinygltf
 )
 
 target_link_libraries(imu_viewer_app
