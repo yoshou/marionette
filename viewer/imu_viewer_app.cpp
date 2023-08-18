@@ -1007,7 +1007,7 @@ int imu_viewer_main()
     uint64_t last_time_us = 0;
 
     model_data model;
-    model.load("../data/TrackingModel2.json");
+    model.load("../data/TrackingModel.json");
 
 #if 0
     const auto recv_data_callback = [&viewer, &pos, &heading_vel, &last_time_us](const FrameData &data)

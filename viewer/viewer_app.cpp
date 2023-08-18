@@ -533,7 +533,7 @@ int ir_viewer_main()
     rendering_th->start(viewer.get());
     
     model_data model;
-    model.load("../data/TrackingModel2.json");
+    model.load("../data/TrackingModel.json");
 
     {
         const std::vector<std::tuple<std::string, float, float>> twist_bounds = {
