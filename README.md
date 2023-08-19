@@ -34,3 +34,13 @@ vcpkg install nlohmann-json:x64-windows
 vcpkg install nuklear:x64-windows
 vcpkg install tinygltf:x64-windows
 ```
+
+### Generate project
+
+```console
+cmake -G "Visual Studio 17 2022" -A x64 ..
+```
+
+## Install for Linux
+
+Please refer to the Dockerfile of devcontainer.
