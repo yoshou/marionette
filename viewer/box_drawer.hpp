@@ -28,4 +28,6 @@ private:
     unsigned int vertex_buffer;
     unsigned int color_buffer;
     unsigned int index_buffer;
+
+    unsigned int vao;
 };

@@ -1,20 +1,15 @@
 #include <string>
 #include <fstream>
 #include <iostream>
-#ifdef _WIN32
 #include <filesystem>
 namespace fs = std::filesystem;
-#else
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#endif
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <nlohmann/json.hpp>
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include "glm_json_ext.hpp"
@@ -202,23 +197,21 @@ struct log_viewer : public window_base
         // set viewport to be the entire window
         glViewport(0, 0, (GLsizei)width, (GLsizei)height);
 
-        // set perspective viewing frustum
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        gluPerspective(fovy, aspect, near, far); // FOV, AspectRatio, NearClip, FarClip
-
-        // switch to modelview matrix in order to set scene
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        gluLookAt(posX, posY, posZ, targetX, targetY, targetZ, up.x, up.y, up.z); // eye(x,y,z), focal(x,y,z), up(x,y,z)
-
         glm::mat4 proj = glm::perspective(fovy, aspect, near, far);
         glm::mat4 view = glm::lookAt(glm::vec3(posX, posY, posZ), glm::vec3(targetX, targetY, targetZ), up);
         glm::mat4 world = glm::identity<glm::mat4>();
         pvw = proj * view * world;
+    }
+
+    virtual void show() override
+    {
+        if (!gladLoadGL())
+        {
+            printf("Failed to load OpenGL extensions!\n");
+            exit(-1);
+        }
+
+        window_base::show();
     }
 
     virtual void update() override
@@ -230,8 +223,6 @@ struct log_viewer : public window_base
 
         if (!initialized)
         {
-            GLenum err = glewInit();
-
             sphere_drawer_.initialize();
             bone_drawer_.initialize();
             grid_drawer_.initialize();

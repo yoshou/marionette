@@ -1,6 +1,6 @@
 #include <cstdlib>
 #include <iostream>
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <memory>
@@ -160,9 +160,9 @@ void *window_manager::create_window_handle(std::string name, int width, int heig
     auto f = p.get_future();
     auto func = [_p = std::move(p), name, width, height, window]() mutable
     {
-        //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-        //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         auto handle = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
         glfwSetWindowUserPointer(handle, window);
         glfwSetScrollCallback(handle, mouse_scroll_callback);

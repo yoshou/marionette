@@ -45,7 +45,6 @@ target_include_directories(ir_viewer
 )
 
 target_link_libraries(ir_viewer
-    gflags
     ceres
     ${OpenCV_LIBS}
     yaml-cpp
@@ -53,8 +52,7 @@ target_link_libraries(ir_viewer
     glfw
     marionette
     stargazer_sensor_grpc_proto
-    $<$<BOOL:${WIN32}>:GLEW::GLEW>
-    $<$<NOT:$<BOOL:${WIN32}>>:GLEW>
+    glad::glad
     $<$<NOT:$<BOOL:${WIN32}>>:pthread>
     $<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:stdc++fs>
     $<$<NOT:$<BOOL:${WIN32}>>:protobuf::libprotobuf>
@@ -108,7 +106,6 @@ add_dependencies(log_viewer_app
 )
 
 target_link_libraries(log_viewer_app
-    gflags
     ceres
     ${OpenCV_LIBS}
     yaml-cpp
@@ -116,8 +113,7 @@ target_link_libraries(log_viewer_app
     glfw
     marionette
     stargazer_sensor_grpc_proto
-    $<$<BOOL:${WIN32}>:GLEW::GLEW>
-    $<$<NOT:$<BOOL:${WIN32}>>:GLEW>
+    glad::glad
     $<$<NOT:$<BOOL:${WIN32}>>:pthread>
     $<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:stdc++fs>
     $<$<NOT:$<BOOL:${WIN32}>>:protobuf::libprotobuf>
@@ -172,7 +168,6 @@ add_dependencies(imu_viewer_app
 )
 
 target_link_libraries(imu_viewer_app
-    gflags
     ceres
     ${OpenCV_LIBS}
     yaml-cpp
@@ -180,8 +175,7 @@ target_link_libraries(imu_viewer_app
     glfw
     marionette
     stargazer_sensor_grpc_proto
-    $<$<BOOL:${WIN32}>:GLEW::GLEW>
-    $<$<NOT:$<BOOL:${WIN32}>>:GLEW>
+    glad::glad
     $<$<NOT:$<BOOL:${WIN32}>>:pthread>
     $<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:stdc++fs>
     $<$<NOT:$<BOOL:${WIN32}>>:protobuf::libprotobuf>

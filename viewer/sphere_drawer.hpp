@@ -81,6 +81,9 @@ private:
     unsigned int index_buffer;
     unsigned int line_index_buffer;
 
+    unsigned int vao;
+    unsigned int line_vao;
+
     // interleaved
     std::vector<float> interleavedVertices;
     int interleavedStride; // # of bytes to hop to the next vertex (should be 32 bytes)

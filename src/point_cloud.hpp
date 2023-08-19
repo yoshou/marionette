@@ -64,6 +64,7 @@ public:
     std::size_t radius_search(const glm::vec3 &query_pt, distance_type radius,
                               std::vector<std::pair<index_type, distance_type>> &result) const
     {
+#if NANOFLANN_VERSION >= 0x150
         nanoflann::SearchParameters params;
         params.sorted = true;
 
@@ -76,5 +77,10 @@ public:
         }
 
         return found_size;
+#else
+        nanoflann::SearchParams params;
+        params.sorted = true;
+        return index->radiusSearch(&query_pt[0], radius, result, params);
+#endif
     }
 };

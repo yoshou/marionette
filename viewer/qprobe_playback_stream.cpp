@@ -1,12 +1,7 @@
 #include "qprobe_playback_stream.hpp"
 
-#ifdef _WIN32
 #include <filesystem>
 namespace fs = std::filesystem;
-#else
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#endif
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <thread>

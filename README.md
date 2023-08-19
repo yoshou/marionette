@@ -23,7 +23,7 @@ vcpkg install boost-core:x64-windows
 vcpkg install boost-program-options:x64-windows
 vcpkg install boost-graph:x64-windows
 vcpkg install yaml-cpp:x64-windows
-vcpkg install glew:x64-windows
+vcpkg install glad:x64-windows
 vcpkg install glfw3:x64-windows
 vcpkg install pcl:x64-windows
 vcpkg install nanoflann:x64-windows

@@ -1,8 +1,7 @@
 #include "drawer2d.hpp"
 
 #include "grid_drawer.hpp"
-#include <GL/glew.h>
-#define GLFW_INCLUDE_GLU
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 drawer2d::drawer2d()
@@ -61,20 +60,9 @@ void drawer2d::draw_rect(const glm::vec2 &position, const glm::vec2 &size, const
     float values[] = {(float)color.x, (float)color.y, (float)color.z, (float)color.w};
     glUniform4fv(glGetUniformLocation(shader, "color"), 1, values);
 
-    // set line colour
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(1);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+    glBindVertexArray(vao);
     glDrawElements(GL_LINES, (unsigned int)indices.size(), GL_UNSIGNED_INT, 0);
-
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
+    glBindVertexArray(0);
 
     glUseProgram(0);
 }
@@ -178,4 +166,19 @@ void drawer2d::initialize()
     glGenBuffers(1, &index_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+
+    glBindVertexArray(0);
 }

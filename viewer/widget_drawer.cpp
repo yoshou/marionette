@@ -1,6 +1,6 @@
 #include <cstdlib>
 #include <iostream>
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <memory>
@@ -18,7 +18,6 @@
 
 #include "widget_drawer.hpp"
 
-#ifdef _WIN32
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
 #define NK_INCLUDE_STANDARD_VARARGS
@@ -31,20 +30,6 @@
 #define NK_KEYSTATE_BASED_INPUT
 #include "nuklear/nuklear.h"
 #include "nuklear_glfw_gl3.h"
-#else
-#define NK_INCLUDE_FIXED_TYPES
-#define NK_INCLUDE_STANDARD_IO
-#define NK_INCLUDE_STANDARD_VARARGS
-#define NK_INCLUDE_DEFAULT_ALLOCATOR
-#define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
-#define NK_INCLUDE_FONT_BAKING
-#define NK_INCLUDE_DEFAULT_FONT
-#define NK_IMPLEMENTATION
-#define NK_GLFW_GL4_IMPLEMENTATION
-#define NK_KEYSTATE_BASED_INPUT
-#include "nuklear.h"
-#include "nuklear_glfw_gl4.h"
-#endif
 
 enum theme
 {
@@ -290,17 +275,12 @@ widget_drawer::~widget_drawer() = default;
 
 void widget_drawer::on_char(void *handle, unsigned int codepoint)
 {
-#if _WIN32
     nk_glfw3_char_callback((nk_glfw *)handle, codepoint);
-#else
-    nk_glfw3_char_callback((GLFWwindow *)handle, codepoint);
-#endif
 }
 
 void widget_drawer::initialize(void* handle, std::size_t width, std::size_t height)
 {
     pimpl->win = (GLFWwindow *)handle;
-#if _WIN32
     pimpl->ctx = nk_glfw3_init(&pimpl->glfw, pimpl->win, NK_GLFW3_INSTALL_CALLBACKS);
 
     /* Load Fonts: if none of these are loaded a default font will be used  */
@@ -317,52 +297,6 @@ void widget_drawer::initialize(void* handle, std::size_t width, std::size_t heig
     /*set_style(ctx, THEME_RED);*/
     /*set_style(ctx, THEME_BLUE);*/
     /*set_style(ctx, THEME_DARK);*/
-#else
-    pimpl->ctx = nk_glfw3_init(pimpl->win, NK_GLFW3_DEFAULT, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
-
-    /* Load Fonts: if none of these are loaded a default font will be used  */
-    /* Load Cursor: if you uncomment cursor loading please hide the cursor */
-    {
-        struct nk_font_atlas *atlas;
-        nk_glfw3_font_stash_begin(&atlas);
-        struct nk_font_config config = nk_font_config(0);
-        config.range = nk_font_chinese_glyph_ranges();
-        struct nk_font *robot = nk_font_atlas_add_from_file(atlas, "../fonts/mplus/fonts/ttf/Mplus2-Regular.ttf", (float)16, &config);
-        nk_glfw3_font_stash_end();
-
-        // for (size_t i = 0; i < NK_CURSOR_COUNT; i++)
-        // {
-        //     atlas->cursors[i].size.x = (float)window->scaleh((int)atlas->cursors[i].size.x);
-        //     atlas->cursors[i].size.y = (float)window->scalev((int)atlas->cursors[i].size.y);
-        // }
-
-        // nk_style_load_all_cursors(ctx, atlas->cursors);
-        nk_style_set_font(pimpl->ctx, &robot->handle);
-    }
-
-    /* style.c */
-    /*set_style(ctx, THEME_WHITE);*/
-    /*set_style(ctx, THEME_RED);*/
-    /*set_style(ctx, THEME_BLUE);*/
-    /*set_style(ctx, THEME_DARK);*/
-
-    /* Create bindless texture.
-     * The index returned is not the opengl resource id.
-     * IF you need the GL resource id use: nk_glfw3_get_tex_ogl_id() */
-
-    {
-        int tex_index = 0;
-        enum
-        {
-            tex_width = 256,
-            tex_height = 256
-        };
-        char pixels[tex_width * tex_height * 4];
-        memset(pixels, 128, sizeof(pixels));
-        tex_index = nk_glfw3_create_texture(pixels, tex_width, tex_height);
-        pimpl->img = nk_image_id(tex_index);
-    }
-#endif
 }
 
 void widget_drawer::draw()
@@ -380,11 +314,7 @@ void widget_drawer::draw()
         return;
     }
 
-#ifdef _WIN32
     nk_glfw3_new_frame(&pimpl ->glfw);
-#else
-    nk_glfw3_new_frame();
-#endif
 
     if (nk_begin(ctx, "Panel", nk_rect(0, 0, 1280, 30), NK_WINDOW_NO_SCROLLBAR))
     {
@@ -452,9 +382,5 @@ void widget_drawer::draw()
     }
     nk_end(ctx);
 
-#ifdef _WIN32
     nk_glfw3_render(&pimpl->glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
-#else
-    nk_glfw3_render(NK_ANTI_ALIASING_ON);
-#endif
 }

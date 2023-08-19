@@ -1,6 +1,5 @@
 #include "sphere_drawer.hpp"
-#include <GL/glew.h>
-#define GLFW_INCLUDE_GLU
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 sphere_drawer::sphere_drawer(int sectors, int stacks, bool smooth) : interleavedStride(32)
@@ -57,14 +56,9 @@ void sphere_drawer::draw(glm::mat4 wvp, const float color[4]) const
     float values[] = {(float)color[0], (float)color[1], (float)color[2], (float)color[3]};
     glUniform4fv(glGetUniformLocation(shader, "color"), 1, values);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+    glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, (unsigned int)indices.size(), GL_UNSIGNED_INT, 0);
-
-    glDisableVertexAttribArray(0);
+    glBindVertexArray(0);
 
     glUseProgram(0);
 }
@@ -78,15 +72,9 @@ void sphere_drawer::drawLines(glm::mat4 wvp, const float color[4]) const
     float values[] = {(float)color[0], (float)color[1], (float)color[2], (float)color[3]};
     glUniform4fv(glGetUniformLocation(shader, "color"), 1, values);
 
-    // draw lines with VA
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, line_index_buffer);
+    glBindVertexArray(line_vao);
     glDrawElements(GL_LINES, (unsigned int)lineIndices.size(), GL_UNSIGNED_INT, 0);
-
-    glDisableVertexAttribArray(0);
+    glBindVertexArray(0);
 
     glUseProgram(0);
 }
@@ -157,6 +145,7 @@ static GLint load_program(std::string vertexFileName, std::string fragmentFileNa
     if (compiled == GL_FALSE)
     {
         fprintf(stderr, "Compile error in vertex shader.\n");
+        std::cout << vertexFileName << std::endl;
         return -1;
     }
 
@@ -207,6 +196,28 @@ void sphere_drawer::initialize()
     glGenBuffers(1, &line_index_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, line_index_buffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, lineIndices.size() * sizeof(unsigned int), lineIndices.data(), GL_STATIC_DRAW);
+
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+
+    glBindVertexArray(0);
+
+    glGenVertexArrays(1, &line_vao);
+    glBindVertexArray(line_vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, line_index_buffer);
+
+    glBindVertexArray(0);
 }
 
 void sphere_drawer::buildVerticesSmooth()

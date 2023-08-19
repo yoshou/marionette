@@ -1,6 +1,5 @@
 #include "bone_drawer.hpp"
-#include <GL/glew.h>
-#define GLFW_INCLUDE_GLU
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <array>
@@ -83,20 +82,9 @@ void bone_drawer::draw(glm::mat4 wvp) const
     glUseProgram(shader);
     glUniformMatrix4fv(glGetUniformLocation(shader, "pvw"), 1, GL_FALSE, &wvp[0][0]);
 
-    // set line colour
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(1);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+    glBindVertexArray(vao);
     glDrawElements(GL_LINES, (unsigned int)indices.size(), GL_UNSIGNED_INT, 0);
-
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
+    glBindVertexArray(0);
 
     glUseProgram(0);
 }
@@ -200,4 +188,19 @@ void bone_drawer::initialize()
     glGenBuffers(1, &index_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+
+    glBindVertexArray(0);
 }

@@ -16,9 +16,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-#include <GL/glew.h>
-
-#define GLFW_INCLUDE_GLU
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #define TINYGLTF_IMPLEMENTATION
@@ -43,6 +41,7 @@ struct primitive_t
 {
     std::map<std::string, buffer_t> buffers;
     buffer_t index_buffer;
+    GLuint vao;
 };
 
 struct node_t
@@ -117,6 +116,7 @@ static GLint load_program(std::string vertexFileName, std::string fragmentFileNa
     if (compiled == GL_FALSE)
     {
         fprintf(stderr, "Compile error in vertex shader.\n");
+        std::cout << vertexFileName << std::endl;
         return -1;
     }
 
@@ -358,86 +358,93 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
             }
         }
 
-        for (auto iter = prim->buffers.begin(); iter != prim->buffers.end(); iter++)
+        if (prim->vao == 0)
         {
-            const tinygltf::Accessor &accessor = model.accessors[primitive.attributes.at(iter->first)];
-            const tinygltf::BufferView &bufferView = model.bufferViews[accessor.bufferView];
+            glGenVertexArrays(1, &prim->vao);
+            glBindVertexArray(prim->vao);
 
-            if (iter->first == "POSITION")
+            for (auto iter = prim->buffers.begin(); iter != prim->buffers.end(); iter++)
             {
-                const buffer_t *buffer = &iter->second;
-                glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
-                int byteStride =
-                    accessor.ByteStride(model.bufferViews[accessor.bufferView]);
-                assert(byteStride != -1);
-                glVertexAttribPointer(0, buffer->elem_size,
-                                      accessor.componentType,
-                                      accessor.normalized ? GL_TRUE : GL_FALSE,
-                                      byteStride, BUFFER_OFFSET(accessor.byteOffset));
+                const tinygltf::Accessor &accessor = model.accessors[primitive.attributes.at(iter->first)];
+                const tinygltf::BufferView &bufferView = model.bufferViews[accessor.bufferView];
+
+                if (iter->first == "POSITION")
+                {
+                    const buffer_t *buffer = &iter->second;
+                    glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
+                    int byteStride =
+                        accessor.ByteStride(model.bufferViews[accessor.bufferView]);
+                    assert(byteStride != -1);
+                    glEnableVertexAttribArray(0);
+                    glVertexAttribPointer(0, buffer->elem_size,
+                                        accessor.componentType,
+                                        accessor.normalized ? GL_TRUE : GL_FALSE,
+                                        byteStride, BUFFER_OFFSET(accessor.byteOffset));
+                }
+                else if(iter->first == "NORMAL")
+                {
+                    const buffer_t *buffer = &iter->second;
+                    glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
+                    int byteStride =
+                        accessor.ByteStride(model.bufferViews[accessor.bufferView]);
+                    assert(byteStride != -1);
+                    glEnableVertexAttribArray(1);
+                    glVertexAttribPointer(1, buffer->elem_size,
+                                        accessor.componentType,
+                                        accessor.normalized ? GL_TRUE : GL_FALSE,
+                                        byteStride, BUFFER_OFFSET(accessor.byteOffset));
+                }
+                else if (iter->first == "TEXCOORD_0")
+                {
+                    const buffer_t *buffer = &iter->second;
+                    glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
+                    int byteStride =
+                        accessor.ByteStride(model.bufferViews[accessor.bufferView]);
+                    assert(byteStride != -1);
+                    glEnableVertexAttribArray(2);
+                    glVertexAttribPointer(2, buffer->elem_size,
+                                        accessor.componentType,
+                                        accessor.normalized ? GL_TRUE : GL_FALSE,
+                                        byteStride, BUFFER_OFFSET(accessor.byteOffset));
+                }
+                else if (iter->first == "JOINTS_0")
+                {
+                    const buffer_t *buffer = &iter->second;
+                    glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
+                    int byteStride =
+                        accessor.ByteStride(model.bufferViews[accessor.bufferView]);
+                    assert(byteStride != -1);
+                    glEnableVertexAttribArray(3);
+                    glVertexAttribIPointer(3, buffer->elem_size,
+                                        accessor.componentType,
+                                        byteStride, BUFFER_OFFSET(accessor.byteOffset));
+                }
+                else if (iter->first == "WEIGHTS_0")
+                {
+                    const buffer_t *buffer = &iter->second;
+                    glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
+                    int byteStride =
+                        accessor.ByteStride(model.bufferViews[accessor.bufferView]);
+                    assert(byteStride != -1);
+                    glEnableVertexAttribArray(4);
+                    glVertexAttribPointer(4, buffer->elem_size,
+                                        accessor.componentType,
+                                        accessor.normalized ? GL_TRUE : GL_FALSE,
+                                        byteStride, BUFFER_OFFSET(accessor.byteOffset));
+                }
             }
-            else if(iter->first == "NORMAL")
-            {
-                const buffer_t *buffer = &iter->second;
-                glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
-                int byteStride =
-                    accessor.ByteStride(model.bufferViews[accessor.bufferView]);
-                assert(byteStride != -1);
-                glVertexAttribPointer(1, buffer->elem_size,
-                                      accessor.componentType,
-                                      accessor.normalized ? GL_TRUE : GL_FALSE,
-                                      byteStride, BUFFER_OFFSET(accessor.byteOffset));
-            }
-            else if (iter->first == "TEXCOORD_0")
-            {
-                const buffer_t *buffer = &iter->second;
-                glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
-                int byteStride =
-                    accessor.ByteStride(model.bufferViews[accessor.bufferView]);
-                assert(byteStride != -1);
-                glVertexAttribPointer(2, buffer->elem_size,
-                                      accessor.componentType,
-                                      accessor.normalized ? GL_TRUE : GL_FALSE,
-                                      byteStride, BUFFER_OFFSET(accessor.byteOffset));
-            }
-            else if (iter->first == "JOINTS_0")
-            {
-                const buffer_t *buffer = &iter->second;
-                glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
-                int byteStride =
-                    accessor.ByteStride(model.bufferViews[accessor.bufferView]);
-                assert(byteStride != -1);
-                glVertexAttribIPointer(3, buffer->elem_size,
-                                       accessor.componentType,
-                                       byteStride, BUFFER_OFFSET(accessor.byteOffset));
-            }
-            else if (iter->first == "WEIGHTS_0")
-            {
-                const buffer_t *buffer = &iter->second;
-                glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
-                int byteStride =
-                    accessor.ByteStride(model.bufferViews[accessor.bufferView]);
-                assert(byteStride != -1);
-                glVertexAttribPointer(4, buffer->elem_size,
-                                      accessor.componentType,
-                                      accessor.normalized ? GL_TRUE : GL_FALSE,
-                                      byteStride, BUFFER_OFFSET(accessor.byteOffset));
-            }
+
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prim->index_buffer.id);
+
+            glBindVertexArray(0);
         }
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-        glEnableVertexAttribArray(2);
-        glEnableVertexAttribArray(3);
-        glEnableVertexAttribArray(4);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prim->index_buffer.id);
+        glBindVertexArray(prim->vao);
+
         glDrawElements(mode, index_accessor.count, index_accessor.componentType,
                        BUFFER_OFFSET(index_accessor.byteOffset));
 
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
-        glDisableVertexAttribArray(2);
-        glDisableVertexAttribArray(3);
-        glDisableVertexAttribArray(4);
+        glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
         glUseProgram(0);
     }

@@ -7,17 +7,17 @@ add_executable(convert_model
 
 target_include_directories(convert_model
     SYSTEM PRIVATE
-    $<$<NOT:$<BOOL:${WIN32}>>:~/fbx/include>
+    $<$<NOT:$<BOOL:${WIN32}>>:/fbxsdk/include>
     $<$<BOOL:${WIN32}>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/include>
 )
 
 target_link_libraries(convert_model
-    $<$<NOT:$<BOOL:${WIN32}>>:boost_program_options>
+    Boost::boost
+    Boost::program_options
     $<$<NOT:$<BOOL:${WIN32}>>:pthread>
+    $<$<NOT:$<BOOL:${WIN32}>>:/fbxsdk/lib/gcc/x64/release/libfbxsdk.a>
     $<$<NOT:$<BOOL:${WIN32}>>:xml2>
-    $<$<NOT:$<BOOL:${WIN32}>>:~/fbx/lib/gcc/x64/debug/libfbxsdk.so>
-    $<$<BOOL:${WIN32}>:Boost::boost>
-    $<$<BOOL:${WIN32}>:Boost::program_options>
+    $<$<NOT:$<BOOL:${WIN32}>>:z>
     $<$<BOOL:${WIN32}>:$<$<CONFIG:RELEASE>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/lib/vs2019/x64/release/libfbxsdk-md.lib>>
     $<$<BOOL:${WIN32}>:$<$<CONFIG:RELEASE>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/lib/vs2019/x64/release/libxml2-md.lib>>
     $<$<BOOL:${WIN32}>:$<$<CONFIG:RELEASE>:C:/Program\ Files/Autodesk/FBX/FBX\ SDK/2020.2.1/lib/vs2019/x64/release/zlib-md.lib>>
