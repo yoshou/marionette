@@ -462,6 +462,20 @@ namespace optimization
         {
         }
 
+        parameter_block(size_t size)
+            : offset(std::numeric_limits<std::size_t>::max())
+            , size(size)
+            , default_values{}
+        {
+        }
+
+        parameter_block(size_t size, const std::vector<double>& default_values)
+            : offset(std::numeric_limits<std::size_t>::max())
+            , size(size)
+            , default_values{default_values}
+        {
+        }
+
         parameter_block()
             : offset(std::numeric_limits<std::size_t>::max())
             , size(0)

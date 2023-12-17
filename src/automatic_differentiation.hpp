@@ -2,6 +2,8 @@
 
 #include <immintrin.h>
 
+#include <Eigen/Core>
+
 #define _mm256_set_m128d(vh, vl) \
     _mm256_insertf128_pd(_mm256_castpd128_pd256(vl), (vh), 1)
 
@@ -176,6 +178,216 @@ static inline dual_t<T> square(const dual_t<T> &f)
     return dual_t<T>(
         df_0,
         f.b * df_1);
+}
+
+template <typename T>
+inline bool isinf(const dual_t<T>& f) {
+    return isinf(f.a);
+}
+template <typename T>
+inline bool isnan(const dual_t<T>& f) {
+    return isnan(f.a);
+}
+template <typename T>
+inline bool isless(const dual_t<T>& f, const dual_t<T>& g) {
+    return isless(f.a, g.a);
+}
+template <typename T>
+inline bool isgreater(const dual_t<T>& f, const dual_t<T>& g) {
+    return isgreater(f.a, g.a);
+}
+template <typename T>
+inline bool islessgreater(const dual_t<T>& f, const dual_t<T>& g) {
+    return islessgreater(f.a, g.a);
+}
+template <typename T>
+static inline dual_t<T> fmin(const dual_t<T>& f, const dual_t<T>& g)
+{
+    if (isnan(f) || isnan(g) || islessgreater(f, g)) {
+        return isnan(f) || isgreater(f, g) ? g : f;
+    }
+    return (f + g) * dual_t<T>(0.5);
+}
+
+template <typename T, int N>
+struct dual_vec_t
+{
+    T a;
+    Eigen::Matrix<T, N, 1> v;
+
+    inline dual_vec_t()
+    {
+        v.setConstant(T());
+    }
+    inline explicit dual_vec_t(const T &value)
+    {
+        a = value;
+        v.setConstant(T());
+    }
+    inline dual_vec_t(const T &value, size_t k)
+    {
+        a = value;
+        v.setConstant(T());
+        v[k] = T(1.0);
+    }
+    template <typename Derived>
+    inline dual_vec_t(const T& a, const Eigen::DenseBase<Derived>& v)
+        : a(a), v(v)
+    {
+    }
+    dual_vec_t<T, N> &operator+=(const dual_vec_t<T, N> &y)
+    {
+        *this = *this + y;
+        return *this;
+    }
+
+    dual_vec_t<T, N> &operator-=(const dual_vec_t<T, N> &y)
+    {
+        *this = *this - y;
+        return *this;
+    }
+
+    dual_vec_t<T, N> &operator*=(const dual_vec_t<T, N> &y)
+    {
+        *this = *this * y;
+        return *this;
+    }
+
+    dual_vec_t<T, N> &operator/=(const dual_vec_t<T, N> &y)
+    {
+        *this = *this / y;
+        return *this;
+    }
+    dual_vec_t<T, N> &operator+=(const T &s)
+    {
+        *this = *this + s;
+        return *this;
+    }
+
+    dual_vec_t<T, N> &operator-=(const T &s)
+    {
+        *this = *this - s;
+        return *this;
+    }
+
+    dual_vec_t<T, N> &operator*=(const T &s)
+    {
+        *this = *this * s;
+        return *this;
+    }
+
+    dual_vec_t<T, N> &operator/=(const T &s)
+    {
+        *this = *this / s;
+        return *this;
+    }
+};
+
+template <typename T, int N>
+static inline dual_vec_t<T, N> operator+(const dual_vec_t<T, N> &f)
+{
+    return f;
+}
+template <typename T, int N>
+static inline dual_vec_t<T, N> operator-(const dual_vec_t<T, N> &f)
+{
+    return dual_vec_t<T, N>(-f.a, -f.v);
+}
+
+template <typename T, int N>
+static inline dual_vec_t<T, N> operator+(const dual_vec_t<T, N> &f, const T &s)
+{
+    return dual_vec_t<T, N>(f.a + s, f.v);
+}
+template <typename T, int N>
+static inline dual_vec_t<T, N> operator+(const dual_vec_t<T, N> &f, const dual_vec_t<T, N> &g)
+{
+    return dual_vec_t<T, N>(f.a + g.a, f.v + g.v);
+}
+template <typename T, int N>
+static inline dual_vec_t<T, N> operator-(const dual_vec_t<T, N> &f, const T &s)
+{
+    return dual_vec_t<T, N>(f.a - s, f.v);
+}
+template <typename T, int N>
+static inline dual_vec_t<T, N> operator-(const dual_vec_t<T, N> &f, const dual_vec_t<T, N> &g)
+{
+    return dual_vec_t<T, N>(f.a - g.a, f.v - g.v);
+}
+template <typename T, int N>
+static inline dual_vec_t<T, N> operator*(const dual_vec_t<T, N> &f, const T &s)
+{
+    return dual_vec_t<T, N>(f.a * s, f.v * s);
+}
+template <typename T, int N>
+static inline dual_vec_t<T, N> operator*(const T &s, const dual_vec_t<T, N> &f)
+{
+    return dual_vec_t<T, N>(f.a * s, f.v * s);
+}
+template <typename T, int N>
+static inline dual_vec_t<T, N> operator*(const dual_vec_t<T, N> &f, const dual_vec_t<T, N> &g)
+{
+    return dual_vec_t<T, N>(f.a * g.a, f.v * g.a + f.a * g.v);
+}
+template <typename T, int N>
+static inline dual_vec_t<T, N> operator/(const dual_vec_t<T, N> &f, const dual_vec_t<T, N> &g)
+{
+    return dual_vec_t<T, N>(f.a / g.a, f.v / g.a - f.a * g.v / (g.a * g.a));
+}
+template <typename T, int N>
+static inline dual_vec_t<T, N> operator/(const dual_vec_t<T, N> &f, const T &s)
+{
+    return dual_vec_t<T, N>(f.a / s, f.v / s);
+}
+template <typename T, int N>
+static inline bool operator>(const dual_vec_t<T, N> &f, const dual_vec_t<T, N> &g)
+{
+    return f.a > g.a;
+}
+template <typename T, int N>
+static inline dual_vec_t<T, N> sqrt(const dual_vec_t<T, N> &f)
+{
+    const auto df_0 = std::sqrt(f.a);
+    const auto df_1 = T{1} / (T{2} * df_0);
+    return dual_vec_t<T, N>(
+        df_0,
+        f.v * df_1);
+}
+template <typename T, int N>
+static inline dual_vec_t<T, N> sin(const dual_vec_t<T, N> &f)
+{
+    const auto df_0 = std::sin(f.a);
+    const auto df_1 = std::cos(f.a);
+    return dual_vec_t<T, N>(
+        df_0,
+        f.v * df_1);
+}
+template <typename T, int N>
+static inline dual_vec_t<T, N> cos(const dual_vec_t<T, N> &f)
+{
+    const auto df_0 = std::cos(f.a);
+    const auto df_1 = -std::sin(f.a);
+    return dual_vec_t<T, N>(
+        df_0,
+        f.v * df_1);
+}
+template <typename T, int N>
+static inline dual_vec_t<T, N> pow(const dual_vec_t<T, N> &f, const T &g)
+{
+    const auto df_0 = std::pow(f.a, g);
+    const auto df_1 = g * std::pow(f.a, g - T{1});
+    return dual_vec_t<T, N>(
+        df_0,
+        f.v * df_1);
+}
+template <typename T, int N>
+static inline dual_vec_t<T, N> square(const dual_vec_t<T, N> &f)
+{
+    const auto df_0 = f.a * f.a;
+    const auto df_1 = T{2} * f.a;
+    return dual_vec_t<T, N>(
+        df_0,
+        f.v * df_1);
 }
 
 template <typename T>
@@ -370,6 +582,53 @@ static inline hyper_dual_t<T> cos(const hyper_dual_t<T> &f)
         f.c * df_1,
         f.d * df_1 + f.b * f.c * df_2);
 }
+
+template <typename T>
+inline bool isinf(const hyper_dual_t<T>& f) {
+    return isinf(f.a);
+}
+template <typename T>
+inline bool isnan(const hyper_dual_t<T>& f) {
+    return isnan(f.a);
+}
+template <typename T>
+inline bool isless(const hyper_dual_t<T>& f, const hyper_dual_t<T>& g) {
+    return isless(f.a, g.a);
+}
+template <typename T>
+inline bool isgreater(const hyper_dual_t<T>& f, const hyper_dual_t<T>& g) {
+    return isgreater(f.a, g.a);
+}
+template <typename T>
+inline bool islessgreater(const hyper_dual_t<T>& f, const hyper_dual_t<T>& g) {
+    return islessgreater(f.a, g.a);
+}
+template <typename T>
+static inline hyper_dual_t<T> fmin(const hyper_dual_t<T>& f, const hyper_dual_t<T>& g)
+{
+    if (isnan(f) || isnan(g) || islessgreater(f, g)) {
+        return isnan(f) || isgreater(f, g) ? g : f;
+    }
+    return (f + g) * hyper_dual_t<T>(0.5);
+}
+
+template <typename T, typename U>
+struct std::common_type<T, dual_t<U>>
+{
+    using type = dual_t<common_type_t<T, U>>;
+};
+
+template <typename T, typename U>
+struct std::common_type<dual_t<T>, U>
+{
+    using type = dual_t<common_type_t<T>>;
+};
+
+template <typename T, typename U>
+struct std::common_type<dual_t<T>, dual_t<U>>
+{
+    using type = dual_t<common_type_t<T>>;
+};
 
 #include <immintrin.h>
 

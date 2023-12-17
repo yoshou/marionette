@@ -14,6 +14,7 @@ include(model_converter/CMakeLists.txt)
 include(viewer/CMakeLists.txt)
 include(protos/CMakeLists.txt)
 include(fonts/CMakeLists.txt)
+include(test/CMakeLists.txt)
 
 if(WIN32)
 else()
