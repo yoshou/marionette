@@ -1,5 +1,5 @@
 if(WIN32)
-    set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/third-party/vcpkg/installed/x64-windows")
+    set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-windows")
 else()
     set(CMAKE_PREFIX_PATH "/usr/local/vcpkg/installed/x64-linux")
 endif()
@@ -8,9 +8,6 @@ find_package(OpenCV REQUIRED)
 find_package(Ceres CONFIG REQUIRED)
 
 set_target_properties(glog::glog PROPERTIES
-    INTERFACE_LINK_LIBRARIES "gflags"
-)
-set_target_properties(multiview PROPERTIES
     INTERFACE_LINK_LIBRARIES "gflags"
 )
 set_target_properties(opencv_sfm PROPERTIES

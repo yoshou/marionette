@@ -32,6 +32,7 @@ target_compile_definitions(ir_viewer
     GLOG_NO_ABBREVIATED_SEVERITIES
     GOOGLE_GLOG_DLL_DECL=
     _MBCS
+    GLM_ENABLE_EXPERIMENTAL
 )
 
 add_dependencies(ir_viewer

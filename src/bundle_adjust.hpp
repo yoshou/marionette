@@ -1,7 +1,6 @@
 #pragma once 
 
 #include <opencv2/opencv.hpp>
-#include <opencv2/viz.hpp>
 #include <iostream>
 #include <fstream>
 #include <random>

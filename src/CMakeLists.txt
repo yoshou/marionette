@@ -52,6 +52,8 @@ target_compile_definitions(marionette
     GLOG_NO_ABBREVIATED_SEVERITIES
     GOOGLE_GLOG_DLL_DECL=
     _MBCS
+    GLM_ENABLE_EXPERIMENTAL
+    GLOG_USE_GLOG_EXPORT
 )
 
 target_include_directories(marionette

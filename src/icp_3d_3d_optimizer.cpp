@@ -847,14 +847,11 @@ float icp_3d_3d_minimizer::update(std::size_t iter, const model_data &model, con
         if (use_quaternion)
         {
 #if 1
+            ceres::Manifold* rotation_manifold = new ceres::QuaternionManifold{};
             for (std::size_t i = 0; i < num_clusters; i++)
             {
-                const auto cluster_name = registered_clusters[i].cluster.name;
-
                 const auto rotate_param = &rotation_params[i * rotation_param_size];
-                ceres::LocalParameterization* parameterization =
-                    new ceres::QuaternionParameterization();
-                problem.SetParameterization(rotate_param, parameterization);
+                problem.SetManifold(rotate_param, rotation_manifold);
             }
 #endif
         }

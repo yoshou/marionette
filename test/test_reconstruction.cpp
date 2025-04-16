@@ -7,7 +7,6 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/hash.hpp>
 
-#include <pcl/visualization/cloud_viewer.h>
 #include <pcl/io/pcd_io.h>
 
 #include <random>
