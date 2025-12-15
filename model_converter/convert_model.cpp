@@ -6,11 +6,12 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <map>
+#include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <nlohmann/json.hpp>
-#include <boost/program_options.hpp>
 
 #include "fbx_loader.hpp"
 
@@ -71,9 +72,9 @@ int convert_tpose(int argc, const char *argv[])
         {"bones", j_bones},
     };
 
-    //std::ofstream ofs;
-    //ofs.open(output_name, std::ios::out | std::ios::binary);
-    //ofs << j.dump(2);
+    std::ofstream ofs;
+    ofs.open(output_name, std::ios::out | std::ios::binary);
+    ofs << j.dump(2);
 
     std::cout << "Successfully converted." << std::endl;
 
@@ -361,32 +362,14 @@ int convert_model(int argc, const char *argv[])
 
 int main(int argc, const char *argv[])
 {
-#if 0
-    namespace po = boost::program_options;
-
-    po::options_description desc("Options");
-    desc.add_options()("model", "Convert model")("tpose", "Convert tpose");
-
-    po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-
-    if (vm.count("help"))
-    {
-        std::cout << desc << "\n";
-        return -1;
-    }
-#endif
-    const auto model = true;
-    const auto tpose = false;
-    if (tpose)
-    {
-        convert_tpose(argc, argv);
-    }
-    else if (model)
-    {
-        convert_model(argc, argv);
-    }
+    // Convert both JSON files
+    std::cout << "Converting DefaultPose.json..." << std::endl;
+    convert_tpose(argc, argv);
+    
+    std::cout << "\nConverting TrackingModel.json..." << std::endl;
+    convert_model(argc, argv);
+    
+    std::cout << "\nAll conversions completed successfully." << std::endl;
 
     return 0;
 }

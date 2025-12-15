@@ -4,169 +4,145 @@
 #include "fbx_loader.hpp"
 
 #include <iostream>
+#include <fstream>
+#include <vector>
+#include <cstring>
 #include <glm/gtx/transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
-#include <fbxsdk.h>
-
-#define fbxsdk FBXSDK_NAMESPACE
+#include <ofbx.h>
 
 namespace marionette::model::fbx
 {
-    template <typename Func>
-    static void convert_node(const fbxsdk::FbxNode *node, const std::shared_ptr<node_t> &parent, Func pred)
+    static glm::mat4 ofbx_matrix_to_glm(const ofbx::DMatrix &m)
     {
-        const auto processed = pred(node);
-        parent->children.push_back(processed);
-        processed->parent = parent;
-
-        const auto num_children = node->GetChildCount();
-        for (int i = 0; i < num_children; i++)
-        {
-            const auto child = node->GetChild(i);
-            convert_node(child, processed, pred);
-        }
+        // OpenFBX returns column-major matrix (same as GLM)
+        return glm::mat4(
+            static_cast<float>(m.m[0]), static_cast<float>(m.m[1]), static_cast<float>(m.m[2]), static_cast<float>(m.m[3]),
+            static_cast<float>(m.m[4]), static_cast<float>(m.m[5]), static_cast<float>(m.m[6]), static_cast<float>(m.m[7]),
+            static_cast<float>(m.m[8]), static_cast<float>(m.m[9]), static_cast<float>(m.m[10]), static_cast<float>(m.m[11]),
+            static_cast<float>(m.m[12]), static_cast<float>(m.m[13]), static_cast<float>(m.m[14]), static_cast<float>(m.m[15])
+        );
     }
 
-    template <typename Func>
-    static std::shared_ptr<node_t> convert_node(const fbxsdk::FbxNode *node, Func pred)
+    static glm::vec3 ofbx_vec3_to_glm(const ofbx::Vec3 &v)
     {
-        const auto root = std::make_shared<node_t>();
-        convert_node(node, root, pred);
-        root->children[0]->parent.reset();
-        return root->children[0];
+        return glm::vec3(static_cast<float>(v.x), static_cast<float>(v.y), static_cast<float>(v.z));
     }
 
-    template <typename T>
-    struct fbx_destroy_deleter
+    // Recursively process FBX object hierarchy
+    static void process_object(const ofbx::Object *obj, const std::shared_ptr<node_t> &parent_node)
     {
-        void operator()(T *obj)
+        if (!obj) return;
+
+        std::shared_ptr<node_t> current_node = std::make_shared<node_t>();
+        current_node->name = obj->name;
+        current_node->transform = ofbx_matrix_to_glm(obj->getLocalTransform());
+        current_node->parent = parent_node;
+        parent_node->children.push_back(current_node);
+
+        // Check if this object has geometry (mesh) attributes
+        if (obj->getType() == ofbx::Object::Type::MESH)
         {
-            if (obj)
+            const ofbx::Mesh *mesh = static_cast<const ofbx::Mesh*>(obj);
+            auto mesh_node = std::make_shared<mesh_node_t>();
+            mesh_node->name = mesh->name;
+            mesh_node->transform = glm::mat4(1.0f);
+            
+            // Extract skin weights
+            const ofbx::Skin *skin = mesh->getSkin();
+            if (skin)
             {
-                obj->Destroy();
-            }
-        }
-    };
-
-    template <typename T, typename... Args>
-    static std::shared_ptr<T> create_fbx_object(Args... args)
-    {
-        return std::shared_ptr<T>(T::Create(args...), fbx_destroy_deleter<T>());
-    }
-
-    template <typename T>
-    static T deg_to_rad(T value)
-    {
-        return static_cast<T>(static_cast<double>(value) * M_PI / 180.0);
-    }
-
-    static glm::mat4 calculate_node_transform(const fbxsdk::FbxNode *node)
-    {
-        const auto scale = node->LclScaling.Get();
-        const auto translation = node->LclTranslation.Get();
-        const auto rotation = node->LclRotation.Get();
-
-        const auto rotate_x = glm::rotate(deg_to_rad(static_cast<float>(rotation[0])), glm::vec3(1, 0, 0));
-        const auto rotate_y = glm::rotate(deg_to_rad(static_cast<float>(rotation[1])), glm::vec3(0, 1, 0));
-        const auto rotate_z = glm::rotate(deg_to_rad(static_cast<float>(rotation[2])), glm::vec3(0, 0, 1));
-
-        glm::mat4 transform = glm::translate(glm::vec3(translation[0], translation[1], translation[2])) *
-                              rotate_z * rotate_y * rotate_x *
-                              glm::scale(glm::vec3(scale[0], scale[1], scale[2]));
-        return transform;
-    }
-
-    static std::shared_ptr<node_t> process_mesh(const fbxsdk::FbxMesh *mesh)
-    {
-        const auto result = std::make_shared<mesh_node_t>();
-        result->transform = glm::mat4(1.0f);
-        result->name = std::string(mesh->GetName());
-
-        int num_deformers = mesh->GetDeformerCount();
-        for (int i = 0; i < num_deformers; i++)
-        {
-            const auto deformer = mesh->GetDeformer(i, nullptr);
-            if (const auto skin = FbxCast<FbxSkin>(deformer))
-            {
-                int num_clusters = skin->GetClusterCount();
-                for (int j = 0; j < num_clusters; j++)
+                int cluster_count = skin->getClusterCount();
+                for (int i = 0; i < cluster_count; i++)
                 {
-                    const auto cluster = skin->GetCluster(j);
-                    const auto num_cp = cluster->GetControlPointIndicesCount();
-                    if (num_cp == 0)
+                    const ofbx::Cluster *cluster = skin->getCluster(i);
+                    const ofbx::Object *link = cluster->getLink();
+                    if (link && cluster->getIndicesCount() > 0)
                     {
-                        continue;
+                        const double *weights = cluster->getWeights();
+                        mesh_node->weights.insert(std::make_pair(link->name, static_cast<float>(weights[0])));
                     }
-                    const auto cp_weights = cluster->GetControlPointWeights();
-                    result->weights.insert(std::make_pair(cluster->GetLink()->GetName(), cp_weights[0]));
                 }
             }
+            
+            mesh_node->parent = current_node;
+            current_node->children.push_back(mesh_node);
         }
-        return result;
-    }
+        // Check if this is a skeleton/bone node
+        else if (obj->getType() == ofbx::Object::Type::LIMB_NODE)
+        {
+            auto skeleton_node = std::make_shared<skeleton_node_t>();
+            skeleton_node->name = obj->name;
+            skeleton_node->transform = glm::mat4(1.0f);
+            skeleton_node->parent = current_node;
+            current_node->children.push_back(skeleton_node);
+        }
 
-    static std::shared_ptr<node_t> process_skeleton(const fbxsdk::FbxSkeleton *skeleton)
-    {
-        const auto result = std::make_shared<skeleton_node_t>();
-        result->transform = glm::mat4(1.0f);
-        result->name = std::string(skeleton->GetName());
-        return result;
-    }
-
-    static std::shared_ptr<node_t> process_node_attribute(const fbxsdk::FbxNodeAttribute *attrib)
-    {
-        if (const auto skeleton = FbxCast<FbxSkeleton>(attrib))
+        // Process all child objects
+        int child_idx = 0;
+        while (const ofbx::Object *child = obj->resolveObjectLink(child_idx++))
         {
-            return process_skeleton(skeleton);
+            if (child && child->isNode())
+            {
+                process_object(child, current_node);
+            }
         }
-        else if (const auto mesh = FbxCast<FbxMesh>(attrib))
-        {
-            return process_mesh(mesh);
-        }
-        else
-        {
-            const auto result = std::make_shared<node_t>();
-            return result;
-        }
-    }
-
-    static std::shared_ptr<node_t> process_node(const fbxsdk::FbxNode *node)
-    {
-        const auto result = std::make_shared<node_t>();
-        result->transform = calculate_node_transform(node);
-        result->name = std::string(node->GetName());
-        for (int i = 0; i < node->GetNodeAttributeCount(); i++)
-        {
-            const auto result_attrib = process_node_attribute(node->GetNodeAttributeByIndex(i));
-            result_attrib->parent = result;
-            result->children.push_back(result_attrib);
-        }
-        return result;
     }
 
     std::shared_ptr<node_t> load_model(const std::string &filename)
     {
-        auto manager = create_fbx_object<FbxManager>();
-        auto importer = create_fbx_object<FbxImporter>(manager.get(), "untitled");
-
-        if (!importer->Initialize(filename.c_str()))
+        // Load FBX file
+        std::ifstream file(filename, std::ios::binary);
+        if (!file.is_open())
         {
-            std::cout << "Failed to open the FBX file." << std::endl;
+            std::cout << "Failed to open the FBX file: " << filename << std::endl;
             exit(-1);
         }
 
-        auto scene = create_fbx_object<FbxScene>(manager.get(), "untitled");
-        if (!importer->Import(scene.get()))
+        file.seekg(0, std::ios::end);
+        size_t size = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        std::vector<ofbx::u8> content(size);
+        file.read(reinterpret_cast<char*>(content.data()), size);
+        file.close();
+
+        // Parse FBX (we need geometry for meshes and bones for skeletons)
+        ofbx::IScene *scene = ofbx::load(content.data(), size, static_cast<ofbx::u16>(ofbx::LoadFlags::NONE));
+        if (!scene)
         {
-            std::cout << "Failed to import the scene." << std::endl;
+            std::cout << "Failed to parse FBX file: " << ofbx::getError() << std::endl;
             exit(-1);
         }
 
-        FbxAxisSystem(FbxAxisSystem::eOpenGL).ConvertScene(scene.get());
-        const auto root_node = scene->GetRootNode();
+        // Get the root object of the scene
+        const ofbx::Object *fbx_root = scene->getRoot();
+        if (!fbx_root)
+        {
+            std::cout << "FBX file has no root object" << std::endl;
+            scene->destroy();
+            exit(-1);
+        }
 
-        const auto processed_node = convert_node(root_node, process_node);
+        // Create root node
+        auto root = std::make_shared<node_t>();
+        root->name = fbx_root->name;
+        root->transform = ofbx_matrix_to_glm(fbx_root->getLocalTransform());
 
-        return processed_node;
+        // Process all children of root
+        int child_idx = 0;
+        while (const ofbx::Object *child = fbx_root->resolveObjectLink(child_idx++))
+        {
+            if (child && child->isNode())
+            {
+                process_object(child, root);
+            }
+        }
+
+        scene->destroy();
+
+        // Return root node with all children
+        return root;
     }
 }

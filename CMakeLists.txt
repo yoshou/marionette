@@ -10,7 +10,7 @@ include_directories(
 
 include(third-party/CMakeLists.txt)
 include(src/CMakeLists.txt)
-# include(model_converter/CMakeLists.txt)  # FBX SDK required
+include(model_converter/CMakeLists.txt)
 include(viewer/CMakeLists.txt)
 include(protos/CMakeLists.txt)
 include(fonts/CMakeLists.txt)
