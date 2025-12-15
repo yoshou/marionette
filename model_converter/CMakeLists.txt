@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 
 add_executable(convert_model
     ${CMAKE_CURRENT_LIST_DIR}/convert_model.cpp

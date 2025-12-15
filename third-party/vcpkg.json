@@ -1,0 +1,25 @@
+{
+  "name": "marionette",
+  "version": "0.1.0",
+  "description": "Tools for human motion tracking",
+  "dependencies": [
+    {
+      "name": "ceres",
+      "features": ["eigensparse", "lapack"]
+    },
+    "opencv4",
+    "boost-program-options",
+    "boost-graph",
+    "yaml-cpp",
+    "glad",
+    "glfw3",
+    "nanoflann",
+    "glm",
+    "eigen3",
+    "grpc",
+    "nlohmann-json",
+    "nuklear",
+    "tinygltf",
+    "gtest"
+  ]
+}

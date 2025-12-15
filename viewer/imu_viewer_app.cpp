@@ -930,9 +930,7 @@ static void estimate_finger_pose(std::map<std::string, glm::mat4>& poses, const 
         double* rotation_param = &rotation_params[4 * i];
         double* translation_param = &translation_params[3 * i];
 
-        ceres::LocalParameterization* parameterization =
-            new ceres::EigenQuaternionParameterization();
-        problem.SetParameterization(rotation_param, parameterization);
+        problem.SetManifold(rotation_param, new ceres::EigenQuaternionManifold());
     }
 
     {

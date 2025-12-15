@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 
 if(NOT WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
@@ -48,7 +48,7 @@ target_include_directories(ir_viewer
 target_link_libraries(ir_viewer
     ceres
     ${OpenCV_LIBS}
-    yaml-cpp
+    yaml-cpp::yaml-cpp
     ${PCL_LIBRARIES}
     glfw
     marionette
@@ -67,6 +67,17 @@ target_compile_options(ir_viewer
     $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wno-unused-parameter -pg>
     $<$<CONFIG:RELEASE>:-O2>
     $<$<CONFIG:DEBUG>:-g -O0>)
+
+if(WIN32)
+    add_custom_command(TARGET ir_viewer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/third-party/vcpkg_installed/x64-windows/bin"
+        "$<TARGET_FILE_DIR:ir_viewer>"
+    )
+    set_target_properties(ir_viewer PROPERTIES
+        VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    )
+endif()
 
 target_sources(ir_viewer
     PRIVATE
@@ -109,7 +120,7 @@ add_dependencies(log_viewer_app
 target_link_libraries(log_viewer_app
     ceres
     ${OpenCV_LIBS}
-    yaml-cpp
+    yaml-cpp::yaml-cpp
     ${PCL_LIBRARIES}
     glfw
     marionette
@@ -171,7 +182,7 @@ add_dependencies(imu_viewer_app
 target_link_libraries(imu_viewer_app
     ceres
     ${OpenCV_LIBS}
-    yaml-cpp
+    yaml-cpp::yaml-cpp
     ${PCL_LIBRARIES}
     glfw
     marionette
@@ -184,11 +195,33 @@ target_link_libraries(imu_viewer_app
     $<$<NOT:$<BOOL:${WIN32}>>:gRPC::grpc++_reflection>
 )
 
+if(WIN32)
+    add_custom_command(TARGET log_viewer_app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/third-party/vcpkg_installed/x64-windows/bin"
+        "$<TARGET_FILE_DIR:log_viewer_app>"
+    )
+    set_target_properties(log_viewer_app PROPERTIES
+        VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    )
+endif()
+
 target_compile_options(imu_viewer_app
     PRIVATE
     $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wno-unused-parameter -pg>
     $<$<CONFIG:RELEASE>:-O2>
     $<$<CONFIG:DEBUG>:-g -O0>)
+
+if(WIN32)
+    add_custom_command(TARGET imu_viewer_app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/third-party/vcpkg_installed/x64-windows/bin"
+        "$<TARGET_FILE_DIR:imu_viewer_app>"
+    )
+    set_target_properties(imu_viewer_app PROPERTIES
+        VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    )
+endif()
 
 target_sources(imu_viewer_app
     PRIVATE

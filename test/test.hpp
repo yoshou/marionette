@@ -34,14 +34,15 @@ void test_registeration()
             points2.push_back(glm::vec3(glm::inverse(rel_source_pose) * glm::vec4(point.position, 1.f)));
         }
 
-        pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p_cloud(new pcl::PointCloud<pcl::PointXYZRGBA>);
+        struct PointXYZRGBA { float x, y, z; uint8_t r, g, b, a; };
+        std::vector<PointXYZRGBA> p_cloud;
 
         {
             const auto &target_points = frame.markers;
 
             for (std::size_t i = 0; i < points1.size(); i++)
             {
-                pcl::PointXYZRGBA point;
+                PointXYZRGBA point;
 
                 point.x = points1[i].x;
                 point.y = points1[i].y;
@@ -51,12 +52,12 @@ void test_registeration()
                 point.b = 255;
                 point.a = 0;
 
-                p_cloud->points.push_back(point);
+                p_cloud.push_back(point);
             }
             glm::mat3 rotation = glm::rotate(45.0f * (float)M_PI / 180.0f, glm::vec3(0, 1, 0));
             for (std::size_t i = 0; i < points2.size(); i++)
             {
-                pcl::PointXYZRGBA point;
+                PointXYZRGBA point;
 
                 const auto weight = rel_source_points[i].weight;
                 const auto weight_mat = glm::mat3(glm::scale(glm::vec3(1.f, 0.f, 1.f)));
@@ -75,7 +76,7 @@ void test_registeration()
                 point.b = 0;
                 point.a = 0;
 
-                p_cloud->points.push_back(point);
+                p_cloud.push_back(point);
             }
             // for (std::size_t i = 0; i < target_points.size(); i++)
             // {
@@ -94,7 +95,7 @@ void test_registeration()
             //     p_cloud->points.push_back(point);
             // }
             {
-                pcl::PointXYZRGBA point;
+                PointXYZRGBA point;
 
                 point.x = 0;
                 point.y = 0;
@@ -104,10 +105,10 @@ void test_registeration()
                 point.b = 0;
                 point.a = 0;
 
-                p_cloud->points.push_back(point);
+                p_cloud.push_back(point);
             }
             {
-                pcl::PointXYZRGBA point;
+                PointXYZRGBA point;
 
                 point.x = 1;
                 point.y = 0;
@@ -117,10 +118,10 @@ void test_registeration()
                 point.b = 0;
                 point.a = 0;
 
-                p_cloud->points.push_back(point);
+                p_cloud.push_back(point);
             }
             {
-                pcl::PointXYZRGBA point;
+                PointXYZRGBA point;
 
                 point.x = 0;
                 point.y = 1;
@@ -130,10 +131,10 @@ void test_registeration()
                 point.b = 0;
                 point.a = 0;
 
-                p_cloud->points.push_back(point);
+                p_cloud.push_back(point);
             }
             {
-                pcl::PointXYZRGBA point;
+                PointXYZRGBA point;
 
                 point.x = 0;
                 point.y = 0;
@@ -143,14 +144,21 @@ void test_registeration()
                 point.b = 255;
                 point.a = 0;
 
-                p_cloud->points.push_back(point);
+                p_cloud.push_back(point);
             }
         }
 
-        p_cloud->width = p_cloud->points.size();
-        p_cloud->height = 1;
-
-        pcl::io::savePCDFileASCII("registered.pcd", *p_cloud);
+        std::ofstream file("registered.pcd");
+        file << "# .PCD v0.7 - Point Cloud Data file format\n";
+        file << "VERSION 0.7\nFIELDS x y z rgba\nSIZE 4 4 4 4\nTYPE F F F U\nCOUNT 1 1 1 1\n";
+        file << "WIDTH " << p_cloud.size() << "\nHEIGHT 1\nVIEWPOINT 0 0 0 1 0 0 0\n";
+        file << "POINTS " << p_cloud.size() << "\nDATA ascii\n";
+        for (const auto &p : p_cloud) {
+            uint32_t rgba = (static_cast<uint32_t>(p.r) << 24) | (static_cast<uint32_t>(p.g) << 16) | 
+                            (static_cast<uint32_t>(p.b) << 8) | static_cast<uint32_t>(p.a);
+            file << p.x << " " << p.y << " " << p.z << " " << rgba << "\n";
+        }
+        file.close();
     }
 
     exit(0);

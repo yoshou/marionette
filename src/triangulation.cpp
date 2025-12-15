@@ -4,11 +4,6 @@
 #include <opencv2/opencv.hpp>
 #include "utils.hpp"
 
-#define ENABLE_SFM 1
-#if ENABLE_SFM
-#include <opencv2/sfm/triangulation.hpp>
-#endif
-
 static inline void swap_rows(cv::Mat &m, int i, int j)
 {
     for (int k = 0; k < m.cols; k++)
@@ -168,13 +163,14 @@ glm::vec3 triangulate(const glm::vec2 pt1, const glm::vec2 pt2, const camera_t &
         output.at<double>(2, 0) / output.at<double>(3, 0));
 }
 
-#if ENABLE_SFM
+// DLT (Direct Linear Transform) implementation for multi-view triangulation
 glm::vec3 triangulate(const std::vector<glm::vec2> &points, const std::vector<camera_t> &cameras)
 {
     assert(points.size() == cameras.size());
-    std::vector<cv::Mat> pts(points.size());
-    std::vector<cv::Mat> projs(points.size());
-    for (std::size_t i = 0; i < points.size(); i++)
+    const size_t n = points.size();
+    cv::Mat A(2 * n, 4, CV_64F);
+    
+    for (size_t i = 0; i < n; i++)
     {
         cv::Mat camera_mat;
         cv::Mat dist_coeffs;
@@ -184,22 +180,30 @@ glm::vec3 triangulate(const std::vector<glm::vec2> &points, const std::vector<ca
         std::vector<cv::Point2d> undistort_pt;
         cv::undistortPoints(pt, undistort_pt, camera_mat, dist_coeffs);
 
-        cv::Mat pt_mat(2, undistort_pt.size(), CV_64F);
-        for (std::size_t j = 0; j < undistort_pt.size(); j++)
+        cv::Mat proj = glm_to_cv_mat3x4(cameras[i].extrin.rotation);
+        
+        double x = undistort_pt[0].x;
+        double y = undistort_pt[0].y;
+        
+        // Build DLT matrix: [x*P(2,:) - P(0,:)] and [y*P(2,:) - P(1,:)]
+        for (int j = 0; j < 4; j++)
         {
-            pt_mat.at<double>(0, j) = undistort_pt[j].x;
-            pt_mat.at<double>(1, j) = undistort_pt[j].y;
+            A.at<double>(2 * i, j) = x * proj.at<double>(2, j) - proj.at<double>(0, j);
+            A.at<double>(2 * i + 1, j) = y * proj.at<double>(2, j) - proj.at<double>(1, j);
         }
-        pts[i] = pt_mat;
-        projs[i] = glm_to_cv_mat3x4(cameras[i].extrin.rotation);
     }
-
-    cv::Mat output;
-    cv::sfm::triangulatePoints(pts, projs, output);
-
+    
+    // Solve using SVD: find null space of A
+    cv::Mat w, u, vt;
+    cv::SVD::compute(A, w, u, vt, cv::SVD::MODIFY_A);
+    
+    // Solution is the last row of Vt (smallest singular value)
+    cv::Mat X = vt.row(3).t();
+    
+    // Convert from homogeneous coordinates
     return glm::vec3(
-        output.at<double>(0, 0),
-        output.at<double>(1, 0),
-        output.at<double>(2, 0));
+        X.at<double>(0) / X.at<double>(3),
+        X.at<double>(1) / X.at<double>(3),
+        X.at<double>(2) / X.at<double>(3)
+    );
 }
-#endif

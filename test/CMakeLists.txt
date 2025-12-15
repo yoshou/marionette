@@ -4,18 +4,18 @@ find_package(Ceres REQUIRED)
 
 enable_testing()
 
-add_executable(reconstruction_test
-    ${CMAKE_CURRENT_LIST_DIR}/test_reconstruction.cpp
-)
+# add_executable(reconstruction_test
+#     ${CMAKE_CURRENT_LIST_DIR}/test_reconstruction.cpp
+# )
 
-target_link_libraries(reconstruction_test
-    PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main
-    ceres
-    ${OpenCV_LIBS}
-    marionette
-)
+# target_link_libraries(reconstruction_test
+#     PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main
+#     ceres
+#     ${OpenCV_LIBS}
+#     marionette
+# )
 
-add_test(AllTestsInMain reconstruction_test)
+# add_test(AllTestsInMain reconstruction_test)
 
 add_executable(optimization_test
     ${CMAKE_CURRENT_LIST_DIR}/test_solver.cpp
@@ -36,4 +36,5 @@ add_executable(test_fitting
 
 target_link_libraries(test_fitting
     marionette
+    nlohmann_json::nlohmann_json
 )

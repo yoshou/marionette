@@ -1,4 +1,5 @@
 #define _USE_MATH_DEFINES
+#define GLM_ENABLE_EXPERIMENTAL
 
 #include "fbx_loader.hpp"
 
