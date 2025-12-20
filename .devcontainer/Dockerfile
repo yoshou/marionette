@@ -28,6 +28,9 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         python3-venv \
         pkg-config \
         gfortran \
+        libwayland-dev \
+        wayland-protocols \
+        libxkbcommon-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Update vcpkg to latest version
@@ -36,7 +39,7 @@ RUN cd ${VCPKG_ROOT} \
     && ./bootstrap-vcpkg.sh
 
 # Install vcpkg packages
-RUN su vscode -c "${VCPKG_ROOT}/vcpkg install eigen3 glm nlohmann-json nanoflann gtest yaml-cpp tinygltf openfbx glad glfw3 nuklear boost-program-options boost-graph opencv4 ceres[eigensparse,lapack] grpc"
+RUN su vscode -c "${VCPKG_ROOT}/vcpkg install eigen3 glm nlohmann-json nanoflann gtest yaml-cpp tinygltf openfbx glad 'glfw3[wayland]' nuklear boost-program-options boost-graph opencv4 ceres[eigensparse,lapack] grpc"
 
 # Add vcpkg tools to PATH
 ENV PATH="${VCPKG_ROOT}/installed/x64-linux/tools/protobuf:${VCPKG_ROOT}/installed/x64-linux/tools/grpc:${PATH}"

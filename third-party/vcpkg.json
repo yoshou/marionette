@@ -12,7 +12,10 @@
     "boost-graph",
     "yaml-cpp",
     "glad",
-    "glfw3",
+    {
+      "name": "glfw3",
+      "features": ["wayland"]
+    },
     "nanoflann",
     "glm",
     "eigen3",
