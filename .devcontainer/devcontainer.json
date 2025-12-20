@@ -4,31 +4,7 @@
 	"name": "C++",
 	"build": {
 		"dockerfile": "Dockerfile"
-	},
-	"features": {
-		"ghcr.io/devcontainers-contrib/features/bash-command:1": {}
-	},
-	"containerEnv": {
-		"DISPLAY": ":10.0"
-	},
-
-	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
-	"workspaceFolder": "/workspace",
-
-	"mounts": [
-		"source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached"
-	],
-
-	"runArgs": [
-		"--privileged",
-		"--runtime=nvidia",
-		"--ipc=host",
-		"--ip=192.168.0.252"
-	],
-
-	"appPort": [
-		// "50051:50051"
-	]
+	}
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},

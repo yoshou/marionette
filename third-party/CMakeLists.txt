@@ -4,14 +4,17 @@ else()
     set(CMAKE_PREFIX_PATH "/usr/local/vcpkg/installed/x64-linux")
 endif()
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED COMPONENTS core imgcodecs)
 find_package(Ceres CONFIG REQUIRED)
+find_package(Eigen3 CONFIG REQUIRED)
 
 set_target_properties(glog::glog PROPERTIES
     INTERFACE_LINK_LIBRARIES "gflags"
 )
 
-cmake_policy(SET CMP0167 NEW)
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(yaml-cpp REQUIRED)
 find_package(glfw3 REQUIRED)
@@ -26,4 +29,5 @@ find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/third-party/vcpkg/installed/x64-include
+    ${EIGEN3_INCLUDE_DIR}
 )

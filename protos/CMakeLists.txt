@@ -25,6 +25,10 @@ set(sensor_proto_srcs "${CMAKE_BINARY_DIR}/protos/sensor.pb.cc")
 set(sensor_proto_hdrs "${CMAKE_BINARY_DIR}/protos/sensor.pb.h")
 set(sensor_grpc_srcs "${CMAKE_BINARY_DIR}/protos/sensor.grpc.pb.cc")
 set(sensor_grpc_hdrs "${CMAKE_BINARY_DIR}/protos/sensor.grpc.pb.h")
+
+# Create output directory
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/protos")
+
 add_custom_command(
       OUTPUT "${sensor_proto_srcs}" "${sensor_proto_hdrs}" "${sensor_grpc_srcs}" "${sensor_grpc_hdrs}"
       COMMAND ${_PROTOBUF_PROTOC}
