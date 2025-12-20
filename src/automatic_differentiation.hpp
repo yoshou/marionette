@@ -182,7 +182,7 @@ static inline dual_t<T> square(const dual_t<T> &f)
 
 template <typename T>
 inline bool isinf(const dual_t<T>& f) {
-    return isinf(f.a);
+    return std::isinf(f.a);
 }
 template <typename T>
 inline bool isnan(const dual_t<T>& f) {
@@ -190,7 +190,7 @@ inline bool isnan(const dual_t<T>& f) {
 }
 template <typename T>
 inline bool isless(const dual_t<T>& f, const dual_t<T>& g) {
-    return isless(f.a, g.a);
+    return std::isless(f.a, g.a);
 }
 template <typename T>
 inline bool isgreater(const dual_t<T>& f, const dual_t<T>& g) {
@@ -585,7 +585,7 @@ static inline hyper_dual_t<T> cos(const hyper_dual_t<T> &f)
 
 template <typename T>
 inline bool isinf(const hyper_dual_t<T>& f) {
-    return isinf(f.a);
+    return std::isinf(f.a);
 }
 template <typename T>
 inline bool isnan(const hyper_dual_t<T>& f) {
@@ -593,7 +593,7 @@ inline bool isnan(const hyper_dual_t<T>& f) {
 }
 template <typename T>
 inline bool isless(const hyper_dual_t<T>& f, const hyper_dual_t<T>& g) {
-    return isless(f.a, g.a);
+    return std::isless(f.a, g.a);
 }
 template <typename T>
 inline bool isgreater(const hyper_dual_t<T>& f, const hyper_dual_t<T>& g) {

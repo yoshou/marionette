@@ -30,6 +30,17 @@ target_link_libraries(optimization_test
 
 add_test(AllTestsInMain optimization_test)
 
+add_executable(test_autodiff
+    ${CMAKE_CURRENT_LIST_DIR}/test_autodiff.cpp
+)
+
+target_link_libraries(test_autodiff
+    PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main
+    marionette
+)
+
+add_test(AutoDiffTests test_autodiff)
+
 add_executable(test_fitting
     ${CMAKE_CURRENT_LIST_DIR}/test_fitting.cpp
 )
