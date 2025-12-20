@@ -17,8 +17,6 @@ endif ()
 add_library(marionette
     ${CMAKE_CURRENT_LIST_DIR}/global_registeration.cpp
     ${CMAKE_CURRENT_LIST_DIR}/articulation_solver.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/correspondance.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/triangulation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/icp_3d_2d_optimizer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/icp_3d_3d_optimizer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/model_detector.cpp
@@ -68,7 +66,6 @@ target_sources(marionette
     ${CMAKE_CURRENT_LIST_DIR}/alignment.hpp
     ${CMAKE_CURRENT_LIST_DIR}/articulation_solver.hpp
     ${CMAKE_CURRENT_LIST_DIR}/automatic_differentiation.hpp
-    ${CMAKE_CURRENT_LIST_DIR}/correspondance.hpp
     ${CMAKE_CURRENT_LIST_DIR}/debug.hpp
     ${CMAKE_CURRENT_LIST_DIR}/features.hpp
     ${CMAKE_CURRENT_LIST_DIR}/frame.hpp
@@ -86,7 +83,6 @@ target_sources(marionette
     ${CMAKE_CURRENT_LIST_DIR}/registration.hpp
     ${CMAKE_CURRENT_LIST_DIR}/srt_transform.hpp
     ${CMAKE_CURRENT_LIST_DIR}/transform.hpp
-    ${CMAKE_CURRENT_LIST_DIR}/triangulation.hpp
     ${CMAKE_CURRENT_LIST_DIR}/tuple_hash.hpp
     ${CMAKE_CURRENT_LIST_DIR}/utils.hpp
     ${CMAKE_CURRENT_LIST_DIR}/motion_tracker.hpp
