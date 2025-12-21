@@ -237,8 +237,13 @@ target_sources(imu_viewer_app
     ${CMAKE_CURRENT_LIST_DIR}/qprobe_playback_stream.hpp
 )
 
-# qprobe_server_app - CLI application for capturing IMU data from qprobe hardware
+# qprobe_server_app - GUI application for capturing and visualizing IMU data from qprobe hardware
 add_executable(qprobe_server_app
+    ${CMAKE_CURRENT_LIST_DIR}/viewer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/sphere_drawer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/grid_drawer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/axis_drawer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/box_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/serial_port.cpp
     ${CMAKE_CURRENT_LIST_DIR}/base64.cpp
     ${CMAKE_CURRENT_LIST_DIR}/stream_server.cpp
@@ -260,6 +265,8 @@ add_dependencies(qprobe_server_app
 target_link_libraries(qprobe_server_app
     stargazer_sensor_grpc_proto
     spdlog::spdlog
+    glfw
+    glad::glad
     $<$<NOT:$<BOOL:${WIN32}>>:pthread>
     $<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:stdc++fs>
     $<$<NOT:$<BOOL:${WIN32}>>:protobuf::libprotobuf>

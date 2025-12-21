@@ -192,6 +192,11 @@ public:
         return radius;
     }
 
+    void set_translation(glm::vec3 position)
+    {
+        translation_matrix = glm::translate(position);
+    }
+
     float get_screen_w() const
     {
         return (float)screen_size.x;

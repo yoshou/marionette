@@ -86,8 +86,6 @@ struct imu_viewer : public window_base
     std::vector<glm::vec3> markers;
     glm::u8vec4 color;
     glm::mat4 world;
-    std::vector<glm::mat3> orientations;
-    std::vector<glm::vec3> positions;
 
     int selected_index = -1;
     bool show_r, show_g, show_b;
@@ -128,6 +126,8 @@ struct imu_viewer : public window_base
     {
         window_base::initialize();
         view_controller = std::make_shared<azimuth_elevation>(glm::u32vec2(0, 0), glm::u32vec2(width, height));
+        view_controller->set_radius(5.0f);
+        view_controller->set_translation(glm::vec3(0.0f, -1.0f, 0.0f));
     }
 
     virtual void on_close() override
@@ -230,28 +230,7 @@ struct imu_viewer : public window_base
 
         set_camera(view_pos.x, view_pos.y, view_pos.z, target_pos.x, target_pos.y, target_pos.z);
 
-        for (size_t i = 0; i < orientations.size(); i++)
-        {
-            glm::mat4 box_orientation;
-            glm::mat4 box_position;
-            {
-                std::lock_guard<std::mutex> lock(mtx);
-                const auto orientation = orientations[i];
-                const auto position = positions[i];
-                box_orientation = orientation;
-                box_position = glm::translate(position);
-            }
-
-            float box_scale = 0.01f;
-            float axis_scale = 0.1f;
-
-            //box_drawer_.draw(pvw * box_position * box_orientation * glm::scale(glm::vec3(box_scale, box_scale, box_scale)));
-            axis_drawer_.draw(pvw * box_position * box_orientation * glm::scale(glm::vec3(axis_scale, axis_scale, axis_scale)));
-
-        }
-
         std::map<std::string, glm::mat4> tmp_poses;
-        glm::u8vec4 tmp_color;
         {
             std::lock_guard<std::mutex> lock(mtx);
             tmp_poses = poses;
@@ -979,8 +958,8 @@ int imu_viewer_main()
 #if 1
     //imu_data_stream data_stream("COM3", 115200);
     //imu_data_stream data_stream("COM5", 1500000);
-    qprobe_playback_stream data_stream("../data/hand_poses", 100);
-    //qprobe_playback_stream data_stream("../data/capture", 100);
+    // qprobe_playback_stream data_stream("../data/hand_poses", 100);
+    qprobe_playback_stream data_stream("../data/capture_20230416", 100);
 #else
     remote_sensor_stream data_stream("192.168.10.105:50052");
 #endif
@@ -1054,8 +1033,6 @@ int imu_viewer_main()
     const auto recv_data_callback = [&viewer, &pos, &heading_vel, &last_time_us, &model, &poses](const std::vector<glm::quat>& orientations)
     {
         std::lock_guard<std::mutex> lock(viewer->mtx);
-        viewer->orientations.clear();
-        viewer->positions.clear();
 
         finger_tracker tracker(model);
 
@@ -1091,9 +1068,6 @@ int imu_viewer_main()
                         default_sensor_orientation[k] = glm::normalize(default_sensor_orientation[k]);
                     }
                     glm::vec3 default_sensor_position = obj->position;
-
-                    viewer->orientations.push_back(default_sensor_orientation);
-                    viewer->positions.push_back(default_sensor_position);
 
                     //
 
@@ -1157,11 +1131,6 @@ int imu_viewer_main()
                     const auto bone_position2 = default_bone_pose[3];
                     const auto bone_orientation2 = default_bone_pose0 * glm::inverse(bone_pose0) * bone_pose;
 #endif
-
-                    {
-                        viewer->orientations.push_back(sensor_pose);
-                        viewer->positions.push_back(sensor_pose[3]);
-                    }
 
                     auto bone = std::find_if(model.bones.begin(), model.bones.end(), [&](const auto& bone) { return bone.name == bones[i];  });
                     if (bone != model.bones.end())

@@ -5,13 +5,23 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <mutex>
+#include <functional>
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/transform.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 
+#include "viewer.hpp"
+#include "axis_drawer.hpp"
+#include "box_drawer.hpp"
+#include "grid_drawer.hpp"
 #include "serial_port.hpp"
 #include "imu_data.hpp"
 #include "base64.hpp"
@@ -19,12 +29,16 @@
 
 namespace fs = std::filesystem;
 
+const int SCREEN_WIDTH = 1280;
+const int SCREEN_HEIGHT = 720;
+
 // qprobe_capture class - captures IMU data from serial port
 class qprobe_capture
 {
     serial_port port;
     std::chrono::system_clock::time_point system_clock_start;
     uint64_t device_clock_start;
+    std::atomic_bool running;
 
 public:
     struct pose_data
@@ -41,6 +55,8 @@ public:
         std::vector<pose_data> poses;
     };
 
+    qprobe_capture() : running(false) {}
+
     void open(std::string port_name)
     {
         port.open(port_name);
@@ -51,8 +67,9 @@ public:
     {
         std::vector<uint8_t> buf;
         bool first_frame = true;
+        running = true;
         
-        while (true)
+        while (running.load())
         {
             size_t receive_len = port.get_received_size();
             if (receive_len <= 0)
@@ -122,6 +139,17 @@ public:
                 }
             }
         }
+        spdlog::info("Capture loop stopped");
+    }
+
+    void stop()
+    {
+        running = false;
+    }
+
+    bool is_running() const
+    {
+        return running.load();
     }
 };
 
@@ -134,10 +162,147 @@ namespace glm
     }
 }
 
+// qprobe_viewer - GUI window for IMU visualization
+struct qprobe_viewer : public window_base
+{
+    std::shared_ptr<azimuth_elevation> view_controller;
+    axis_drawer axis_drawer_;
+    box_drawer box_drawer_;
+    grid_drawer grid_drawer_;
+    std::mutex mtx;
+    std::vector<glm::mat3> orientations;
+    std::vector<glm::vec3> positions;
+    bool drawer_initialized;
+
+    qprobe_viewer()
+        : window_base("qprobe Server - IMU Viewer", SCREEN_WIDTH, SCREEN_HEIGHT), drawer_initialized(false)
+    {
+    }
+
+    virtual void initialize() override
+    {
+        window_base::initialize();
+        view_controller = std::make_shared<azimuth_elevation>(glm::u32vec2(0, 0), glm::u32vec2(width, height));
+        view_controller->set_radius(5.0f);
+        view_controller->set_translation(glm::vec3(0.0f, 0.0f, 0.0f));
+    }
+
+    virtual void on_close() override
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        window_manager::get_instance()->exit();
+        window_base::on_close();
+    }
+
+    virtual void on_scroll(double x, double y) override
+    {
+        if (view_controller)
+        {
+            view_controller->scroll(x, y);
+        }
+    }
+
+    glm::mat4 pvw;
+
+#ifdef near
+#undef near
+#endif
+#ifdef far
+#undef far
+#endif
+
+    void set_camera(float posX, float posY, float posZ, float targetX, float targetY, float targetZ)
+    {
+        float fovy = 45.0f;
+        float aspect = (float)(width) / height;
+        float near = 0.01f;
+        float far = 1000.0f;
+        glm::vec3 up(0.0f, 1.0f, 0.0f);
+        glViewport(0, 0, (GLsizei)width, (GLsizei)height);
+
+        glm::mat4 proj = glm::perspective(fovy, aspect, near, far);
+        glm::mat4 view = glm::lookAt(glm::vec3(posX, posY, posZ), glm::vec3(targetX, targetY, targetZ), up);
+        glm::mat4 world = glm::identity<glm::mat4>();
+        pvw = proj * view * world;
+    }
+
+    virtual void show() override
+    {
+        if (!gladLoadGL())
+        {
+            spdlog::error("Failed to load OpenGL extensions!");
+            exit(-1);
+        }
+        window_base::show();
+    }
+
+    virtual void update() override
+    {
+
+        if (!drawer_initialized)
+        {
+            axis_drawer_.initialize();
+            box_drawer_.initialize();
+            grid_drawer_.initialize();
+            drawer_initialized = true;
+        }
+
+        const auto mouse = mouse_state::get_mouse_state(handle);
+        view_controller->update(mouse);
+        float radius = view_controller->get_radius() * 0.2f;
+        glm::vec3 forward(0.f, 0.f, 1.f);
+        const auto target_pos = glm::vec3(-view_controller->get_translation_matrix()[3]);
+        glm::vec3 view_pos = target_pos + glm::rotate(glm::inverse(view_controller->get_rotation_quaternion()), forward * radius);
+
+        set_camera(view_pos.x, view_pos.y, view_pos.z, target_pos.x, target_pos.y, target_pos.z);
+
+        // Draw grid
+        grid_drawer_.draw(pvw);
+
+        // Draw IMU sensors
+        for (size_t i = 0; i < orientations.size(); i++)
+        {
+            glm::mat4 box_orientation;
+            glm::mat4 box_position;
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                if (i < orientations.size())
+                {
+                    const auto orientation = orientations[i];
+                    const auto position = positions[i];
+                    box_orientation = orientation;
+                    box_position = glm::translate(position);
+                }
+            }
+
+            float box_scale = 0.01f;
+            float axis_scale = 0.1f;
+
+            axis_drawer_.draw(pvw * box_position * box_orientation * glm::scale(glm::vec3(axis_scale, axis_scale, axis_scale)));
+        }
+    }
+
+    void update_imu_data(const std::vector<glm::mat3> &new_orientations, const std::vector<glm::vec3> &new_positions)
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        orientations = new_orientations;
+        positions = new_positions;
+    }
+};
+
 int main(int argc, char* argv[])
 {
     spdlog::set_level(spdlog::level::info);
     spdlog::info("qprobe Server Application");
+
+    // Initialize window manager
+    const auto win_mgr = window_manager::get_instance();
+    win_mgr->initialize();
+
+    // Create viewer window
+    const auto viewer = std::make_shared<qprobe_viewer>();
+    const auto rendering_th = std::make_shared<rendering_thread>();
+    rendering_th->start(viewer.get());
 
     // Start gRPC streaming server
     marker_stream_server server;
@@ -175,66 +340,95 @@ int main(int argc, char* argv[])
         spdlog::info("Created data directory: {}", data_dir);
     }
 
-    // Open qprobe device and start capturing
-    qprobe_capture capture;
-    try
-    {
-        capture.open(port_name);
-        spdlog::info("Serial port opened successfully");
-    }
-    catch (const std::exception& e)
-    {
-        spdlog::error("Failed to open serial port: {}", e.what());
-        return 1;
-    }
-
-    // Start capture loop
-    spdlog::info("Starting capture loop...");
-    capture.start([&](const qprobe_capture::pose_frame &frame) {
-        // Print frame info to console
-        std::cout << (uint64_t)(frame.timestamp * 1000);
-        for (int i = 0; i < NUM_SENSORS; i++)
+    // Open qprobe device and start capturing in separate thread
+    auto capture = std::make_shared<qprobe_capture>();
+    
+    std::thread capture_thread([capture, port_name, &server, &viewer]() {
+        try
         {
-            std::cout << " | " << (int)frame.poses[i].accel_status 
-                      << "," << (int)frame.poses[i].gyro_status 
-                      << "," << (int)frame.poses[i].mag_status;
+            capture->open(port_name);
+            spdlog::info("Serial port opened successfully");
         }
-        for (int i = 0; i < NUM_SENSORS; i++)
+        catch (const std::exception& e)
         {
-            std::cout << " | " << glm::to_string(frame.poses[i].orientation);
+            spdlog::error("Failed to open serial port: {}", e.what());
+            return;
         }
-        std::cout << " |" << std::endl;
 
-        // Prepare data for JSON (optional - can be disabled for performance)
-        nlohmann::json j;
-        j["timestamp"] = frame.timestamp;
+        // Start capture loop
+        spdlog::info("Starting capture loop...");
+        capture->start([capture, &server, &viewer](const qprobe_capture::pose_frame &frame) {
+            // Print frame info to console
+            std::cout << (uint64_t)(frame.timestamp * 1000);
+            for (int i = 0; i < NUM_SENSORS; i++)
+            {
+                std::cout << " | " << (int)frame.poses[i].accel_status 
+                          << "," << (int)frame.poses[i].gyro_status 
+                          << "," << (int)frame.poses[i].mag_status;
+            }
+            for (int i = 0; i < NUM_SENSORS; i++)
+            {
+                std::cout << " | " << glm::to_string(frame.poses[i].orientation);
+            }
+            std::cout << " |" << std::endl;
 
-        std::vector<glm::quat> orientations;
-        std::vector<nlohmann::json> poses;
-        
-        for (int i = 0; i < NUM_SENSORS; i++)
-        {
-            nlohmann::json pose;
-            pose["accel_status"] = (int)frame.poses[i].accel_status;
-            pose["gyro_status"] = (int)frame.poses[i].gyro_status;
-            pose["mag_status"] = (int)frame.poses[i].mag_status;
-            pose["orientation"] = frame.poses[i].orientation;
+            // Prepare data for visualization
+            std::vector<glm::quat> orientations;
+            std::vector<glm::mat3> orientation_mats;
+            std::vector<glm::vec3> positions;
+            
+            for (int i = 0; i < NUM_SENSORS; i++)
+            {
+                orientations.push_back(frame.poses[i].orientation);
+                
+                // Convert quaternion to matrix for visualization
+                glm::mat3 orient_mat = glm::mat3_cast(frame.poses[i].orientation);
+                orientation_mats.push_back(orient_mat);
+                
+                // Position sensors in a line for visualization
+                positions.push_back(glm::vec3(i * 0.15f, 0.0f, 0.0f));
+            }
 
-            orientations.push_back(frame.poses[i].orientation);
-            poses.push_back(pose);
-        }
-        j["poses"] = poses;
+            // Update viewer
+            viewer->update_imu_data(orientation_mats, positions);
 
-        // Optional: Save to file (commented out for performance)
-        // const auto j_str = j.dump(2);
-        // const auto path = data_dir + "/" + std::to_string((uint64_t)(frame.timestamp * 1000)) + ".json";
-        // std::ofstream ofs(path, std::ios::out | std::ios::binary);
-        // ofs.write(j_str.c_str(), j_str.size());
-
-        // Stream data to connected clients via gRPC
-        server.push_frame(orientations);
+            // Stream data to connected clients via gRPC
+            server.push_frame(orientations);
+        });
     });
 
+    // Main rendering loop
+    while (!win_mgr->should_close())
+    {
+        win_mgr->handle_event();
+    }
+
+    // Cleanup
+    spdlog::info("Shutting down...");
+    
+    // Stop capture thread
+    if (capture->is_running())
+    {
+        spdlog::info("Stopping capture...");
+        capture->stop();
+    }
+    
+    if (capture_thread.joinable())
+    {
+        spdlog::info("Waiting for capture thread...");
+        capture_thread.join();
+    }
+    
+    // Stop rendering
+    rendering_th->stop();
+    viewer->destroy();
+    
+    // Stop gRPC server
     server.stop();
+    
+    // Terminate window manager
+    win_mgr->terminate();
+    
+    spdlog::info("Shutdown complete");
     return 0;
 }
