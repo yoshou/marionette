@@ -26,6 +26,7 @@
     "eigen3",
     "grpc",
     "nlohmann-json",
+    "spdlog",
     "nuklear",
     "tinygltf",
     "gtest",

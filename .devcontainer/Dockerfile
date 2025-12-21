@@ -39,7 +39,7 @@ RUN cd ${VCPKG_ROOT} \
     && ./bootstrap-vcpkg.sh
 
 # Install vcpkg packages
-RUN su vscode -c "${VCPKG_ROOT}/vcpkg install eigen3 glm nlohmann-json nanoflann gtest yaml-cpp tinygltf openfbx glad 'glfw3[wayland]' nuklear boost-program-options boost-graph opencv4 ceres[eigensparse,lapack] grpc"
+RUN su vscode -c "${VCPKG_ROOT}/vcpkg install eigen3 glm nlohmann-json nanoflann gtest yaml-cpp tinygltf openfbx glad 'glfw3[wayland]' nuklear boost-program-options boost-graph opencv4 ceres[eigensparse,lapack] grpc spdlog"
 
 # Add vcpkg tools to PATH
 ENV PATH="${VCPKG_ROOT}/installed/x64-linux/tools/protobuf:${VCPKG_ROOT}/installed/x64-linux/tools/grpc:${PATH}"

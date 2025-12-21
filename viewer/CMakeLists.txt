@@ -236,3 +236,62 @@ target_sources(imu_viewer_app
     ${CMAKE_CURRENT_LIST_DIR}/widget_drawer.hpp
     ${CMAKE_CURRENT_LIST_DIR}/qprobe_playback_stream.hpp
 )
+
+# qprobe_server_app - CLI application for capturing IMU data from qprobe hardware
+add_executable(qprobe_server_app
+    ${CMAKE_CURRENT_LIST_DIR}/serial_port.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/base64.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/stream_server.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/qprobe_server_app.cpp
+)
+
+target_compile_definitions(qprobe_server_app
+    PUBLIC
+    GLOG_NO_ABBREVIATED_SEVERITIES
+    GOOGLE_GLOG_DLL_DECL=
+    _MBCS
+    GLM_ENABLE_EXPERIMENTAL
+)
+
+add_dependencies(qprobe_server_app
+    stargazer_sensor_grpc_proto
+)
+
+target_link_libraries(qprobe_server_app
+    stargazer_sensor_grpc_proto
+    spdlog::spdlog
+    $<$<NOT:$<BOOL:${WIN32}>>:pthread>
+    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:stdc++fs>
+    $<$<NOT:$<BOOL:${WIN32}>>:protobuf::libprotobuf>
+    $<$<NOT:$<BOOL:${WIN32}>>:gRPC::grpc++_unsecure>
+    $<$<NOT:$<BOOL:${WIN32}>>:gRPC::grpc++_reflection>
+    $<$<BOOL:${WIN32}>:protobuf::libprotobuf>
+    $<$<BOOL:${WIN32}>:gRPC::grpc++_unsecure>
+    $<$<BOOL:${WIN32}>:gRPC::grpc++>
+    nlohmann_json::nlohmann_json
+)
+
+target_compile_options(qprobe_server_app
+    PRIVATE
+    $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wno-unused-parameter>
+    $<$<CONFIG:RELEASE>:-O2>
+    $<$<CONFIG:DEBUG>:-g -O0>)
+
+if(WIN32)
+    add_custom_command(TARGET qprobe_server_app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/third-party/vcpkg_installed/x64-windows/bin"
+        "$<TARGET_FILE_DIR:qprobe_server_app>"
+    )
+    set_target_properties(qprobe_server_app PROPERTIES
+        VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    )
+endif()
+
+target_sources(qprobe_server_app
+    PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/serial_port.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/base64.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/imu_data.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/stream_server.hpp
+)
