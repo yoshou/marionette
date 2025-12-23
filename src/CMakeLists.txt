@@ -36,6 +36,8 @@ add_library(marionette
     ${CMAKE_CURRENT_LIST_DIR}/data_source/imu_capture.cpp
     ${CMAKE_CURRENT_LIST_DIR}/pose_estimation/finger_pose_estimation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/tracking/finger_tracker.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/preprocess/fbx_loader.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/preprocess/model_converter.cpp
 )
 
 target_link_libraries(marionette
@@ -82,6 +84,7 @@ target_include_directories(marionette
     ${CMAKE_CURRENT_LIST_DIR}/optimization
     ${CMAKE_CURRENT_LIST_DIR}/pose_estimation
     ${CMAKE_CURRENT_LIST_DIR}/utils
+    ${CMAKE_CURRENT_LIST_DIR}/preprocess
 )
 
 target_sources(marionette
@@ -127,4 +130,7 @@ target_sources(marionette
     ${CMAKE_CURRENT_LIST_DIR}/core/camera_info.hpp
     ${CMAKE_CURRENT_LIST_DIR}/core/glm_json_ext.hpp
     ${CMAKE_CURRENT_LIST_DIR}/optimization/model_optimizer.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/preprocess/fbx_model.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/preprocess/fbx_loader.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/preprocess/model_converter.hpp
 )

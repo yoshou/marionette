@@ -2,7 +2,7 @@
 
 #include <string>
 #include <memory>
-#include "model.hpp"
+#include "fbx_model.hpp"
 
 namespace marionette::model::fbx
 {
