@@ -125,21 +125,16 @@ static int load_shader(GLuint shaderObj, std::string fileName)
 
 static GLint load_program(std::string vertexFileName, std::string fragmentFileName)
 {
-    // シェーダーオブジェクト作成
     GLuint vertShaderObj = glCreateShader(GL_VERTEX_SHADER);
     GLuint fragShaderObj = glCreateShader(GL_FRAGMENT_SHADER);
     GLuint shader;
-
-    // シェーダーコンパイルとリンクの結果用変数
     GLint compiled, linked;
 
-    /* シェーダーのソースプログラムの読み込み */
     if (load_shader(vertShaderObj, vertexFileName))
         return -1;
     if (load_shader(fragShaderObj, fragmentFileName))
         return -1;
 
-    /* バーテックスシェーダーのソースプログラムのコンパイル */
     glCompileShader(vertShaderObj);
     glGetShaderiv(vertShaderObj, GL_COMPILE_STATUS, &compiled);
     if (compiled == GL_FALSE)
@@ -149,7 +144,6 @@ static GLint load_program(std::string vertexFileName, std::string fragmentFileNa
         return -1;
     }
 
-    /* フラグメントシェーダーのソースプログラムのコンパイル */
     glCompileShader(fragShaderObj);
     glGetShaderiv(fragShaderObj, GL_COMPILE_STATUS, &compiled);
     if (compiled == GL_FALSE)
@@ -158,18 +152,14 @@ static GLint load_program(std::string vertexFileName, std::string fragmentFileNa
         return -1;
     }
 
-    /* プログラムオブジェクトの作成 */
     shader = glCreateProgram();
 
-    /* シェーダーオブジェクトのシェーダープログラムへの登録 */
     glAttachShader(shader, vertShaderObj);
     glAttachShader(shader, fragShaderObj);
 
-    /* シェーダーオブジェクトの削除 */
     glDeleteShader(vertShaderObj);
     glDeleteShader(fragShaderObj);
 
-    /* シェーダープログラムのリンク */
     glLinkProgram(shader);
     glGetProgramiv(shader, GL_LINK_STATUS, &linked);
     if (linked == GL_FALSE)

@@ -215,12 +215,12 @@ struct imu_server_viewer : public window_base
     {
         float fovy = 45.0f;
         float aspect = (float)(width) / height;
-        float near = 0.01f;
-        float far = 1000.0f;
+        float near_plane = 0.01f;
+        float far_plane = 1000.0f;
         glm::vec3 up(0.0f, 1.0f, 0.0f);
         glViewport(0, 0, (GLsizei)width, (GLsizei)height);
 
-        glm::mat4 proj = glm::perspective(fovy, aspect, near, far);
+        glm::mat4 proj = glm::perspective(fovy, aspect, near_plane, far_plane);
         glm::mat4 view = glm::lookAt(glm::vec3(posX, posY, posZ), glm::vec3(targetX, targetY, targetZ), up);
         glm::mat4 world = glm::identity<glm::mat4>();
         pvw = proj * view * world;

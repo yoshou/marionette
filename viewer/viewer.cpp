@@ -20,8 +20,6 @@
 
 static constexpr int DEFAULT_SCREEN_WIDTH = 1680;
 static constexpr int DEFAULT_SCREEN_HEIGHT = 1050;
-// static constexpr int DEFAULT_SCREEN_WIDTH = 1280;
-// static constexpr int DEFAULT_SCREEN_HEIGHT = 720;
 
 void azimuth_elevation::update(mouse_state mouse)
 {

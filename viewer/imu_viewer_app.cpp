@@ -25,6 +25,8 @@
 #include "model_drawer.hpp"
 #include "drawer2d.hpp"
 #include "model.hpp"
+#include "imu_playback_stream.hpp"
+#include "remote_sensor_stream.hpp"
 
 #ifdef _WIN32
 #else
@@ -146,24 +148,18 @@ struct imu_viewer : public window_base
     }
 
     glm::mat4 pvw;
-#ifdef near
-#undef near
-#endif
-#ifdef far
-#undef far
-#endif
 
     void set_camera(float posX, float posY, float posZ, float targetX, float targetY, float targetZ)
     {
         float fovy = 45.0f;
         float aspect = (float)(width) / height;
-        float near = 0.01f;
-        float far = 1000.0f;
+        float near_plane = 0.01f;
+        float far_plane = 1000.0f;
         glm::vec3 up(0.0f, 1.0f, 0.0f);
         // set viewport to be the entire window
         glViewport(0, 0, (GLsizei)width, (GLsizei)height);
 
-        glm::mat4 proj = glm::perspective(fovy, aspect, near, far);
+        glm::mat4 proj = glm::perspective(fovy, aspect, near_plane, far_plane);
         glm::mat4 view = glm::lookAt(glm::vec3(posX, posY, posZ), glm::vec3(targetX, targetY, targetZ), up);
         glm::mat4 world = glm::identity<glm::mat4>();
         pvw = proj * view * world;
@@ -254,10 +250,6 @@ struct imu_viewer : public window_base
             {
                 bone_drawer_g_.draw(pvw * glm::translate(glm::vec3(0, 0, 0)) * transform * glm::scale(glm::vec3(0.1f, 0.02f, 0.1f)));
             }
-            //else if (name.find("Distal.R") < name.size())
-            //{
-             //   bone_drawer_b_.draw(pvw * glm::translate(glm::vec3(0, 0, 0)) * transform * glm::scale(glm::vec3(0.1f, 0.02f, 0.1f)));
-            //}
             else
             {
                 bone_drawer_.draw(pvw * glm::translate(glm::vec3(0, 0, 0)) * transform * glm::scale(glm::vec3(0.1f, 0.02f, 0.1f)));
@@ -289,9 +281,6 @@ static void sigint_handler(int)
     shutdown();
     exit(0);
 }
-
-#include "imu_playback_stream.hpp"
-#include "remote_sensor_stream.hpp"
 
 class finger_tracker
 {
@@ -329,21 +318,13 @@ public:
                 sensor_pose[k] = glm::normalize(sensor_pose[k]);
             }
             sensor_pose[3] = glm::vec4(sensor->position, 1.f);
-#if 0
-            glm::quat sensor_orientation = glm::quat_cast(sensor_pose);
-            const auto sensor_position = sensor_pose[3];
-            sensor_orientation = glm::quat(sensor_orientation.w, sensor_orientation.x, sensor_orientation.z, -sensor_orientation.y);
-            sensor_pose = glm::toMat4(sensor_orientation);
-            sensor_pose[3] = sensor_position;
-#endif
 
             glm::mat4 bone_pose = bone->pose;
             for (size_t k = 0; k < 3; k++)
             {
                 bone_pose[k] = glm::normalize(bone_pose[k]);
             }
-            //glm::quat bone_orientation = glm::quat_cast(bone_pose);
-            //bone_orientation = glm::toMat4(glm::normalize(glm::quat(bone_orientation.w, bone_orientation.x, bone_orientation.z, -bone_orientation.y)));
+            
             sensor_to_bone.push_back(glm::inverse(sensor_pose) * bone_pose);
         }
     }
@@ -369,20 +350,12 @@ struct local_angle_error
         const T* const child_rotation,
         T* residuals) const
     {
-#if 0
-        Eigen::Map<const Eigen::Vector4<T>> q1(parent_rotation);
-        Eigen::Map<const Eigen::Vector4<T>> q2(rotation);
-        Eigen::Map<const Eigen::Vector4<T>> q3(child_rotation);
-
-        const Eigen::Vector4<T> diff = (q1 + q3) * 0.5 - q2;
-#else
         Eigen::Map<const Eigen::Quaternion<T>> q1(parent_rotation);
         Eigen::Map<const Eigen::Vector4<T>> q2(rotation);
         Eigen::Map<const Eigen::Quaternion<T>> q3(child_rotation);
 
         const Eigen::Quaternion<T> q4 = Eigen::Quaternion<T>(q1).slerp(T(0.5), q3);
         const Eigen::Vector4<T> diff = Eigen::Vector4<T>(q4.x(), q4.y(), q4.z(), q4.w()) - q2;
-#endif
 
         residuals[0] = diff.x();
         residuals[1] = diff.y();
@@ -415,20 +388,12 @@ struct local_angle_error2
     {
         const T parent_rotation[] = { T(this->parent_rotation.x), T(this->parent_rotation.y), T(this->parent_rotation.z), T(this->parent_rotation.w)};
 
-#if 0
-        Eigen::Map<const Eigen::Vector4<T>> q1(parent_rotation);
-        Eigen::Map<const Eigen::Vector4<T>> q2(rotation);
-        Eigen::Map<const Eigen::Vector4<T>> q3(child_rotation);
-
-        const Eigen::Vector4<T> diff = (q1 + q3) * 0.5 - q2;
-#else
         Eigen::Map<const Eigen::Quaternion<T>> q1(parent_rotation);
         Eigen::Map<const Eigen::Vector4<T>> q2(rotation);
         Eigen::Map<const Eigen::Quaternion<T>> q3(child_rotation);
 
         const Eigen::Quaternion<T> q4 = Eigen::Quaternion<T>(q1).slerp(T(0.5), q3);
         const Eigen::Vector4<T> diff = Eigen::Vector4<T>(q4.x(), q4.y(), q4.z(), q4.w()) - q2;
-#endif
 
         residuals[0] = diff.x();
         residuals[1] = diff.y();
@@ -461,20 +426,12 @@ struct local_angle_error3
     {
         const T child_rotation[] = { T(this->child_rotation.x), T(this->child_rotation.y), T(this->child_rotation.z), T(this->child_rotation.w)};
 
-#if 0
-        Eigen::Map<const Eigen::Vector4<T>> q1(parent_rotation);
-        Eigen::Map<const Eigen::Vector4<T>> q2(rotation);
-        Eigen::Map<const Eigen::Vector4<T>> q3(child_rotation);
-
-        const Eigen::Vector4<T> diff = (q1 + q3) * 0.5 - q2;
-#else
         Eigen::Map<const Eigen::Quaternion<T>> q1(parent_rotation);
         Eigen::Map<const Eigen::Vector4<T>> q2(rotation);
         Eigen::Map<const Eigen::Quaternion<T>> q3(child_rotation);
 
         const Eigen::Quaternion<T> q4 = Eigen::Quaternion<T>(q1).slerp(T(0.5), q3);
         const Eigen::Vector4<T> diff = Eigen::Vector4<T>(q4.x(), q4.y(), q4.z(), q4.w()) - q2;
-#endif
 
         residuals[0] = diff.x();
         residuals[1] = diff.y();
@@ -826,7 +783,6 @@ static void estimate_finger_pose(std::map<std::string, glm::mat4>& poses, const 
             }
             else if (std::find(bones.begin(), bones.end(), child_bone) == bones.end())
             {
-#if 1
                 double* parent_rotation_param = bone_rotations.at(parent_bone);
                 const glm::dquat child_pose = glm::quat_cast(poses.at(child_bone));
 
@@ -838,11 +794,9 @@ static void estimate_finger_pose(std::map<std::string, glm::mat4>& poses, const 
                 problem.AddResidualBlock(cost_function,
                     loss,
                     parent_rotation_param);
-#endif
             }
             else
             {
-#if 1
                 double* parent_rotation_param = bone_rotations.at(parent_bone);
                 double* child_rotation_param = bone_rotations.at(child_bone);
 
@@ -855,53 +809,9 @@ static void estimate_finger_pose(std::map<std::string, glm::mat4>& poses, const 
                     loss,
                     parent_rotation_param,
                     child_rotation_param);
-#endif
             }
         }
     }
-
-#if 0
-    {
-        for (const auto& [child_bone, parent_bone] : joints)
-        {
-            const auto global_child_position = glm::vec3(poses.at(child_bone)[3]);
-            const auto parent_pose = poses.at(parent_bone);
-
-            const auto local_child_position = glm::vec3(glm::inverse(parent_pose) * glm::vec4(global_child_position, 1.0));
-
-            if (parents.find(parent_bone) != parents.end())
-            {
-                double* parent_rotation_param = bone_rotations.at(parent_bone);
-                double* parent_translation_param = bone_translations.at(parent_bone);
-                double* child_translation_param = bone_translations.at(child_bone);
-
-                ceres::CostFunction* cost_function =
-                    articulation_error::create(local_child_position);
-
-                ceres::LossFunction* loss = nullptr; /* squared loss */
-
-                problem.AddResidualBlock(cost_function,
-                    loss,
-                    parent_translation_param,
-                    parent_rotation_param,
-                    child_translation_param);
-            }
-            else
-            {
-                double* child_translation_param = bone_translations.at(child_bone);
-
-                ceres::CostFunction* cost_function =
-                    articulation_error2::create(local_child_position);
-
-                ceres::LossFunction* loss = nullptr; /* squared loss */
-
-                problem.AddResidualBlock(cost_function,
-                    loss,
-                    child_translation_param);
-            }
-        }
-    }
-#endif
 
     for (std::size_t i = 0; i < bones.size(); i++)
     {
@@ -956,9 +866,6 @@ static void estimate_finger_pose(std::map<std::string, glm::mat4>& poses, const 
 int imu_viewer_main()
 {
 #if 1
-    //imu_data_stream data_stream("COM3", 115200);
-    //imu_data_stream data_stream("COM5", 1500000);
-    // imu_playback_stream data_stream("../data/hand_poses", 100);
     imu_playback_stream data_stream("../data/capture_20230416", 100);
 #else
     remote_sensor_stream data_stream("192.168.10.105:50052");
@@ -982,47 +889,6 @@ int imu_viewer_main()
     model_data model;
     model.load("../data/TrackingModel.json");
 
-#if 0
-    const auto recv_data_callback = [&viewer, &pos, &heading_vel, &last_time_us](const FrameData &data)
-    {
-        std::cout << (int)data.imu.accel << ", " << (int)data.imu.gyro << ", " << (int)data.imu.mag << std::endl;
-        std::cout << data.imu.linear_accel.x << ", " << data.imu.linear_accel.y << ", " << data.imu.linear_accel.z << std::endl;
-
-        if (last_time_us == 0)
-        {
-            last_time_us = data.timestamp;
-        }
-
-        const auto delta_time_us = data.timestamp - last_time_us;
-        last_time_us = data.timestamp;
-
-        const auto delta_time_ms = delta_time_us / 1000.0;
-        // velocity = accel*dt (dt in seconds)
-        // position = 0.5*accel*dt^2
-        const auto accel_to_vel = delta_time_ms / 1000.0;
-        const auto accel_to_pos = 0.5 * accel_to_vel * accel_to_vel;
-        const auto deg_to_rad = 0.01745329251; // trig functions require radians, BNO055 outputs degrees
-
-        const auto delta_pos = accel_to_pos * glm::dvec3(data.imu.linear_accel.x, data.imu.linear_accel.y, data.imu.linear_accel.z);
-
-        glm::dquat ori(data.imu.orientation_quat.w, data.imu.orientation_quat.x, data.imu.orientation_quat.y, data.imu.orientation_quat.z);
-
-        pos += glm::inverse(ori) * delta_pos;
-
-        // velocity of sensor in the direction it's facing
-        heading_vel = accel_to_vel * data.imu.linear_accel.x / cos(deg_to_rad * data.imu.orientation.x);
-
-        glm::vec3 position(pos.x, pos.z, pos.y);
-
-        glm::quat orientation(data.imu.orientation_quat.w, data.imu.orientation_quat.x, data.imu.orientation_quat.z, data.imu.orientation_quat.y);
-
-        std::lock_guard<std::mutex> lock(viewer->mtx);
-        viewer->orientation = orientation;
-        viewer->position = position;
-
-        std::cout << delta_time_us << ", " << glm::to_string(position) << std::endl;
-    };
-#endif
     std::map<std::string, glm::mat4> poses;
 
     for (std::size_t j = 0; j < model.bones.size(); j++)
@@ -1069,8 +935,6 @@ int imu_viewer_main()
                     }
                     glm::vec3 default_sensor_position = obj->position;
 
-                    //
-
                     glm::mat4 default_bone_pose(1.0f);
                     {
                         const auto obj = std::find_if(model.bones.begin(), model.bones.end(), [&](const auto& obj) { return obj.name == bones[i];  });
@@ -1108,8 +972,6 @@ int imu_viewer_main()
                         }
                     }
 
-                    //
-
                     const auto sensor_orientation = glm::toMat4(glm::normalize(glm::quat(orientations[i].w, orientations[i].x, orientations[i].z, -orientations[i].y)));
                     const auto sensor_orientation0 = glm::toMat4(glm::normalize(glm::quat(orientations[5].w, orientations[5].x, orientations[5].z, -orientations[5].y)));
 
@@ -1121,16 +983,8 @@ int imu_viewer_main()
                     const auto bone_pose0 = sensor_pose0 * tracker.sensor_to_bone[5];
                     const auto bone_pose = sensor_pose * tracker.sensor_to_bone[i];
 
-#if 0
-                    const auto bone_position2 = (bone_pose0 * glm::inverse(default_bone_pose0) * default_bone_pose)[3];
-                    const auto bone_orientation2 = bone_pose;
-#elif 0
-                    const auto bone_position2 = (glm::inverse(default_bone_pose0) * default_bone_pose)[3];
-                    const auto bone_orientation2 = glm::inverse(bone_pose0) * bone_pose;
-#else
                     const auto bone_position2 = default_bone_pose[3];
                     const auto bone_orientation2 = default_bone_pose0 * glm::inverse(bone_pose0) * bone_pose;
-#endif
 
                     auto bone = std::find_if(model.bones.begin(), model.bones.end(), [&](const auto& bone) { return bone.name == bones[i];  });
                     if (bone != model.bones.end())
@@ -1159,12 +1013,6 @@ int imu_viewer_main()
     {
         win_mgr->handle_event();
     }
-
-    //data_stream.stop();
-    //if (stream_th.joinable())
-    //{
-    //    stream_th.join();
-    //}
 
     shutdown();
 

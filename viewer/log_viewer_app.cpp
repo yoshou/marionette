@@ -86,7 +86,6 @@ struct log_viewer : public window_base
         show_g = true;
         show_b = true;
 
-#if 1
         std::vector<std::string> filenames;
         std::string path = "../data/markers/";
         std::vector<std::size_t> iter;
@@ -107,42 +106,6 @@ struct log_viewer : public window_base
 
             std::cout << "Num markers: " << point_cloud_.size() << std::endl;
         };
-#elif 1
-        widget_drawer_.frame_no_changed = [this](int frame_no)
-        {
-            std::ifstream ifs;
-            ifs.open("pose_" + std::to_string(frame_no - 1700) + ".json", std::ios::in);
-            nlohmann::json j = nlohmann::json::parse(ifs);
-            const auto points = j["points"].get<std::vector<glm::vec3>>();
-
-            point_cloud_.clear();
-            point_cloud_.add(points, glm::u8vec3(255, 0, 0));
-
-            std::vector<glm::mat4> poses;
-            for (const auto& [name, pose] : j["poses"].get<std::map<std::string, glm::mat4>>())
-            {
-                poses.push_back(pose);
-            }
-
-            point_cloud_.poses = poses;
-        };
-#else
-        {
-            std::ifstream ifs;
-            ifs.open("../data/capture_pose_points.json", std::ios::in);
-            nlohmann::json j_frames = nlohmann::json::parse(ifs);
-            for (const auto &j_frame : j_frames)
-            {
-                const auto markers = j_frame["markers"].get<std::vector<glm::vec3>>();
-                marker_frames.push_back(markers);
-            }
-        }
-        widget_drawer_.frame_no_changed = [this](int frame_no)
-        {
-            point_cloud_.clear();
-            point_cloud_.add(marker_frames[frame_no], glm::u8vec3(255, 0, 0));
-        };
-#endif
 
         widget_drawer_.check_r_changed = [this](bool show)
         {
@@ -180,24 +143,18 @@ struct log_viewer : public window_base
     }
 
     glm::mat4 pvw;
-#ifdef near
-#undef near
-#endif
-#ifdef far
-#undef far
-#endif
 
     void set_camera(float posX, float posY, float posZ, float targetX, float targetY, float targetZ)
     {
         float fovy = 45.0f;
         float aspect = (float)(width) / height;
-        float near = 1.0f;
-        float far = 1000.0f;
+        float near_plane = 1.0f;
+        float far_plane = 1000.0f;
         glm::vec3 up(0.0f, 1.0f, 0.0f);
         // set viewport to be the entire window
         glViewport(0, 0, (GLsizei)width, (GLsizei)height);
 
-        glm::mat4 proj = glm::perspective(fovy, aspect, near, far);
+        glm::mat4 proj = glm::perspective(fovy, aspect, near_plane, far_plane);
         glm::mat4 view = glm::lookAt(glm::vec3(posX, posY, posZ), glm::vec3(targetX, targetY, targetZ), up);
         glm::mat4 world = glm::identity<glm::mat4>();
         pvw = proj * view * world;

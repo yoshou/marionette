@@ -445,18 +445,6 @@ class model_tracking_worker
                 std::lock_guard lock(poses_mtx);
                 this->poses = poses;
             }
-#if 0
-            {
-                nlohmann::json j;
-
-                j["poses"] = poses;
-                j["points"] = frame_cursor->get_frame().markers;
-
-                std::ofstream ofs;
-                ofs.open("pose_" + std::to_string(frame_cursor->get_frame().frame_number) + ".json", std::ios::out);
-                ofs << j.dump(2);
-            }
-#endif
         }
     }
 
@@ -561,8 +549,6 @@ int ir_viewer_main()
     std::mutex model_trackings_mtx;
     std::unordered_map<std::uint32_t, std::shared_ptr<model_tracking_worker>> model_trackings;
 
-    //model_optimizer model_optim(model);
-
     const size_t max_frame_history = 1000;
     const auto frame_history = std::make_shared<frame_queue>(max_frame_history);
 
@@ -623,19 +609,6 @@ int ir_viewer_main()
             viewer->color = color;
             viewer->poses = poses;
         }
-#if 0
-        {
-            point_cloud_debug_drawer debug_point;
-            for (const auto& marker : frame.markers)
-            {
-                debug_point.add(marker, glm::u8vec3(255, 0, 0));
-            }
-            if (frame.markers.size() > 0)
-            {
-                debug_point.save("temp_" + std::to_string(frame.frame_number) + ".pcd");
-            }
-        }
-#endif
     };
 
 #if PLAYBACK
