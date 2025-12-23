@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cmath>
 #include <limits>
+#include <numbers>
 #include "automatic_differentiation.hpp"
 
 // Helper functions for differentiation tests
@@ -350,7 +351,7 @@ TEST(AutoDiffTest, QuaternionRotation)
     ASSERT_NEAR(result.z, 0.0, 1e-9);
     
     // 90 degree rotation around z-axis
-    double angle = M_PI / 2.0;
+    double angle = std::numbers::pi / 2.0;
     quat_t<double> q_90z(std::cos(angle/2), 0.0, 0.0, std::sin(angle/2));
     auto result2 = rotate(q_90z, v);
     ASSERT_NEAR(result2.x, 0.0, 1e-9);
@@ -395,7 +396,7 @@ TEST(AutoDiffTest, RotateAngleAxis)
     
     // 90 degree rotation around z-axis
     {
-        vec3_t<double> axis(0.0, 0.0, M_PI / 2.0);
+        vec3_t<double> axis(0.0, 0.0, std::numbers::pi / 2.0);
         vec3_t<double> point(1.0, 0.0, 0.0);
         
         auto result = rotate_angle_axis(axis, point);

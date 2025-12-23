@@ -21,6 +21,8 @@ add_executable(test_autodiff
     ${CMAKE_CURRENT_LIST_DIR}/test_autodiff.cpp
 )
 
+target_compile_features(test_autodiff PRIVATE cxx_std_20)
+
 target_link_libraries(test_autodiff
     PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main
     marionette
