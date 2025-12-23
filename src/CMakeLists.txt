@@ -30,6 +30,12 @@ add_library(marionette
     ${CMAKE_CURRENT_LIST_DIR}/imu_playback_stream.cpp
     ${CMAKE_CURRENT_LIST_DIR}/remote_sensor_stream.cpp
     ${CMAKE_CURRENT_LIST_DIR}/retarget.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/pose_computation.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/model_detection_worker.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/model_tracking_worker.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/imu_capture.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/finger_pose_estimation.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/finger_tracker.cpp
 )
 
 target_link_libraries(marionette
@@ -104,4 +110,10 @@ target_sources(marionette
     ${CMAKE_CURRENT_LIST_DIR}/remote_sensor_stream.hpp
     ${CMAKE_CURRENT_LIST_DIR}/retarget.hpp
     ${CMAKE_CURRENT_LIST_DIR}/frame_queue.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/pose_computation.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/model_detection_worker.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/model_tracking_worker.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/imu_capture.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/finger_pose_estimation.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/finger_tracker.hpp
 )
