@@ -32,8 +32,8 @@ namespace fs = std::filesystem;
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
 
-// qprobe_capture class - captures IMU data from serial port
-class qprobe_capture
+// imu_capture class - captures IMU data from serial port
+class imu_capture
 {
     serial_port port;
     std::chrono::system_clock::time_point system_clock_start;
@@ -55,7 +55,7 @@ public:
         std::vector<pose_data> poses;
     };
 
-    qprobe_capture() : running(false) {}
+    imu_capture() : running(false) {}
 
     void open(std::string port_name)
     {
@@ -162,8 +162,8 @@ namespace glm
     }
 }
 
-// qprobe_viewer - GUI window for IMU visualization
-struct qprobe_viewer : public window_base
+// imu_server_viewer - GUI window for IMU visualization
+struct imu_server_viewer : public window_base
 {
     std::shared_ptr<azimuth_elevation> view_controller;
     axis_drawer axis_drawer_;
@@ -174,8 +174,8 @@ struct qprobe_viewer : public window_base
     std::vector<glm::vec3> positions;
     bool drawer_initialized;
 
-    qprobe_viewer()
-        : window_base("qprobe Server - IMU Viewer", SCREEN_WIDTH, SCREEN_HEIGHT), drawer_initialized(false)
+    imu_server_viewer()
+        : window_base("IMU Server - IMU Viewer", SCREEN_WIDTH, SCREEN_HEIGHT), drawer_initialized(false)
     {
     }
 
@@ -293,14 +293,14 @@ struct qprobe_viewer : public window_base
 int main(int argc, char* argv[])
 {
     spdlog::set_level(spdlog::level::info);
-    spdlog::info("qprobe Server Application");
+    spdlog::info("IMU Server Application");
 
     // Initialize window manager
     const auto win_mgr = window_manager::get_instance();
     win_mgr->initialize();
 
     // Create viewer window
-    const auto viewer = std::make_shared<qprobe_viewer>();
+    const auto viewer = std::make_shared<imu_server_viewer>();
     const auto rendering_th = std::make_shared<rendering_thread>();
     rendering_th->start(viewer.get());
 
@@ -340,8 +340,8 @@ int main(int argc, char* argv[])
         spdlog::info("Created data directory: {}", data_dir);
     }
 
-    // Open qprobe device and start capturing in separate thread
-    auto capture = std::make_shared<qprobe_capture>();
+    // Open IMU device and start capturing in separate thread
+    auto capture = std::make_shared<imu_capture>();
     
     std::thread capture_thread([capture, port_name, &server, &viewer]() {
         try
@@ -357,7 +357,7 @@ int main(int argc, char* argv[])
 
         // Start capture loop
         spdlog::info("Starting capture loop...");
-        capture->start([capture, &server, &viewer](const qprobe_capture::pose_frame &frame) {
+        capture->start([capture, &server, &viewer](const imu_capture::pose_frame &frame) {
             // Print frame info to console
             std::cout << (uint64_t)(frame.timestamp * 1000);
             for (int i = 0; i < NUM_SENSORS; i++)

@@ -290,7 +290,7 @@ static void sigint_handler(int)
     exit(0);
 }
 
-#include "qprobe_playback_stream.hpp"
+#include "imu_playback_stream.hpp"
 #include "remote_sensor_stream.hpp"
 
 class finger_tracker
@@ -958,8 +958,8 @@ int imu_viewer_main()
 #if 1
     //imu_data_stream data_stream("COM3", 115200);
     //imu_data_stream data_stream("COM5", 1500000);
-    // qprobe_playback_stream data_stream("../data/hand_poses", 100);
-    qprobe_playback_stream data_stream("../data/capture_20230416", 100);
+    // imu_playback_stream data_stream("../data/hand_poses", 100);
+    imu_playback_stream data_stream("../data/capture_20230416", 100);
 #else
     remote_sensor_stream data_stream("192.168.10.105:50052");
 #endif

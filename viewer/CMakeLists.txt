@@ -162,7 +162,7 @@ add_executable(imu_viewer_app
     ${CMAKE_CURRENT_LIST_DIR}/box_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/axis_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/widget_drawer.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/qprobe_playback_stream.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/imu_playback_stream.cpp
     ${CMAKE_CURRENT_LIST_DIR}/remote_sensor_stream.cpp
     ${CMAKE_CURRENT_LIST_DIR}/imu_viewer_app.cpp
 )
@@ -234,11 +234,11 @@ target_sources(imu_viewer_app
     ${CMAKE_CURRENT_LIST_DIR}/box_drawer.hpp
     ${CMAKE_CURRENT_LIST_DIR}/axis_drawer.hpp
     ${CMAKE_CURRENT_LIST_DIR}/widget_drawer.hpp
-    ${CMAKE_CURRENT_LIST_DIR}/qprobe_playback_stream.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/imu_playback_stream.hpp
 )
 
-# qprobe_server_app - GUI application for capturing and visualizing IMU data from qprobe hardware
-add_executable(qprobe_server_app
+# imu_server_app - GUI application for capturing and visualizing IMU data from IMU hardware
+add_executable(imu_server_app
     ${CMAKE_CURRENT_LIST_DIR}/viewer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/sphere_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/grid_drawer.cpp
@@ -247,10 +247,10 @@ add_executable(qprobe_server_app
     ${CMAKE_CURRENT_LIST_DIR}/serial_port.cpp
     ${CMAKE_CURRENT_LIST_DIR}/base64.cpp
     ${CMAKE_CURRENT_LIST_DIR}/stream_server.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/qprobe_server_app.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/imu_server_app.cpp
 )
 
-target_compile_definitions(qprobe_server_app
+target_compile_definitions(imu_server_app
     PUBLIC
     GLOG_NO_ABBREVIATED_SEVERITIES
     GOOGLE_GLOG_DLL_DECL=
@@ -258,11 +258,11 @@ target_compile_definitions(qprobe_server_app
     GLM_ENABLE_EXPERIMENTAL
 )
 
-add_dependencies(qprobe_server_app
+add_dependencies(imu_server_app
     stargazer_sensor_grpc_proto
 )
 
-target_link_libraries(qprobe_server_app
+target_link_libraries(imu_server_app
     stargazer_sensor_grpc_proto
     spdlog::spdlog
     glfw
@@ -278,24 +278,24 @@ target_link_libraries(qprobe_server_app
     nlohmann_json::nlohmann_json
 )
 
-target_compile_options(qprobe_server_app
+target_compile_options(imu_server_app
     PRIVATE
     $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wno-unused-parameter>
     $<$<CONFIG:RELEASE>:-O2>
     $<$<CONFIG:DEBUG>:-g -O0>)
 
 if(WIN32)
-    add_custom_command(TARGET qprobe_server_app POST_BUILD
+    add_custom_command(TARGET imu_server_app POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/third-party/vcpkg_installed/x64-windows/bin"
-        "$<TARGET_FILE_DIR:qprobe_server_app>"
+        "$<TARGET_FILE_DIR:imu_server_app>"
     )
-    set_target_properties(qprobe_server_app PROPERTIES
+    set_target_properties(imu_server_app PROPERTIES
         VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     )
 endif()
 
-target_sources(qprobe_server_app
+target_sources(imu_server_app
     PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/serial_port.hpp
     ${CMAKE_CURRENT_LIST_DIR}/base64.hpp

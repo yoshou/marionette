@@ -1,4 +1,4 @@
-#include "qprobe_playback_stream.hpp"
+#include "imu_playback_stream.hpp"
 
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -8,7 +8,7 @@ namespace fs = std::filesystem;
 
 #include "glm_json_ext.hpp"
 
-qprobe_playback_stream::qprobe_playback_stream(std::string directory, uint32_t fps, std::size_t initial_frame_no)
+imu_playback_stream::imu_playback_stream(std::string directory, uint32_t fps, std::size_t initial_frame_no)
     : directory(directory), frame_no(initial_frame_no), fps(fps)
 {
     std::string path_pattern = "([0-9]+).json";
@@ -29,7 +29,7 @@ qprobe_playback_stream::qprobe_playback_stream(std::string directory, uint32_t f
     std::sort(frame_numbers.begin(), frame_numbers.end());
 }
 
-void qprobe_playback_stream::subscribe_quat(const std::string &name, std::function<void(const std::vector<glm::quat> &)> callback)
+void imu_playback_stream::subscribe_quat(const std::string &name, std::function<void(const std::vector<glm::quat> &)> callback)
 {
     auto next_time = std::chrono::system_clock::now() + std::chrono::duration<double>(1.0 / fps);
     while (frame_no < frame_numbers.size())
