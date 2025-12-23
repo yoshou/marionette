@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
+find_package(unofficial-openfbx CONFIG REQUIRED)
+
 set(CMAKE_CXX_STANDARD 17)
 
 if (WIN32)
@@ -46,6 +48,8 @@ target_link_libraries(marionette
     PRIVATE nanoflann::nanoflann
     PRIVATE nlohmann_json::nlohmann_json
     PUBLIC spdlog::spdlog
+    PUBLIC stargazer_sensor_grpc_proto
+    PRIVATE unoffical::openfbx::openfbx
 
     # ${CUDA_CUFFT_LIBRARIES}
     # ${CUDA_CUBLAS_LIBRARIES}
