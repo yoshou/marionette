@@ -21,9 +21,6 @@ add_executable(ir_viewer
     ${CMAKE_CURRENT_LIST_DIR}/box_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/axis_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/widget_drawer.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/playback_stream.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/remote_sensor_stream.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/retarget.cpp
     ${CMAKE_CURRENT_LIST_DIR}/viewer_app.cpp
 )
 
@@ -43,6 +40,7 @@ add_dependencies(ir_viewer
 target_include_directories(ir_viewer
     SYSTEM PRIVATE
     ${TINYGLTF_INCLUDE_DIRS}
+    PRIVATE ${CMAKE_SOURCE_DIR}/src
 )
 
 target_link_libraries(ir_viewer
@@ -105,6 +103,10 @@ add_executable(log_viewer_app
     ${CMAKE_CURRENT_LIST_DIR}/log_viewer_app.cpp
 )
 
+target_include_directories(log_viewer_app
+    PRIVATE ${CMAKE_SOURCE_DIR}/src
+)
+
 target_compile_definitions(log_viewer_app
     PUBLIC
     GLOG_NO_ABBREVIATED_SEVERITIES
@@ -162,9 +164,11 @@ add_executable(imu_viewer_app
     ${CMAKE_CURRENT_LIST_DIR}/box_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/axis_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/widget_drawer.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/imu_playback_stream.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/remote_sensor_stream.cpp
     ${CMAKE_CURRENT_LIST_DIR}/imu_viewer_app.cpp
+)
+
+target_include_directories(imu_viewer_app
+    PRIVATE ${CMAKE_SOURCE_DIR}/src
 )
 
 target_compile_definitions(imu_viewer_app
@@ -234,7 +238,6 @@ target_sources(imu_viewer_app
     ${CMAKE_CURRENT_LIST_DIR}/box_drawer.hpp
     ${CMAKE_CURRENT_LIST_DIR}/axis_drawer.hpp
     ${CMAKE_CURRENT_LIST_DIR}/widget_drawer.hpp
-    ${CMAKE_CURRENT_LIST_DIR}/imu_playback_stream.hpp
 )
 
 # imu_server_app - GUI application for capturing and visualizing IMU data from IMU hardware
@@ -244,10 +247,11 @@ add_executable(imu_server_app
     ${CMAKE_CURRENT_LIST_DIR}/grid_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/axis_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/box_drawer.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/serial_port.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/base64.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/stream_server.cpp
     ${CMAKE_CURRENT_LIST_DIR}/imu_server_app.cpp
+)
+
+target_include_directories(imu_server_app
+    PRIVATE ${CMAKE_SOURCE_DIR}/src
 )
 
 target_compile_definitions(imu_server_app
@@ -264,7 +268,7 @@ add_dependencies(imu_server_app
 
 target_link_libraries(imu_server_app
     stargazer_sensor_grpc_proto
-    spdlog::spdlog
+    marionette
     glfw
     glad::glad
     $<$<NOT:$<BOOL:${WIN32}>>:pthread>
@@ -297,8 +301,4 @@ endif()
 
 target_sources(imu_server_app
     PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/serial_port.hpp
-    ${CMAKE_CURRENT_LIST_DIR}/base64.hpp
-    ${CMAKE_CURRENT_LIST_DIR}/imu_data.hpp
-    ${CMAKE_CURRENT_LIST_DIR}/stream_server.hpp
 )

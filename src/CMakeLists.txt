@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 17)
 
 if (WIN32)
+    add_compile_options(/utf-8)
 else ()
 set(CMAKE_C_FLAGS "-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-unused-function")
 set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
@@ -22,6 +23,13 @@ add_library(marionette
     ${CMAKE_CURRENT_LIST_DIR}/model_detector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/debug.cpp
     ${CMAKE_CURRENT_LIST_DIR}/motion_tracker.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/base64.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/serial_port.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/stream_server.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/playback_stream.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/imu_playback_stream.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/remote_sensor_stream.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/retarget.cpp
 )
 
 target_link_libraries(marionette
@@ -29,6 +37,7 @@ target_link_libraries(marionette
     ${CUDA_cusolver_LIBRARY}
     PRIVATE nanoflann::nanoflann
     PRIVATE nlohmann_json::nlohmann_json
+    PUBLIC spdlog::spdlog
 
     # ${CUDA_CUFFT_LIBRARIES}
     # ${CUDA_CUBLAS_LIBRARIES}
@@ -86,4 +95,13 @@ target_sources(marionette
     ${CMAKE_CURRENT_LIST_DIR}/tuple_hash.hpp
     ${CMAKE_CURRENT_LIST_DIR}/utils.hpp
     ${CMAKE_CURRENT_LIST_DIR}/motion_tracker.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/base64.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/serial_port.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/stream_server.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/imu_data.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/playback_stream.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/imu_playback_stream.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/remote_sensor_stream.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/retarget.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/frame_queue.hpp
 )
