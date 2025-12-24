@@ -9,6 +9,8 @@
 #include <chrono>
 #include <iostream>
 
+namespace marionette::tracking {
+
 using namespace marionette::core;
 using namespace marionette::optimization;
 using namespace marionette::utils;
@@ -344,3 +346,5 @@ void motion_tracker::track_frame(const model_data &model, const frame_data_t &fr
 
     //std::cout << "Intraframe Dist : " << compute_articulation_distance(keyframe_clusters, params, world) << std::endl;
 }
+
+} // namespace marionette::tracking

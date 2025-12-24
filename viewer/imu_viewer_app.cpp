@@ -30,6 +30,10 @@
 #include "finger_tracker.hpp"
 
 using namespace marionette::core;
+using namespace marionette::tracking;
+using namespace marionette::data_source;
+
+using namespace marionette::core;
 using namespace marionette::data_source;
 #include "finger_pose_estimation.hpp"
 

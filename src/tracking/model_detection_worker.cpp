@@ -1,6 +1,9 @@
 #include "model_detection_worker.hpp"
 #include <iostream>
 
+namespace marionette::tracking
+{
+
 model_detection_worker::model_detection_worker(const model_data& model)
     : running(false), model(model), is_callback_valid(false)
 {}
@@ -54,3 +57,5 @@ void model_detection_worker::process()
         }
     }
 }
+
+} // namespace marionette::tracking

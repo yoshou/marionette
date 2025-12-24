@@ -11,6 +11,7 @@
 #include "transform.hpp"
 
 using namespace marionette::core;
+using namespace marionette::tracking;
 
 namespace marionette::optimization
 {

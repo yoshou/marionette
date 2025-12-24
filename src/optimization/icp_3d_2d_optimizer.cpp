@@ -21,6 +21,7 @@
 
 using namespace marionette::core;
 using namespace marionette::optimization;
+using namespace marionette::tracking;
 
 namespace marionette::optimization
 {

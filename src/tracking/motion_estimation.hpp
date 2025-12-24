@@ -6,6 +6,9 @@
 
 #include <Eigen/QR>
 
+namespace marionette::tracking
+{
+
 static void polyfit(const std::vector<double> &t,
              const std::vector<double> &v,
              std::vector<double> &coeff,
@@ -98,3 +101,5 @@ struct polynomial_regression
         return glm::vec3(x_value, y_value, z_value);
     }
 };
+
+} // namespace marionette::tracking

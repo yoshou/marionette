@@ -6,6 +6,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>
 
+namespace marionette::tracking
+{
+
 struct triangle_feature
 {
     std::vector<glm::vec3> values;
@@ -183,3 +186,5 @@ static float compute_feature_distance(const segment_feature &feature1, const seg
         return *std::max_element(dists.begin(), dists.end());
     }
 }
+
+} // namespace marionette::tracking

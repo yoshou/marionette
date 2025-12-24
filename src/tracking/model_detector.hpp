@@ -5,6 +5,8 @@
 #include "model.hpp"
 #include "frame.hpp"
 
+namespace marionette::tracking {
+
 using namespace marionette::core;
 using namespace marionette::optimization;
 
@@ -41,3 +43,5 @@ struct model_instance_data
 model_instance_data detect_model(const model_data &model, const frame_data_t &frame);
 
 float compute_articulation_distance(const model_instance_data &clusters);
+
+} // namespace marionette::tracking

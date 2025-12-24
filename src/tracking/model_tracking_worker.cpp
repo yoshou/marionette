@@ -4,6 +4,8 @@
 #include "registration.hpp"
 #include <iostream>
 
+namespace marionette::tracking {
+
 using namespace marionette::core;
 using namespace marionette::optimization;
 
@@ -80,3 +82,5 @@ void model_tracking_worker::process()
         }
     }
 }
+
+} // namespace marionette::tracking

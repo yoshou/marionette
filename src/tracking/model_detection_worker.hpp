@@ -8,6 +8,9 @@
 #include "model_detector.hpp"
 #include "frame.hpp"
 
+namespace marionette::tracking
+{
+
 using namespace marionette::core;
 
 class model_detection_worker
@@ -36,3 +39,5 @@ public:
 
     void stop();
 };
+
+} // namespace marionette::tracking

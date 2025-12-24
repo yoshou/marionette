@@ -3,6 +3,9 @@
 #include <glm/gtx/transform.hpp>
 #include <limits>
 
+using namespace marionette::tracking;
+using namespace marionette::optimization;
+
 std::vector<glm::mat4> compute_pose(const model_instance_data &model_instance)
 {
     const auto &keyframe_clusters = model_instance.clusters;

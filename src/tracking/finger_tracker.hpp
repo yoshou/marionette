@@ -5,6 +5,9 @@
 #include <glm/glm.hpp>
 #include "model.hpp"
 
+namespace marionette::tracking
+{
+
 using namespace marionette::core;
 
 class finger_tracker
@@ -20,3 +23,5 @@ public:
 
     void track(const std::vector<glm::quat>& poses);
 };
+
+} // namespace marionette::tracking

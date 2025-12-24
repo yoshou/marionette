@@ -9,6 +9,8 @@
 #include "articulation_solver.hpp"
 #include "debug.hpp"
 
+namespace marionette::tracking {
+
 using namespace marionette::core;
 using namespace marionette::optimization;
 
@@ -321,3 +323,5 @@ model_instance_data detect_model(const model_data &model, const frame_data_t &fr
         return registered_clusters;
     }
 }
+
+} // namespace marionette::tracking

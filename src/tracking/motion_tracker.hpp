@@ -10,6 +10,9 @@
 #include "motion_estimation.hpp"
 #include <glm/glm.hpp>
 
+namespace marionette::tracking
+{
+
 using namespace marionette::core;
 
 class motion_tracker
@@ -31,3 +34,5 @@ public:
     void track_frame(const model_data &model, const frame_data_t &frame,
                      const model_instance_data &model_instance);
 };
+
+} // namespace marionette::tracking

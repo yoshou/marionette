@@ -12,6 +12,9 @@
 #include "frame_queue.hpp"
 #include "motion_tracker.hpp"
 
+namespace marionette::tracking
+{
+
 using namespace marionette::core;
 
 class model_tracking_worker
@@ -39,3 +42,5 @@ public:
 
     std::map<std::string, glm::mat4> get_poses() const;
 };
+
+} // namespace marionette::tracking

@@ -2,6 +2,9 @@
 #include <algorithm>
 #include <stdexcept>
 
+namespace marionette::tracking
+{
+
 finger_tracker::finger_tracker(const model_data& model)
     : model(model)
 {
@@ -46,3 +49,5 @@ void finger_tracker::track(const std::vector<glm::quat>& poses)
 {
     // Implementation placeholder
 }
+
+} // namespace marionette::tracking

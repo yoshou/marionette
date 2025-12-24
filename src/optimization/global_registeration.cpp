@@ -19,6 +19,9 @@
 #include "features.hpp"
 
 using namespace marionette::core;
+using namespace marionette::tracking;
+
+using namespace marionette::core;
 using namespace marionette::optimization;
 
 #ifdef USE_CUDA
