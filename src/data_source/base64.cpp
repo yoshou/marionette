@@ -1,5 +1,7 @@
 #include "base64.hpp"
 
+namespace marionette::data_source {
+
 bool encode_base64(const uint8_t* src, size_t size, std::string &dst)
 {
     const std::string table("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
@@ -127,3 +129,5 @@ bool decode_base64(const std::string &src, uint8_t *dst, size_t size, size_t *co
         return true;
     }
 }
+
+} // namespace marionette::data_source

@@ -5,6 +5,8 @@
 #include <vector>
 #include <glm/glm.hpp>
 
+namespace marionette::data_source {
+
 class imu_playback_stream
 {
     std::string directory;
@@ -17,3 +19,5 @@ public:
 
     void subscribe_quat(const std::string &name, std::function<void(const std::vector<glm::quat> &)> callback);
 };
+
+} // namespace marionette::data_source

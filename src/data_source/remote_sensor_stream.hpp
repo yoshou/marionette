@@ -5,6 +5,8 @@
 #include <glm/gtx/quaternion.hpp>
 #include <functional>
 
+namespace marionette::data_source {
+
 class remote_sensor_stream
 {
 public:
@@ -15,3 +17,5 @@ public:
 private:
     std::unique_ptr<stargazer::Sensor::Stub> stub_;
 };
+
+} // namespace marionette::data_source

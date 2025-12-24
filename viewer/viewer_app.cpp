@@ -30,6 +30,9 @@ namespace fs = std::filesystem;
 #include "frame_queue.hpp"
 #include "motion_tracker.hpp"
 #include "retarget.hpp"
+
+using namespace marionette::core;
+using namespace marionette::data_source;
 #include "pose_computation.hpp"
 #include "model_detection_worker.hpp"
 #include "model_tracking_worker.hpp"

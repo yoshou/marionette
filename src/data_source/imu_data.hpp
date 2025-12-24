@@ -4,6 +4,8 @@
 
 #define NUM_SENSORS (6)
 
+namespace marionette::data_source {
+
 #pragma pack(push, 1)
 struct Vec3
 {
@@ -73,3 +75,5 @@ struct ResponseHeader
     uint8_t code;
 };
 #pragma pack(pop)
+
+} // namespace marionette::data_source

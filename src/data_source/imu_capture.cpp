@@ -3,6 +3,8 @@
 #include <thread>
 #include <spdlog/spdlog.h>
 
+namespace marionette::data_source {
+
 imu_capture::imu_capture() : running(false) {}
 
 void imu_capture::open(std::string port_name)
@@ -99,3 +101,5 @@ bool imu_capture::is_running() const
 {
     return running.load();
 }
+
+} // namespace marionette::data_source

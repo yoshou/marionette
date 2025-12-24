@@ -18,6 +18,8 @@
 
 #include "sensor.grpc.pb.h"
 
+namespace marionette::data_source {
+
 class SensorServiceImpl;
 
 class marker_stream_server
@@ -36,3 +38,5 @@ public:
     void run();
     void stop();
 };
+
+} // namespace marionette::data_source

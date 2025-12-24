@@ -25,6 +25,8 @@
 #include "imu_capture.hpp"
 #include "stream_server.hpp"
 
+using namespace marionette::data_source;
+
 namespace fs = std::filesystem;
 
 const int SCREEN_WIDTH = 1280;

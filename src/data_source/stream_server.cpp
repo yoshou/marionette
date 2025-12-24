@@ -3,6 +3,8 @@
 #include <unordered_map>
 #include <spdlog/spdlog.h>
 
+namespace marionette::data_source {
+
 class SensorServiceImpl final : public stargazer::Sensor::Service
 {
     std::mutex mtx;
@@ -93,3 +95,5 @@ void marker_stream_server::stop()
         }
     }
 }
+
+} // namespace marionette::data_source

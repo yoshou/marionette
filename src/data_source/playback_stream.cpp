@@ -8,6 +8,8 @@ namespace fs = std::filesystem;
 
 #include "glm_json_ext.hpp"
 
+namespace marionette::data_source {
+
 playback_stream::playback_stream(std::string directory, uint32_t fps, std::size_t initial_frame_no)
     : directory(directory), frame_no(initial_frame_no), fps(fps)
 {
@@ -59,3 +61,5 @@ void playback_stream::subscribe_sphere(const std::string &name, std::function<vo
         next_time = next_time + std::chrono::duration<double>(1.0 / fps);
     }
 }
+
+} // namespace marionette::data_source

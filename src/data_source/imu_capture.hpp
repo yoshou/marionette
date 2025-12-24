@@ -10,6 +10,8 @@
 #include "serial_port.hpp"
 #include "imu_data.hpp"
 
+namespace marionette::data_source {
+
 class imu_capture
 {
     serial_port port;
@@ -42,3 +44,5 @@ public:
 
     bool is_running() const;
 };
+
+} // namespace marionette::data_source

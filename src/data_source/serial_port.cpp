@@ -12,6 +12,8 @@
 #define PORTS "Ports"
 #define PORTNAME "PortName"
 
+namespace marionette::data_source {
+
 std::vector<std::string> serial_port::get_serial_port_names()
 {
     std::vector<std::string> list;
@@ -136,6 +138,8 @@ void serial_port::clear()
     PurgeComm(handle->value, PURGE_RXCLEAR | PURGE_TXCLEAR);
 }
 
+} // namespace marionette::data_source
+
 #elif defined(__linux__)
 
 #include <termios.h>
@@ -148,6 +152,8 @@ void serial_port::clear()
 #include <algorithm>
 
 namespace fs = std::filesystem;
+
+namespace marionette::data_source {
 
 static const std::string get_driver(const fs::path &dir)
 {
@@ -394,6 +400,9 @@ void serial_port::clear()
     }
     tcflush(handle->fd, TCIOFLUSH);
 }
+
+} // namespace marionette::data_source
+
 #else
 #error "Not supported"
 #endif

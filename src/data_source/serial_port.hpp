@@ -4,6 +4,8 @@
 #include <string>
 #include <memory>
 
+namespace marionette::data_source {
+
 class serial_port
 {
 	struct handle_t;
@@ -24,3 +26,5 @@ public:
 	size_t read(uint8_t* buf, size_t size);
 	void clear();
 };
+
+} // namespace marionette::data_source

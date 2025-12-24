@@ -10,6 +10,8 @@
 
 #include "sensor.grpc.pb.h"
 
+namespace marionette::data_source {
+
 #define USE_SECURE_CREDENTIALS
 
 static std::string read_text_file(const std::string& path)
@@ -105,3 +107,5 @@ void remote_sensor_stream::subscribe_quat(const std::string &name, std::function
         throw std::runtime_error("subscribe_sphere rpc failed.");
     }
 }
+
+} // namespace marionette::data_source
