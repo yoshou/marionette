@@ -1,12 +1,15 @@
 #pragma once
 
 #include <immintrin.h>
+#include <cmath>
 
 #include <Eigen/Core>
 
 #define _mm256_set_m128d(vh, vl) \
     _mm256_insertf128_pd(_mm256_castpd128_pd256(vl), (vh), 1)
 
+namespace marionette::optimization
+{
 template <typename T>
 struct dual_t
 {
@@ -137,7 +140,8 @@ static inline bool operator>(const dual_t<T> &f, const dual_t<T> &g)
 template <typename T>
 static inline dual_t<T> sqrt(const dual_t<T> &f)
 {
-    const auto df_0 = std::sqrt(f.a);
+    using std::sqrt;
+    const auto df_0 = sqrt(f.a);
     const auto df_1 = T{1} / (T{2} * df_0);
     return dual_t<T>(
         df_0,
@@ -146,8 +150,9 @@ static inline dual_t<T> sqrt(const dual_t<T> &f)
 template <typename T>
 static inline dual_t<T> sin(const dual_t<T> &f)
 {
-    const auto df_0 = std::sin(f.a);
-    const auto df_1 = std::cos(f.a);
+    using std::sin; using std::cos;
+    const auto df_0 = sin(f.a);
+    const auto df_1 = cos(f.a);
     return dual_t<T>(
         df_0,
         f.b * df_1);
@@ -155,8 +160,9 @@ static inline dual_t<T> sin(const dual_t<T> &f)
 template <typename T>
 static inline dual_t<T> cos(const dual_t<T> &f)
 {
-    const auto df_0 = std::cos(f.a);
-    const auto df_1 = -std::sin(f.a);
+    using std::cos; using std::sin;
+    const auto df_0 = cos(f.a);
+    const auto df_1 = -sin(f.a);
     return dual_t<T>(
         df_0,
         f.b * df_1);
@@ -164,8 +170,9 @@ static inline dual_t<T> cos(const dual_t<T> &f)
 template <typename T>
 static inline dual_t<T> pow(const dual_t<T> &f, const T& g)
 {
-    const auto df_0 = std::pow(f.a, g);
-    const auto df_1 = g * std::pow(f.a, g - T{1});
+    using std::pow;
+    const auto df_0 = pow(f.a, g);
+    const auto df_1 = g * pow(f.a, g - T{1});
     return dual_t<T>(
         df_0,
         f.b * df_1);
@@ -347,7 +354,8 @@ static inline bool operator>(const dual_vec_t<T, N> &f, const dual_vec_t<T, N> &
 template <typename T, int N>
 static inline dual_vec_t<T, N> sqrt(const dual_vec_t<T, N> &f)
 {
-    const auto df_0 = std::sqrt(f.a);
+    using std::sqrt;
+    const auto df_0 = sqrt(f.a);
     const auto df_1 = T{1} / (T{2} * df_0);
     return dual_vec_t<T, N>(
         df_0,
@@ -356,8 +364,9 @@ static inline dual_vec_t<T, N> sqrt(const dual_vec_t<T, N> &f)
 template <typename T, int N>
 static inline dual_vec_t<T, N> sin(const dual_vec_t<T, N> &f)
 {
-    const auto df_0 = std::sin(f.a);
-    const auto df_1 = std::cos(f.a);
+    using std::sin; using std::cos;
+    const auto df_0 = sin(f.a);
+    const auto df_1 = cos(f.a);
     return dual_vec_t<T, N>(
         df_0,
         f.v * df_1);
@@ -365,8 +374,9 @@ static inline dual_vec_t<T, N> sin(const dual_vec_t<T, N> &f)
 template <typename T, int N>
 static inline dual_vec_t<T, N> cos(const dual_vec_t<T, N> &f)
 {
-    const auto df_0 = std::cos(f.a);
-    const auto df_1 = -std::sin(f.a);
+    using std::cos; using std::sin;
+    const auto df_0 = cos(f.a);
+    const auto df_1 = -sin(f.a);
     return dual_vec_t<T, N>(
         df_0,
         f.v * df_1);
@@ -374,8 +384,9 @@ static inline dual_vec_t<T, N> cos(const dual_vec_t<T, N> &f)
 template <typename T, int N>
 static inline dual_vec_t<T, N> pow(const dual_vec_t<T, N> &f, const T &g)
 {
-    const auto df_0 = std::pow(f.a, g);
-    const auto df_1 = g * std::pow(f.a, g - T{1});
+    using std::pow;
+    const auto df_0 = pow(f.a, g);
+    const auto df_1 = g * pow(f.a, g - T{1});
     return dual_vec_t<T, N>(
         df_0,
         f.v * df_1);
@@ -549,7 +560,8 @@ static inline bool operator>(const hyper_dual_t<T> &f, const hyper_dual_t<T> &g)
 template <typename T>
 static inline hyper_dual_t<T> sqrt(const hyper_dual_t<T> &f)
 {
-    const auto df_0 = std::sqrt(f.a);
+    using std::sqrt;
+    const auto df_0 = sqrt(f.a);
     const auto df_1 = T{1} / (T{2} * df_0);
     const auto df_2 = T{-2} * df_1 * df_1 * df_1;
     return hyper_dual_t<T>(
@@ -561,8 +573,9 @@ static inline hyper_dual_t<T> sqrt(const hyper_dual_t<T> &f)
 template <typename T>
 static inline hyper_dual_t<T> sin(const hyper_dual_t<T> &f)
 {
-    const auto df_0 = std::sin(f.a);
-    const auto df_1 = std::cos(f.a);
+    using std::sin; using std::cos;
+    const auto df_0 = sin(f.a);
+    const auto df_1 = cos(f.a);
     const auto df_2 = -df_0;
     return hyper_dual_t<T>(
         df_0,
@@ -573,8 +586,9 @@ static inline hyper_dual_t<T> sin(const hyper_dual_t<T> &f)
 template <typename T>
 static inline hyper_dual_t<T> cos(const hyper_dual_t<T> &f)
 {
-    const auto df_0 = std::cos(f.a);
-    const auto df_1 = -std::sin(f.a);
+    using std::cos; using std::sin;
+    const auto df_0 = cos(f.a);
+    const auto df_1 = -sin(f.a);
     const auto df_2 = -df_0;
     return hyper_dual_t<T>(
         df_0,
@@ -612,23 +626,28 @@ static inline hyper_dual_t<T> fmin(const hyper_dual_t<T>& f, const hyper_dual_t<
     return (f + g) * hyper_dual_t<T>(0.5);
 }
 
+} // namespace marionette::optimization
+
 template <typename T, typename U>
-struct std::common_type<T, dual_t<U>>
+struct std::common_type<T, marionette::optimization::dual_t<U>>
 {
-    using type = dual_t<common_type_t<T, U>>;
+    using type = marionette::optimization::dual_t<std::common_type_t<T, U>>;
 };
 
 template <typename T, typename U>
-struct std::common_type<dual_t<T>, U>
+struct std::common_type<marionette::optimization::dual_t<T>, U>
 {
-    using type = dual_t<common_type_t<T>>;
+    using type = marionette::optimization::dual_t<std::common_type_t<T, U>>;
 };
 
 template <typename T, typename U>
-struct std::common_type<dual_t<T>, dual_t<U>>
+struct std::common_type<marionette::optimization::dual_t<T>, marionette::optimization::dual_t<U>>
 {
-    using type = dual_t<common_type_t<T>>;
+    using type = marionette::optimization::dual_t<std::common_type_t<T, U>>;
 };
+
+namespace marionette::optimization
+{
 
 #include <immintrin.h>
 
@@ -1172,6 +1191,7 @@ static inline vec3_t<T> rotate(const quat_t<T>& q, const vec3_t<T> &v)
 template <typename T>
 static inline vec3_t<T> rotate_angle_axis(const vec3_t<T> &angle_axis, const vec3_t<T> &pt)
 {
+    using std::sqrt; using std::cos; using std::sin;
     const T theta2 = dot(angle_axis, angle_axis);
     if (theta2 > T(std::numeric_limits<double>::epsilon()))
     {
@@ -1226,3 +1246,5 @@ static inline vec3_t<dual_t<double>> rotate(const quat_t<dual_t<double>>& q, con
         dual_t<double>(2) * ((t7 - t3) * x + (t2 + t9) * y + (t5 + t8) * z) + z);
 }
 #endif
+
+} // namespace marionette::optimization

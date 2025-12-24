@@ -3,6 +3,9 @@
 #include <vector>
 #include <limits>
 
+namespace marionette::optimization
+{
+
 template <typename T>
 static T find_nearest_neighbor_point(const T &point, const std::vector<T> &points, float threshold = std::numeric_limits<float>::max())
 {
@@ -100,3 +103,5 @@ static std::size_t find_nearest_neighbor_point_index(const T &point, const std::
     }
     return min_idx;
 }
+
+} // namespace marionette::optimization

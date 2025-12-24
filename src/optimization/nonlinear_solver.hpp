@@ -14,6 +14,9 @@
 
 #include "unsupported/Eigen/NonLinearOptimization"
 
+namespace marionette::optimization
+{
+
 template <typename ResidualFunc, typename ConstraintFunc, typename T>
 static void gradient(ResidualFunc **residuals, std::size_t num_residuals, ConstraintFunc **constraints, std::size_t num_constraints, const T *params, std::size_t num_params, T *nabla)
 {
@@ -412,9 +415,7 @@ static optimization_result solve_semi_newton_method(ResidualFunc **residuals, st
     return result;
 }
 
-namespace optimization
-{
-    class function_term
+class function_term
     {
     public:
         virtual double eval(const double *params, std::size_t num_params) const
@@ -1068,7 +1069,6 @@ namespace optimization
             return params.data() + param_block->offset;
         }
     };
-}
 
 template <typename ResidualFunc, typename ConstraintFunc, typename T>
 static optimization_result solve_lbfgs_method(ResidualFunc **residuals, std::size_t num_residuals, ConstraintFunc **constraints, std::size_t num_constraints, T *params, std::size_t num_params, double terminate_thresold, std::size_t max_iteration, std::size_t max_m)
@@ -1490,3 +1490,5 @@ static optimization_result solve_interior_point_method(ResidualFunc **residuals,
 
     return result;
 }
+
+} // namespace marionette::optimization

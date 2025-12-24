@@ -20,6 +20,12 @@
 #include <iostream>
 
 using namespace marionette::core;
+using namespace marionette::optimization;
+
+namespace marionette::optimization
+{
+
+using namespace marionette::core;
 
 struct labeled_point
 {
@@ -59,7 +65,7 @@ static void project_target(const model_instance_data &model_instance,
 
         for (std::size_t j = 0; j < registerd_points.size(); j++)
         {
-            const auto marker = transform_coordinate(registerd_points[j].position, inverse_world);
+            const auto marker = marionette::core::transform_coordinate(registerd_points[j].position, inverse_world);
             const auto pt = project_ortho(camera, marker);
 
             points.push_back(labeled_point{
@@ -82,7 +88,7 @@ static void project_target(const model_instance_data &model_instance,
 
         for (std::size_t j = 0; j < target_points.size(); j++)
         {
-            const auto marker = transform_coordinate(target_points[j].position, inverse_world);
+            const auto marker = marionette::core::transform_coordinate(target_points[j].position, inverse_world);
 
             const auto rotation = &params.mutable_rotations[i * 3];
             const auto translation = &params.mutable_translations[i * 3];
@@ -121,7 +127,7 @@ float icp_3d_2d_minimizer::update(std::size_t iter, const model_data &model, con
     {
         const auto &registered_cluster = registered_clusters[i];
 
-        const auto registerd_points = transform_coordinate(registered_cluster.target, inverse_world);
+        const auto registerd_points = marionette::core::transform_coordinate(registered_cluster.target, inverse_world);
 
         for (std::size_t j = 0; j < registerd_points.size(); j++)
         {
@@ -357,7 +363,7 @@ float icp_3d_2d_minimizer::update(std::size_t iter, const model_data &model, con
                 const auto &child_cluster = registered_clusters[child_cluster_idx];
                 const auto [pos1, rot1, pos2, rot2] = compute_articuated_pair_points(parent_cluster.cluster, child_cluster.cluster, parent_cluster.fit_result, child_cluster.fit_result);
 
-                const auto articulation_p = transform_coordinate((pos1 + pos2) * 0.5f, inverse_world);
+                const auto articulation_p = marionette::core::transform_coordinate((pos1 + pos2) * 0.5f, inverse_world);
 
                 ceres::CostFunction *cost_function =
                     articulation_projection_error::create(articulation_p, view, proj);
@@ -419,3 +425,5 @@ float icp_3d_2d_minimizer::update(std::size_t iter, const model_data &model, con
         return std::abs(summary.final_cost - summary.initial_cost) / summary.initial_cost;
     }
 }
+
+} // namespace marionette::optimization

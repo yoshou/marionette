@@ -12,6 +12,9 @@
 
 using namespace marionette::core;
 
+namespace marionette::optimization
+{
+
 struct icp_3d_2d_minimizer
 {
     std::size_t frame_no;
@@ -19,3 +22,5 @@ struct icp_3d_2d_minimizer
     float update(std::size_t iter, const model_data &model, const std::vector<camera_t> &cameras, const frame_data_t &frame,
                  const model_instance_data &model_instance, glm::mat4 world, clusters_transform_params &params, bool with_twist, bool verbose = true);
 };
+
+} // namespace marionette::optimization

@@ -8,6 +8,9 @@
 
 using namespace marionette::core;
 
+namespace marionette::optimization
+{
+
 static void transform_to_target(const rigid_cluster &cluster, const find_fit_result &result, std::vector<glm::vec3> &points)
 {
     const auto translation = result.translation;
@@ -139,3 +142,5 @@ static std::vector<weighted_point> find_source_points(const rigid_cluster &clust
     }
     return paired_target_points;
 }
+
+} // namespace marionette::optimization

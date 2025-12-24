@@ -10,6 +10,7 @@
 #include "debug.hpp"
 
 using namespace marionette::core;
+using namespace marionette::optimization;
 
 static bool solve_articulation(const model_data &model, const std::map<std::string, std::vector<find_fit_result>> &results, model_instance_data &registered_clusters, float articulation_solved_threshold = 0.05f)
 {

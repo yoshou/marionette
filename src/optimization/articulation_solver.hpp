@@ -7,6 +7,9 @@
 
 using namespace marionette::core;
 
+namespace marionette::optimization
+{
+
 struct articulation_results
 {
     rigid_cluster parent_cluster;
@@ -32,3 +35,5 @@ std::tuple<glm::vec3, glm::mat4, glm::vec3, glm::mat4> compute_articuated_pair_p
     const rigid_cluster &child_cluster,
     const find_fit_result &parent_result,
     const find_fit_result &child_result);
+
+} // namespace marionette::optimization

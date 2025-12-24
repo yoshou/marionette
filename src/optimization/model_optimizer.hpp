@@ -21,6 +21,9 @@
 
 using namespace marionette::core;
 
+namespace marionette::optimization
+{
+
 struct zero_function
 {
     template <typename T>
@@ -504,4 +507,6 @@ public:
     {
     }
 };
+
+} // namespace marionette::optimization
 #endif

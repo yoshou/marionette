@@ -6,6 +6,7 @@
 #include "frame.hpp"
 
 using namespace marionette::core;
+using namespace marionette::optimization;
 
 struct rigid_cluster_instance
 {

@@ -10,6 +10,7 @@
 #include <iostream>
 
 using namespace marionette::core;
+using namespace marionette::optimization;
 using namespace marionette::utils;
 
 static find_fit_result update_result(const find_fit_result &fit_result, const double *rotation, const double *translation, double twist_angle)

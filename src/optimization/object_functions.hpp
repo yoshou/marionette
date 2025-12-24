@@ -5,6 +5,9 @@
 #include <ceres/rotation.h>
 #include "automatic_differentiation.hpp"
 
+namespace marionette::optimization
+{
+
 template <typename T>
 static void transform_coordinate(const T *p, const glm::mat4 &m, T *result)
 {
@@ -1622,3 +1625,5 @@ struct quat_twisted_rt_articulation_least_square_constraint
         return 5.0 * l2norm(res_vec);
     }
 };
+
+} // namespace marionette::optimization

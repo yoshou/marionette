@@ -4,6 +4,8 @@
 #include <numbers>
 #include "automatic_differentiation.hpp"
 
+using namespace marionette::optimization;
+
 // Helper functions for differentiation tests
 template <typename T>
 auto test_func1(const T &x)
@@ -403,6 +405,33 @@ TEST(AutoDiffTest, RotateAngleAxis)
         ASSERT_NEAR(result.x, 0.0, 1e-9);
         ASSERT_NEAR(result.y, 1.0, 1e-9);
         ASSERT_NEAR(result.z, 0.0, 1e-9);
+    }
+    
+    // Test with dual_t<double> - rotation around z-axis with derivative
+    {
+        // angle_axis with dual number for automatic differentiation
+        vec3_t<dual_t<double>> axis(
+            dual_t<double>(0.0, 0.0),
+            dual_t<double>(0.0, 0.0),
+            dual_t<double>(std::numbers::pi / 2.0, 1.0)  // derivative w.r.t. angle
+        );
+        vec3_t<dual_t<double>> point(
+            dual_t<double>(1.0, 0.0),
+            dual_t<double>(0.0, 0.0),
+            dual_t<double>(0.0, 0.0)
+        );
+        
+        auto result = rotate_angle_axis(axis, point);
+        
+        // Check value (should be same as double version)
+        ASSERT_NEAR(result.get_x().a, 0.0, 1e-9);
+        ASSERT_NEAR(result.get_y().a, 1.0, 1e-9);
+        ASSERT_NEAR(result.get_z().a, 0.0, 1e-9);
+        
+        // Check derivative w.r.t. angle (d/dθ of rotation)
+        ASSERT_NEAR(result.get_x().b, -1.0, 1e-9);  // d(cos(θ))/dθ = -sin(θ) at θ=π/2
+        ASSERT_NEAR(result.get_y().b, 0.0, 1e-9);   // d(sin(θ))/dθ = cos(θ) at θ=π/2
+        ASSERT_NEAR(result.get_z().b, 0.0, 1e-9);
     }
 }
 

@@ -2,6 +2,9 @@
 
 #include "alignment.hpp"
 
+namespace marionette::optimization
+{
+
 struct clusters_transform_params
 {
     std::vector<double> mutable_rotations;
@@ -32,3 +35,5 @@ struct clusters_transform_params
         return params;
     }
 };
+
+} // namespace marionette::optimization

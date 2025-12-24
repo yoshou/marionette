@@ -9,6 +9,8 @@
 
 #include "nonlinear_solver.hpp"
 
+using namespace marionette::optimization;
+
 namespace
 {
     struct square_func
@@ -31,15 +33,15 @@ namespace
 
 TEST(SolverTest, TestAutoDiff)
 {
-    const auto param1 = std::make_shared<optimization::parameter_block>(0.0);
+    const auto param1 = std::make_shared<parameter_block>(0.0);
     param1->offset = 0;
-    const auto param2 = std::make_shared<optimization::parameter_block>(0.0);
+    const auto param2 = std::make_shared<parameter_block>(0.0);
     param2->offset = 1;
 
-    const auto term1 = optimization::make_auto_diff_function_term(square_func(), param1);
-    const auto term2 = optimization::make_auto_diff_function_term(cubic_func(), param2);
+    const auto term1 = make_auto_diff_function_term(square_func(), param1);
+    const auto term2 = make_auto_diff_function_term(cubic_func(), param2);
 
-    optimization::function func(term1, term2);
+    function func(term1, term2);
 
     {
         std::vector<double> params = {2, 3};

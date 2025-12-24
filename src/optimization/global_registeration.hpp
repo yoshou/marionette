@@ -13,6 +13,9 @@
 
 using namespace marionette::core;
 
+namespace marionette::optimization
+{
+
 struct twist_rt_transform
 {
     glm::mat3 rotation;
@@ -64,3 +67,5 @@ public:
     void find_fits(const rigid_cluster &cluster, const std::vector<glm::vec3> &points,
                    float initial_twist_angle, float min_twist_angle, float max_twist_angle, std::vector<find_fit_result> &results);
 };
+
+} // namespace marionette::optimization

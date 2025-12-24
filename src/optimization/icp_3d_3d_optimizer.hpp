@@ -10,6 +10,9 @@
 
 using namespace marionette::core;
 
+namespace marionette::optimization
+{
+
 class correnspondance_matcher
 {
 public:
@@ -43,3 +46,5 @@ struct icp_3d_3d_minimizer
                  const model_instance_data &registered_clusters, const std::unordered_map<std::size_t, glm::vec3>& estimated_pos, clusters_transform_params &params, bool with_twist,
                  bool verbose = true);
 };
+
+} // namespace marionette::optimization

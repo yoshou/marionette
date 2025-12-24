@@ -19,6 +19,7 @@
 #include "features.hpp"
 
 using namespace marionette::core;
+using namespace marionette::optimization;
 
 #ifdef USE_CUDA
 #include <cuda_runtime.h>
@@ -29,6 +30,11 @@ using namespace marionette::core;
 #include <thrust/device_vector.h>
 #include <thrust/copy.h>
 #endif
+
+namespace marionette::optimization
+{
+
+using namespace marionette::core;
 
 void find_nearest_pair(
     const std::vector<weighted_point> &source_points, const glm::mat4 &source_pose, const glm::mat4 &inv_pose, const point_cloud &target_points,
@@ -936,3 +942,5 @@ void global_registration::find_fits(const rigid_cluster &cluster, const std::vec
 
     find_fits(cluster, cloud, initial_twist_angle, min_twist_angle, max_twist_angle, results);
 }
+
+} // namespace marionette::optimization

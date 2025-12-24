@@ -9,6 +9,12 @@
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 
 using namespace marionette::core;
+using namespace marionette::optimization;
+
+namespace marionette::optimization
+{
+
+using namespace marionette::core;
 
 static auto solve_articuated_pair(
     const rigid_cluster &parent_cluster, const rigid_cluster &child_cluster,
@@ -393,15 +399,17 @@ static auto compute_paired_points(const glm::vec3& point1, const glm::vec3& poin
         const auto anchor_pos = twist(parent_cluster.points[0], parent_cluster.pose, glm::inverse(parent_cluster.pose), parent_result.twist_angle);
         const auto transform = glm::translate(parent_result.translation) * glm::mat4(parent_result.rotation) * glm::translate(glm::mat4(1.f), -anchor_pos);
 
-        pos_a = transform_coordinate(point1, transform);
+        pos_a = marionette::core::transform_coordinate(point1, transform);
     }
 
     {
         const auto anchor_pos = twist(child_cluster.points[0], child_cluster.pose, glm::inverse(child_cluster.pose), child_result.twist_angle);
         const auto transform = glm::translate(child_result.translation) * glm::mat4(child_result.rotation) * glm::translate(glm::mat4(1.f), -anchor_pos);
 
-        pos_b = transform_coordinate(point2, transform);
+        pos_b = marionette::core::transform_coordinate(point2, transform);
     }
 
     return std::make_tuple(pos_a, pos_b);
 }
+
+} // namespace marionette::optimization

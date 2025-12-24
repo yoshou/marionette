@@ -14,7 +14,7 @@
 
 #include "unsupported/Eigen/NonLinearOptimization"
 
-namespace optimization
+namespace marionette::optimization
 {
     class residual_block
     {
@@ -303,4 +303,5 @@ namespace optimization
             return params.data() + param_block->offset;
         }
     };
-}
+
+} // namespace marionette::optimization

@@ -1144,6 +1144,8 @@ struct refine_pose_obj_func
 
 #include "nonlinear_solver.hpp"
 
+using namespace marionette::optimization;
+
 static double cubic_interpolate(const double x1, const double f1, const double g1, const double x2, const double f2, const double g2, double xmin_bound, double xmax_bound)
 {
     // Compute d1
@@ -1527,10 +1529,10 @@ int main()
         fit_shape_obj_func loss_func(&model, keypoints3d_data, keypoints3d_shape, shapes_shape, poses_data, poses_shape, rh_data, th_data);
 
         std::vector<double> shapes_double(shapes_data.begin(), shapes_data.end());
-        std::shared_ptr<optimization::parameter_block> shapes_params = std::make_shared<optimization::parameter_block>(shapes_double.size(), shapes_double);
+        std::shared_ptr<parameter_block> shapes_params = std::make_shared<parameter_block>(shapes_double.size(), shapes_double);
         shapes_params->offset = 0;
 
-        const auto residual = optimization::make_auto_diff_function_term(loss_func, shapes_params);
+        const auto residual = make_auto_diff_function_term(loss_func, shapes_params);
 
         lbgfs_optimizer optimizer;
         optimizer.set_params(shapes_double.data(), shapes_double.size());
@@ -1554,12 +1556,12 @@ int main()
 
         std::vector<double> rh_double(rh_data.begin(), rh_data.end());
         std::vector<double> th_double(th_data.begin(), th_data.end());
-        std::shared_ptr<optimization::parameter_block> rh_params = std::make_shared<optimization::parameter_block>(rh_data.size(), rh_double);
-        std::shared_ptr<optimization::parameter_block> th_params = std::make_shared<optimization::parameter_block>(th_data.size(), th_double);
+        std::shared_ptr<parameter_block> rh_params = std::make_shared<parameter_block>(rh_data.size(), rh_double);
+        std::shared_ptr<parameter_block> th_params = std::make_shared<parameter_block>(th_data.size(), th_double);
         th_params->offset = 0;
         rh_params->offset = th_data.size();
 
-        const auto residual = optimization::make_auto_diff_function_term(loss_func, rh_params, th_params);
+        const auto residual = make_auto_diff_function_term(loss_func, rh_params, th_params);
 
         std::vector<double> params;
         std::copy(th_double.begin(), th_double.end(), std::back_inserter(params));
@@ -1589,14 +1591,14 @@ int main()
         std::vector<double> poses_double(poses_data.begin(), poses_data.end());
         std::vector<double> rh_double(rh_data.begin(), rh_data.end());
         std::vector<double> th_double(th_data.begin(), th_data.end());
-        std::shared_ptr<optimization::parameter_block> poses_params = std::make_shared<optimization::parameter_block>(poses_data.size(), poses_double);
-        std::shared_ptr<optimization::parameter_block> rh_params = std::make_shared<optimization::parameter_block>(rh_data.size(), rh_double);
-        std::shared_ptr<optimization::parameter_block> th_params = std::make_shared<optimization::parameter_block>(th_data.size(), th_double);
+        std::shared_ptr<parameter_block> poses_params = std::make_shared<parameter_block>(poses_data.size(), poses_double);
+        std::shared_ptr<parameter_block> rh_params = std::make_shared<parameter_block>(rh_data.size(), rh_double);
+        std::shared_ptr<parameter_block> th_params = std::make_shared<parameter_block>(th_data.size(), th_double);
         poses_params->offset = 0;
         rh_params->offset = poses_data.size();
         th_params->offset = poses_data.size() + rh_data.size();
 
-        const auto residual = optimization::make_auto_diff_function_term(loss_func, poses_params, rh_params, th_params);
+        const auto residual = make_auto_diff_function_term(loss_func, poses_params, rh_params, th_params);
 
         std::vector<double> params;
         std::copy(poses_double.begin(), poses_double.end(), std::back_inserter(params));
