@@ -6,6 +6,8 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
 
+namespace marionette::pose_estimation {
+
 static glm::vec3 parse_vec3(const nlohmann::json& obj)
 {
     glm::vec3 result;
@@ -152,3 +154,5 @@ std::map<std::string, glm::mat4> retarget(const std::map<std::string, glm::mat4>
 
     return result_pose;
 }
+
+} // namespace marionette::pose_estimation

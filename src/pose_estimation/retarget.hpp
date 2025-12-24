@@ -4,6 +4,8 @@
 #include <map>
 #include <glm/glm.hpp>
 
+namespace marionette::pose_estimation {
+
 class retarget_model
 {
     struct bone_data
@@ -25,3 +27,5 @@ glm::mat4 get_bone_global_transform(const std::string &name, const std::map<std:
 glm::mat4 get_bone_local_transform(const std::string &name, const std::map<std::string, std::string> &parents, const std::map<std::string, glm::mat4> &transforms);
 
 std::map<std::string, glm::mat4> retarget(const std::map<std::string, glm::mat4> &pose, const std::map<std::string, glm::mat4> &dst_pose, const std::map<std::string, std::string> &parents);
+
+} // namespace marionette::pose_estimation

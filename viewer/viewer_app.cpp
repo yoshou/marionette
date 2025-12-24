@@ -33,6 +33,8 @@ namespace fs = std::filesystem;
 
 using namespace marionette::core;
 using namespace marionette::data_source;
+using namespace marionette::tracking;
+using namespace marionette::pose_estimation;
 #include "pose_computation.hpp"
 #include "model_detection_worker.hpp"
 #include "model_tracking_worker.hpp"

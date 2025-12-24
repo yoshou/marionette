@@ -7,6 +7,10 @@
 #include <iostream>
 #include <algorithm>
 
+namespace marionette::pose_estimation {
+
+using namespace marionette::core;
+
 struct local_angle_error
 {
     local_angle_error()
@@ -533,3 +537,5 @@ void estimate_finger_pose(std::map<std::string, glm::mat4>& poses, const model_d
         }
     }
 }
+
+} // namespace marionette::pose_estimation

@@ -28,14 +28,12 @@
 #include "imu_playback_stream.hpp"
 #include "remote_sensor_stream.hpp"
 #include "finger_tracker.hpp"
+#include "finger_pose_estimation.hpp"
 
 using namespace marionette::core;
 using namespace marionette::tracking;
 using namespace marionette::data_source;
-
-using namespace marionette::core;
-using namespace marionette::data_source;
-#include "finger_pose_estimation.hpp"
+using namespace marionette::pose_estimation;
 
 #ifdef _WIN32
 #else
