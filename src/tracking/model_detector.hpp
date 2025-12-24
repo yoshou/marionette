@@ -5,6 +5,8 @@
 #include "model.hpp"
 #include "frame.hpp"
 
+using namespace marionette::core;
+
 struct rigid_cluster_instance
 {
     const rigid_cluster cluster;

@@ -9,6 +9,8 @@
 #include "articulation_solver.hpp"
 #include "debug.hpp"
 
+using namespace marionette::core;
+
 static bool solve_articulation(const model_data &model, const std::map<std::string, std::vector<find_fit_result>> &results, model_instance_data &registered_clusters, float articulation_solved_threshold = 0.05f)
 {
     const auto add_articulation = [&](std::vector<articulation_results> &articulations, std::string parent_name, std::string child_name)

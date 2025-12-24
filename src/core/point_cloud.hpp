@@ -3,6 +3,9 @@
 #include <nanoflann.hpp>
 #include <vector>
 
+namespace marionette {
+namespace core {
+
 struct point_cloud
 {
     using point_type = glm::vec3;
@@ -84,3 +87,6 @@ public:
 #endif
     }
 };
+
+} // namespace core
+} // namespace marionette

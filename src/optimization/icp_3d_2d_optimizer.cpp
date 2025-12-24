@@ -19,6 +19,8 @@
 
 #include <iostream>
 
+using namespace marionette::core;
+
 struct labeled_point
 {
     std::size_t cluster;

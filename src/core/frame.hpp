@@ -8,6 +8,9 @@
 #include <nlohmann/json.hpp>
 #include "glm_json_ext.hpp"
 
+namespace marionette {
+namespace core {
+
 struct frame_data_t
 {
     std::vector<glm::vec3> markers;
@@ -41,3 +44,6 @@ static void load_frames(std::string path, std::vector<frame_data_t> &frames, con
         frames.push_back(frame_data_t{markers, points, i});
     }
 }
+
+} // namespace core
+} // namespace marionette

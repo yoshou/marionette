@@ -5,6 +5,9 @@
 #include <condition_variable>
 #include <memory>
 
+namespace marionette {
+namespace core {
+
 class frame_cursor
 {
     frame_data_t frame;
@@ -82,3 +85,6 @@ public:
         return nullptr;
     }
 };
+
+} // namespace core
+} // namespace marionette

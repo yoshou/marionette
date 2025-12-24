@@ -8,6 +8,8 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 
+using namespace marionette::core;
+
 static auto solve_articuated_pair(
     const rigid_cluster &parent_cluster, const rigid_cluster &child_cluster,
     const std::vector<find_fit_result> &parent_results, const std::vector<find_fit_result> &child_results)

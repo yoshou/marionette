@@ -18,6 +18,8 @@
 #include "transform.hpp"
 #include "features.hpp"
 
+using namespace marionette::core;
+
 #ifdef USE_CUDA
 #include <cuda_runtime.h>
 #include <cublas_v2.h>

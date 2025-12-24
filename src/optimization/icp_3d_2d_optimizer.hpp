@@ -10,6 +10,8 @@
 #include "registration.hpp"
 #include "transform.hpp"
 
+using namespace marionette::core;
+
 struct icp_3d_2d_minimizer
 {
     std::size_t frame_no;

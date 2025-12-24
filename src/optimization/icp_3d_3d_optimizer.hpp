@@ -8,6 +8,8 @@
 #include "frame.hpp"
 #include "registration.hpp"
 
+using namespace marionette::core;
+
 class correnspondance_matcher
 {
 public:

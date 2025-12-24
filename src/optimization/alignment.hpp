@@ -6,6 +6,8 @@
 #include "model.hpp"
 #include "global_registeration.hpp"
 
+using namespace marionette::core;
+
 static void transform_to_target(const rigid_cluster &cluster, const find_fit_result &result, std::vector<glm::vec3> &points)
 {
     const auto translation = result.translation;

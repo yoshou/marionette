@@ -8,6 +8,8 @@
 #include "model_detector.hpp"
 #include "frame.hpp"
 
+using namespace marionette::core;
+
 class model_detection_worker
 {
     std::unique_ptr<std::thread> th;

@@ -5,6 +5,8 @@
 
 #include <glm/glm.hpp>
 
+using namespace marionette::core;
+
 struct articulation_results
 {
     rigid_cluster parent_cluster;

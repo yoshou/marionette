@@ -10,6 +10,8 @@
 #include "motion_estimation.hpp"
 #include <glm/glm.hpp>
 
+using namespace marionette::core;
+
 class motion_tracker
 {
 public:

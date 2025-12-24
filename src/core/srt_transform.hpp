@@ -4,6 +4,9 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 
+namespace marionette {
+namespace core {
+
 template <typename T>
 struct srt_transform
 {
@@ -86,3 +89,6 @@ static inline srt_transform<T> operator*(const srt_transform<T> &b, const srt_tr
 
     return c;
 }
+
+} // namespace core
+} // namespace marionette

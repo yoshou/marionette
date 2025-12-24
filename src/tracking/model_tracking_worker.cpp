@@ -4,6 +4,8 @@
 #include "registration.hpp"
 #include <iostream>
 
+using namespace marionette::core;
+
 model_tracking_worker::model_tracking_worker(const model_data& model, const model_instance_data& model_instance, const std::shared_ptr<::frame_cursor>& frame_cursor)
     : running(false), model(model), instanced_model(model), model_instance(model_instance), frame_cursor(frame_cursor)
 {

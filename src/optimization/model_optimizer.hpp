@@ -19,6 +19,8 @@
 
 #include <iostream>
 
+using namespace marionette::core;
+
 struct zero_function
 {
     template <typename T>

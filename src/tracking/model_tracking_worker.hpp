@@ -12,6 +12,8 @@
 #include "frame_queue.hpp"
 #include "motion_tracker.hpp"
 
+using namespace marionette::core;
+
 class model_tracking_worker
 {
     std::unique_ptr<std::thread> th;

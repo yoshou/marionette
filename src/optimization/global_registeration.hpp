@@ -11,6 +11,8 @@
 #include "transform.hpp"
 #include "point_cloud.hpp"
 
+using namespace marionette::core;
+
 struct twist_rt_transform
 {
     glm::mat3 rotation;

@@ -7,6 +7,9 @@
 #include <nlohmann/json.hpp>
 #include <glm/glm.hpp>
 
+namespace marionette {
+namespace core {
+
 struct weighted_point
 {
     glm::vec3 position;
@@ -306,3 +309,6 @@ public:
         }
     }
 };
+
+} // namespace core
+} // namespace marionette

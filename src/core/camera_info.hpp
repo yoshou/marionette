@@ -8,6 +8,9 @@
 #include <nlohmann/json.hpp>
 #include <yaml-cpp/yaml.h>
 
+namespace marionette {
+namespace core {
+
 struct camera_intrin_t
 {
     float fx, fy;
@@ -114,3 +117,6 @@ static std::map<std::string, camera_module_t> load_camera_params(std::string pat
     }
     return result;
 }
+
+} // namespace core
+} // namespace marionette

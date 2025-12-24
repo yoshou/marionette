@@ -22,6 +22,8 @@
 
 #include "icp_3d_3d_optimizer.hpp"
 
+using namespace marionette::core;
+
 #define USE_CERES_SOLVER 1
 
 #if USE_CERES_SOLVER

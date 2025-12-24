@@ -5,6 +5,8 @@
 #include <glm/glm.hpp>
 #include "model.hpp"
 
+using namespace marionette::core;
+
 class finger_tracker
 {
     model_data model;

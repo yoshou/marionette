@@ -5,6 +5,9 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
 
+namespace marionette {
+namespace core {
+
 struct line3
 {
     glm::vec3 origin;
@@ -179,3 +182,6 @@ static inline std::vector<T> transform_coordinate(const std::vector<T> &position
     }
     return result;
 }
+
+} // namespace core
+} // namespace marionette
