@@ -2,6 +2,9 @@
 #include <fstream>
 #include <iomanip>
 
+namespace marionette {
+namespace utils {
+
 struct PointXYZRGBA
 {
     float x, y, z;
@@ -150,3 +153,6 @@ void point_cloud_debug_drawer::load(const std::string &path)
     }
     file.close();
 }
+
+} // namespace utils
+} // namespace marionette

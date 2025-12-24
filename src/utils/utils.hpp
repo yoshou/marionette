@@ -6,6 +6,11 @@
 #include <opencv2/opencv.hpp>
 #include "camera_info.hpp"
 
+namespace marionette {
+namespace utils {
+
+using namespace marionette::core;
+
 static cv::Mat glm_to_cv_mat4(const glm::mat4 &m)
 {
     cv::Mat ret(4, 4, CV_32F);
@@ -133,3 +138,6 @@ static void read_csv(std::string filename, std::vector<std::vector<std::string>>
         }
     }
 }
+
+} // namespace utils
+} // namespace marionette

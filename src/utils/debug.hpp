@@ -5,6 +5,9 @@
 #include <glm/glm.hpp>
 #include <memory>
 
+namespace marionette {
+namespace utils {
+
 template<typename T>
 static void write_point_image(std::string path, const std::vector<T> &points, std::size_t width, std::size_t height)
 {
@@ -100,3 +103,6 @@ public:
         return logger;
     }
 };
+
+} // namespace utils
+} // namespace marionette

@@ -272,7 +272,7 @@ model_instance_data detect_model(const model_data &model, const frame_data_t &fr
 
         debug_point.add(frame.markers, glm::u8vec3(0, 255, 0));
 
-        debug_point.save("frame" + std::to_string(point_cloud_logger::get_logger().frame) + ".pcd");
+        debug_point.save("frame" + std::to_string(marionette::utils::point_cloud_logger::get_logger().frame) + ".pcd");
 #endif
 
 #if 0
@@ -307,7 +307,7 @@ model_instance_data detect_model(const model_data &model, const frame_data_t &fr
                 debug_point.add(frame.markers, glm::u8vec3(255, 0, 0));
                 debug_point.add(glm::vec3(0.f), glm::u8vec3(0, 0, 0));
 
-                debug_point.save("frame" + std::to_string(point_cloud_logger::get_logger().frame) + "_" + std::to_string(i) + ".pcd");
+                debug_point.save("frame" + std::to_string(marionette::utils::point_cloud_logger::get_logger().frame) + "_" + std::to_string(i) + ".pcd");
             }
         }
 #endif

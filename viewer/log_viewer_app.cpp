@@ -21,6 +21,8 @@ namespace fs = std::filesystem;
 #include "drawer2d.hpp"
 #include "debug.hpp"
 
+using namespace marionette::utils;
+
 const int SCREEN_WIDTH = 1680;
 const int SCREEN_HEIGHT = 1050;
 

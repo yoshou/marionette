@@ -18,6 +18,9 @@
 #include "model_detector.hpp"
 #include "articulation_solver.hpp"
 
+using namespace marionette::core;
+using namespace marionette::utils;
+
 #include <iostream>
 
 #include "icp_3d_3d_optimizer.hpp"

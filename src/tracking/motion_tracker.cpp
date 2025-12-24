@@ -9,6 +9,9 @@
 #include <chrono>
 #include <iostream>
 
+using namespace marionette::core;
+using namespace marionette::utils;
+
 static find_fit_result update_result(const find_fit_result &fit_result, const double *rotation, const double *translation, double twist_angle)
 {
     const auto transform_by_param = [](glm::mat4 m, const double *axis_angle, const double *translation)
@@ -253,7 +256,7 @@ void motion_tracker::track_frame(const model_data &model, const frame_data_t &fr
                 }
             }
 
-            debug_points.save("aligned_" + std::to_string(point_cloud_logger::get_logger().frame) + ".pcd");
+            debug_points.save("aligned_" + std::to_string(marionette::utils::point_cloud_logger::get_logger().frame) + ".pcd");
         }
 #endif
         }
@@ -330,7 +333,7 @@ void motion_tracker::track_frame(const model_data &model, const frame_data_t &fr
             }
         }
 
-        // debug_points.save("aligned_" + std::to_string(point_cloud_logger::get_logger().frame) + ".pcd");
+        // debug_points.save("aligned_" + std::to_string(marionette::utils::point_cloud_logger::get_logger().frame) + ".pcd");
 
         const auto end = std::chrono::system_clock::now();
         const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();

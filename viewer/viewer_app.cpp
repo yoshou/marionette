@@ -353,7 +353,7 @@ int ir_viewer_main()
         frame.points = pts;
         frame.frame_number = frame_counter++;
 
-        point_cloud_logger::get_logger().frame = frame.frame_number;
+        marionette::utils::point_cloud_logger::get_logger().frame = frame.frame_number;
 
         frame_history->push(frame);
 
