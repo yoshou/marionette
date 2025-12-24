@@ -6,7 +6,7 @@
 #include <map>
 #include <glm/glm.hpp>
 
-namespace marionette::model
+namespace marionette::preprocess
 {
     class node_t
     {

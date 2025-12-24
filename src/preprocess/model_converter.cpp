@@ -38,9 +38,7 @@ namespace marionette::preprocess
 
     int convert_tpose(const std::string& input_path, const std::string& output_path, float scale)
     {
-        using namespace marionette::model;
-
-        const auto processed_node = marionette::model::fbx::load_model(input_path);
+        const auto processed_node = marionette::preprocess::load_model(input_path);
 
         std::vector<std::shared_ptr<skeleton_node_t>> skeletons;
         traverse_node(processed_node, [&](const std::shared_ptr<node_t> &node)
@@ -84,9 +82,7 @@ namespace marionette::preprocess
 
     int convert_tracking_model(const std::string& input_path, const std::string& output_path, float scale)
     {
-        using namespace marionette::model;
-
-        const auto processed_node = marionette::model::fbx::load_model(input_path);
+        const auto processed_node = marionette::preprocess::load_model(input_path);
 
         std::vector<std::shared_ptr<skeleton_node_t>> skeletons;
         std::vector<std::shared_ptr<mesh_node_t>> meshs;

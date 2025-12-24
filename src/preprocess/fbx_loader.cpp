@@ -12,7 +12,7 @@
 
 #include <ofbx.h>
 
-namespace marionette::model::fbx
+namespace marionette::preprocess
 {
     static glm::mat4 ofbx_matrix_to_glm(const ofbx::DMatrix &m)
     {

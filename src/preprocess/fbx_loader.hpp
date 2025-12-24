@@ -4,7 +4,7 @@
 #include <memory>
 #include "fbx_model.hpp"
 
-namespace marionette::model::fbx
+namespace marionette::preprocess
 {
     std::shared_ptr<node_t> load_model(const std::string &filename);
 }
