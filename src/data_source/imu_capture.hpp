@@ -1,48 +1,46 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <functional>
 #include <atomic>
 #include <chrono>
+#include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include "serial_port.hpp"
+#include <string>
+#include <vector>
+
 #include "imu_data.hpp"
+#include "serial_port.hpp"
 
 namespace marionette::data_source {
 
-class imu_capture
-{
-    serial_port port;
-    std::chrono::system_clock::time_point system_clock_start;
-    uint64_t device_clock_start;
-    std::atomic_bool running;
+class imu_capture {
+  serial_port port;
+  std::chrono::system_clock::time_point system_clock_start;
+  uint64_t device_clock_start;
+  std::atomic_bool running;
 
-public:
-    struct pose_data
-    {
-        uint8_t accel_status;
-        uint8_t gyro_status;
-        uint8_t mag_status;
-        glm::quat orientation;
-    };
-    
-    struct pose_frame
-    {
-        double timestamp;
-        std::vector<pose_data> poses;
-    };
+ public:
+  struct pose_data {
+    uint8_t accel_status;
+    uint8_t gyro_status;
+    uint8_t mag_status;
+    glm::quat orientation;
+  };
 
-    imu_capture();
+  struct pose_frame {
+    double timestamp;
+    std::vector<pose_data> poses;
+  };
 
-    void open(std::string port_name);
+  imu_capture();
 
-    void start(std::function<void(const pose_frame &)> frame_received);
+  void open(std::string port_name);
 
-    void stop();
+  void start(std::function<void(const pose_frame &)> frame_received);
 
-    bool is_running() const;
+  void stop();
+
+  bool is_running() const;
 };
 
-} // namespace marionette::data_source
+}  // namespace marionette::data_source

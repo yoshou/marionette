@@ -1,27 +1,26 @@
 #pragma once
 
-#include <vector>
-#include <string>
 #include <glm/glm.hpp>
+#include <string>
+#include <vector>
+
 #include "model.hpp"
 
-namespace marionette::tracking
-{
+namespace marionette::tracking {
 
 using namespace marionette::core;
 
-class finger_tracker
-{
-    model_data model;
+class finger_tracker {
+  model_data model;
 
-public:
-    std::vector<glm::mat4> sensor_to_bone;
+ public:
+  std::vector<glm::mat4> sensor_to_bone;
 
-    finger_tracker(const model_data& model);
+  finger_tracker(const model_data& model);
 
-    void initialize();
+  void initialize();
 
-    void track(const std::vector<glm::quat>& poses);
+  void track(const std::vector<glm::quat>& poses);
 };
 
-} // namespace marionette::tracking
+}  // namespace marionette::tracking

@@ -1,36 +1,32 @@
 #pragma once
 
-#include <cstddef>
-#include <vector>
-#include <random>
-
-#include <glm/glm.hpp>
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
 
-#include "model.hpp"
+#include <cstddef>
+#include <glm/glm.hpp>
+#include <iostream>
+#include <random>
+#include <vector>
+
 #include "camera_info.hpp"
+#include "debug.hpp"
 #include "frame.hpp"
-#include "registration.hpp"
-#include "transform.hpp"
+#include "model.hpp"
 #include "nearest_neighbor.hpp"
 #include "object_functions.hpp"
-#include "debug.hpp"
-
-#include <iostream>
+#include "registration.hpp"
+#include "transform.hpp"
 
 using namespace marionette::core;
 
-namespace marionette::optimization
-{
+namespace marionette::optimization {
 
-struct zero_function
-{
-    template <typename T>
-    T operator()(const T *params) const
-    {
-        return T(0.0);
-    }
+struct zero_function {
+  template <typename T>
+  T operator()(const T *params) const {
+    return T(0.0);
+  }
 };
 
 #if 0

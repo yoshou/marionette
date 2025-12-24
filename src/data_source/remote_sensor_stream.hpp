@@ -1,21 +1,23 @@
 #pragma once
 
-#include "sensor.grpc.pb.h"
+#include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include <functional>
+
+#include "sensor.grpc.pb.h"
 
 namespace marionette::data_source {
 
-class remote_sensor_stream
-{
-public:
-    remote_sensor_stream(std::string endpoint);
-    void subscribe_sphere(const std::string& name, std::function<void(const std::vector<glm::vec3>&)> callback);
-    void subscribe_quat(const std::string& name, std::function<void(const std::vector<glm::quat>&)> callback);
+class remote_sensor_stream {
+ public:
+  remote_sensor_stream(std::string endpoint);
+  void subscribe_sphere(const std::string& name,
+                        std::function<void(const std::vector<glm::vec3>&)> callback);
+  void subscribe_quat(const std::string& name,
+                      std::function<void(const std::vector<glm::quat>&)> callback);
 
-private:
-    std::unique_ptr<stargazer::Sensor::Stub> stub_;
+ private:
+  std::unique_ptr<stargazer::Sensor::Stub> stub_;
 };
 
-} // namespace marionette::data_source
+}  // namespace marionette::data_source
