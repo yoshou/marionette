@@ -20,33 +20,33 @@ drawer2d::drawer2d() {
     glm::vec3 v2(1.0f, 1.0f, -1.0f);
     glm::vec3 v3(0.0f, 1.0f, -1.0f);
     glm::vec4 color(1, 1, 1, 1);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v0.x, v0.y, v0.z);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v1.x, v1.y, v1.z);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v1.x, v1.y, v1.z);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v2.x, v2.y, v2.z);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v2.x, v2.y, v2.z);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v3.x, v3.y, v3.z);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v3.x, v3.y, v3.z);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v0.x, v0.y, v0.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v0.x, v0.y, v0.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v1.x, v1.y, v1.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v1.x, v1.y, v1.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v2.x, v2.y, v2.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v2.x, v2.y, v2.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v3.x, v3.y, v3.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v3.x, v3.y, v3.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v0.x, v0.y, v0.z);
   }
 }
 
-void drawer2d::addVertex(float x, float y, float z) {
+void drawer2d::add_vertex(float x, float y, float z) {
   vertices.push_back(x);
   vertices.push_back(y);
   vertices.push_back(z);
 
   indices.push_back(indices.size());
 }
-void drawer2d::addColor(float r, float g, float b, float a) {
+void drawer2d::add_color(float r, float g, float b, float a) {
   colors.push_back(r);
   colors.push_back(g);
   colors.push_back(b);

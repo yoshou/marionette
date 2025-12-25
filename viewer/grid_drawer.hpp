@@ -17,8 +17,8 @@ class grid_drawer {
 
  protected:
  private:
-  void addVertex(float x, float y, float z);
-  void addColor(float r, float g, float b, float a);
+  void add_vertex(float x, float y, float z);
+  void add_color(float r, float g, float b, float a);
 
   std::vector<float> vertices;
   std::vector<float> colors;

@@ -80,11 +80,11 @@ static void process_object(const ofbx::Object *obj, const std::shared_ptr<node_t
   }
 }
 
-std::shared_ptr<node_t> load_model(const std::string &filename) {
+std::shared_ptr<node_t> load_model(const std::string &file_name) {
   // Load FBX file
-  std::ifstream file(filename, std::ios::binary);
+  std::ifstream file(file_name, std::ios::binary);
   if (!file.is_open()) {
-    std::cout << "Failed to open the FBX file: " << filename << std::endl;
+    std::cout << "Failed to open the FBX file: " << file_name << std::endl;
     exit(-1);
   }
 

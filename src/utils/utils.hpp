@@ -90,9 +90,9 @@ static std::vector<std::string> split(std::string &input, char delimiter) {
   return result;
 }
 
-static void read_csv(std::string filename, std::vector<std::vector<std::string>> &result) {
+static void read_csv(std::string file_name, std::vector<std::vector<std::string>> &result) {
   std::ifstream ifs;
-  ifs.open(filename, std::ios::in);
+  ifs.open(file_name, std::ios::in);
   if (!ifs) {
     std::cout << "File does not exist" << std::endl;
     return;

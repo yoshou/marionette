@@ -6,14 +6,14 @@
 namespace marionette {
 namespace utils {
 
-struct PointXYZRGBA {
+struct point_xyzrgba {
   float x, y, z;
   uint8_t r, g, b, a;
 };
 
 class point_cloud_debug_drawer::impl {
  public:
-  std::vector<PointXYZRGBA> points;
+  std::vector<point_xyzrgba> points;
 
   impl() {}
 };
@@ -23,7 +23,7 @@ point_cloud_debug_drawer::point_cloud_debug_drawer() : pimpl(new impl()) {}
 point_cloud_debug_drawer::~point_cloud_debug_drawer() {}
 
 void point_cloud_debug_drawer::add(const glm::vec3 &point, const glm::u8vec4 &color) {
-  PointXYZRGBA p;
+  point_xyzrgba p;
   p.x = point.x;
   p.y = point.y;
   p.z = point.z;
@@ -35,7 +35,7 @@ void point_cloud_debug_drawer::add(const glm::vec3 &point, const glm::u8vec4 &co
 }
 
 void point_cloud_debug_drawer::add(const glm::vec3 &point, const glm::u8vec3 &color) {
-  PointXYZRGBA p;
+  point_xyzrgba p;
   p.x = point.x;
   p.y = point.y;
   p.z = point.z;
@@ -113,7 +113,7 @@ void point_cloud_debug_drawer::load(const std::string &path) {
 
     if (data_section && !line.empty() && line[0] != '#') {
       std::istringstream iss(line);
-      PointXYZRGBA p;
+      point_xyzrgba p;
       uint32_t rgba;
       if (iss >> p.x >> p.y >> p.z >> rgba) {
         p.r = (rgba >> 24) & 0xFF;

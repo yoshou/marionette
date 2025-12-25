@@ -10,74 +10,78 @@ class sphere_drawer {
   int shader;
 
  public:
-  sphere_drawer(int sectorCount = 36, int stackCount = 18, bool smooth = true);
+  sphere_drawer(int sector_count = 36, int stack_count = 18, bool smooth = true);
   ~sphere_drawer() {}
 
   void initialize();
 
-  int getSectorCount() const { return sectorCount; }
-  int getStackCount() const { return stackCount; }
-  void set(int sectorCount, int stackCount, bool smooth = true);
-  void setSectorCount(int sectorCount);
-  void setStackCount(int stackCount);
-  void setSmooth(bool smooth);
+  int get_sector_count() const { return sector_count; }
+  int get_stack_count() const { return stack_count; }
+  void set(int sector_count, int stack_count, bool smooth = true);
+  void set_sector_count(int sector_count);
+  void set_stack_count(int stack_count);
+  void set_smooth(bool smooth);
 
   // for vertex data
-  unsigned int getVertexCount() const { return (unsigned int)vertices.size() / 3; }
-  unsigned int getNormalCount() const { return (unsigned int)normals.size() / 3; }
-  unsigned int getTexCoordCount() const { return (unsigned int)texCoords.size() / 2; }
-  unsigned int getIndexCount() const { return (unsigned int)indices.size(); }
-  unsigned int getLineIndexCount() const { return (unsigned int)lineIndices.size(); }
-  unsigned int getTriangleCount() const { return getIndexCount() / 3; }
-  unsigned int getVertexSize() const { return (unsigned int)vertices.size() * sizeof(float); }
-  unsigned int getNormalSize() const { return (unsigned int)normals.size() * sizeof(float); }
-  unsigned int getTexCoordSize() const { return (unsigned int)texCoords.size() * sizeof(float); }
-  unsigned int getIndexSize() const { return (unsigned int)indices.size() * sizeof(unsigned int); }
-  unsigned int getLineIndexSize() const {
-    return (unsigned int)lineIndices.size() * sizeof(unsigned int);
+  unsigned int get_vertex_count() const { return (unsigned int)vertices.size() / 3; }
+  unsigned int get_normal_count() const { return (unsigned int)normals.size() / 3; }
+  unsigned int get_tex_coord_count() const { return (unsigned int)tex_coords.size() / 2; }
+  unsigned int get_index_count() const { return (unsigned int)indices.size(); }
+  unsigned int get_line_index_count() const { return (unsigned int)line_indices.size(); }
+  unsigned int get_triangle_count() const { return get_index_count() / 3; }
+  unsigned int get_vertex_size() const { return (unsigned int)vertices.size() * sizeof(float); }
+  unsigned int get_normal_size() const { return (unsigned int)normals.size() * sizeof(float); }
+  unsigned int get_tex_coord_size() const {
+    return (unsigned int)tex_coords.size() * sizeof(float);
   }
-  const float *getVertices() const { return vertices.data(); }
-  const float *getNormals() const { return normals.data(); }
-  const float *getTexCoords() const { return texCoords.data(); }
-  const unsigned int *getIndices() const { return indices.data(); }
-  const unsigned int *getLineIndices() const { return lineIndices.data(); }
+  unsigned int get_index_size() const {
+    return (unsigned int)indices.size() * sizeof(unsigned int);
+  }
+  unsigned int get_line_index_size() const {
+    return (unsigned int)line_indices.size() * sizeof(unsigned int);
+  }
+  const float *get_vertices() const { return vertices.data(); }
+  const float *get_normals() const { return normals.data(); }
+  const float *get_tex_coords() const { return tex_coords.data(); }
+  const unsigned int *get_indices() const { return indices.data(); }
+  const unsigned int *get_line_indices() const { return line_indices.data(); }
 
   // for interleaved vertices: V/N/T
-  unsigned int getInterleavedVertexCount() const { return getVertexCount(); }  // # of vertices
-  unsigned int getInterleavedVertexSize() const {
-    return (unsigned int)interleavedVertices.size() * sizeof(float);
+  unsigned int get_interleaved_vertex_count() const { return get_vertex_count(); }  // # of vertices
+  unsigned int get_interleaved_vertex_size() const {
+    return (unsigned int)interleaved_vertices.size() * sizeof(float);
   }  // # of bytes
-  int getInterleavedStride() const { return interleavedStride; }  // should be 32 bytes
-  const float *getInterleavedVertices() const { return interleavedVertices.data(); }
+  int get_interleaved_stride() const { return interleaved_stride; }  // should be 32 bytes
+  const float *get_interleaved_vertices() const { return interleaved_vertices.data(); }
 
   // draw in VertexArray mode
-  void draw(glm::mat4 wvp, const float color[4]) const;               // draw surface
-  void drawLines(glm::mat4 wvp, const float lineColor[4]) const;      // draw lines only
-  void drawWithLines(glm::mat4 wvp, const float lineColor[4]) const;  // draw surface and lines
+  void draw(glm::mat4 wvp, const float color[4]) const;                  // draw surface
+  void draw_lines(glm::mat4 wvp, const float line_color[4]) const;       // draw lines only
+  void draw_with_lines(glm::mat4 wvp, const float line_color[4]) const;  // draw surface and lines
 
  protected:
  private:
   // member functions
-  void buildVerticesSmooth();
-  void buildVerticesFlat();
-  void buildInterleavedVertices();
-  void clearArrays();
-  void addVertex(float x, float y, float z);
-  void addNormal(float x, float y, float z);
-  void addTexCoord(float s, float t);
-  void addIndices(unsigned int i1, unsigned int i2, unsigned int i3);
-  std::vector<float> computeFaceNormal(float x1, float y1, float z1, float x2, float y2, float z2,
-                                       float x3, float y3, float z3);
+  void build_vertices_smooth();
+  void build_vertices_flat();
+  void build_interleaved_vertices();
+  void clear_arrays();
+  void add_vertex(float x, float y, float z);
+  void add_normal(float x, float y, float z);
+  void add_tex_coord(float s, float t);
+  void add_indices(unsigned int i1, unsigned int i2, unsigned int i3);
+  std::vector<float> compute_face_normal(float x1, float y1, float z1, float x2, float y2, float z2,
+                                         float x3, float y3, float z3);
 
   // memeber vars
-  int sectorCount;  // longitude, # of slices
-  int stackCount;   // latitude, # of stacks
+  int sector_count;  // longitude, # of slices
+  int stack_count;   // latitude, # of stacks
   bool smooth;
   std::vector<float> vertices;
   std::vector<float> normals;
-  std::vector<float> texCoords;
+  std::vector<float> tex_coords;
   std::vector<unsigned int> indices;
-  std::vector<unsigned int> lineIndices;
+  std::vector<unsigned int> line_indices;
 
   unsigned int vertex_buffer;
   unsigned int index_buffer;
@@ -87,6 +91,6 @@ class sphere_drawer {
   unsigned int line_vao;
 
   // interleaved
-  std::vector<float> interleavedVertices;
-  int interleavedStride;  // # of bytes to hop to the next vertex (should be 32 bytes)
+  std::vector<float> interleaved_vertices;
+  int interleaved_stride;  // # of bytes to hop to the next vertex (should be 32 bytes)
 };

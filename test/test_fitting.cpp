@@ -27,9 +27,9 @@ using MatrixXf = Eigen::Matrix<float, -1, -1, Eigen::RowMajor>;
 using MatrixXd = Eigen::Matrix<double, -1, -1, Eigen::RowMajor>;
 
 template <typename T>
-static std::tuple<std::vector<T>, std::vector<uint32_t>> load_tensor(const std::string &filename) {
+static std::tuple<std::vector<T>, std::vector<uint32_t>> load_tensor(const std::string &file_name) {
   std::ifstream ifs;
-  ifs.open(filename, std::ios::in);
+  ifs.open(file_name, std::ios::in);
   nlohmann::json j = nlohmann::json::parse(ifs);
   if (j["type"].get<std::string>() != get_typename<T>()) {
     throw std::runtime_error("Invalid type");
@@ -40,9 +40,9 @@ static std::tuple<std::vector<T>, std::vector<uint32_t>> load_tensor(const std::
 }
 
 template <typename T>
-static MatrixX<T> load_dense_matrix(const std::string &filename) {
+static MatrixX<T> load_dense_matrix(const std::string &file_name) {
   std::ifstream ifs;
-  ifs.open(filename, std::ios::in);
+  ifs.open(file_name, std::ios::in);
   nlohmann::json j = nlohmann::json::parse(ifs);
   if (j["type"].get<std::string>() != get_typename<T>()) {
     throw std::runtime_error("Invalid type");
@@ -63,9 +63,9 @@ static MatrixX<T> load_dense_matrix(const std::string &filename) {
 }
 
 template <typename T>
-static MatrixX<T> load_sparse_matrix(const std::string &filename) {
+static MatrixX<T> load_sparse_matrix(const std::string &file_name) {
   std::ifstream ifs;
-  ifs.open(filename, std::ios::in);
+  ifs.open(file_name, std::ios::in);
   nlohmann::json j = nlohmann::json::parse(ifs);
   if (j["type"].get<std::string>() != get_typename<T>()) {
     throw std::runtime_error("Invalid type");

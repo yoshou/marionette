@@ -9,8 +9,8 @@
 
 namespace shader_utils {
 
-int load_shader(GLuint shaderObj, const std::string& fileName);
+int load_shader(GLuint shader_obj, const std::string& file_name);
 
-GLint load_program(const std::string& vertexFileName, const std::string& fragmentFileName);
+GLint load_program(const std::string& vertex_file_name, const std::string& fragment_file_name);
 
 }  // namespace shader_utils

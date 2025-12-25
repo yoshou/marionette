@@ -132,7 +132,8 @@ struct log_viewer : public window_base {
 
   glm::mat4 pvw;
 
-  void set_camera(float posX, float posY, float posZ, float targetX, float targetY, float targetZ) {
+  void set_camera(float pos_x, float pos_y, float pos_z, float target_x, float target_y,
+                  float target_z) {
     float fovy = 45.0f;
     float aspect = (float)(width) / height;
     float near_plane = 1.0f;
@@ -143,7 +144,7 @@ struct log_viewer : public window_base {
 
     glm::mat4 proj = glm::perspective(fovy, aspect, near_plane, far_plane);
     glm::mat4 view =
-        glm::lookAt(glm::vec3(posX, posY, posZ), glm::vec3(targetX, targetY, targetZ), up);
+        glm::lookAt(glm::vec3(pos_x, pos_y, pos_z), glm::vec3(target_x, target_y, target_z), up);
     glm::mat4 world = glm::identity<glm::mat4>();
     pvw = proj * view * world;
   }
@@ -251,13 +252,13 @@ struct log_viewer : public window_base {
           color = glm::u8vec3(0, 255, 255);
         }
 
-        float lineColor[] = {std::clamp(color.r / 255.f, 0.f, 1.f),
-                             std::clamp(color.g / 255.f, 0.f, 1.f),
-                             std::clamp(color.b / 255.f, 0.f, 1.f), 1.f};
+        float line_color[] = {std::clamp(color.r / 255.f, 0.f, 1.f),
+                              std::clamp(color.g / 255.f, 0.f, 1.f),
+                              std::clamp(color.b / 255.f, 0.f, 1.f), 1.f};
         const auto pos = world * glm::vec4(marker, 1.0f);
-        sphere_drawer_.drawWithLines(
+        sphere_drawer_.draw_with_lines(
             pvw * glm::translate(glm::vec3(pos)) * glm::scale(glm::vec3(0.01f, 0.01f, 0.01f)),
-            lineColor);
+            line_color);
       }
     }
 

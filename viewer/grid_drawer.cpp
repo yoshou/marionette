@@ -26,10 +26,10 @@ grid_drawer::grid_drawer() {
     if (x == 0.0f) {
       v1.z = 0;
     }
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v0.x, v0.y, v0.z);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v1.x, v1.y, v1.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v0.x, v0.y, v0.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v1.x, v1.y, v1.z);
   }
   for (int i = 0; i <= num_lines; i++) {
     float z = min.z + (max.z - min.z) * i / num_lines;
@@ -39,41 +39,41 @@ grid_drawer::grid_drawer() {
     if (z == 0.0f) {
       v1.x = 0;
     }
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v0.x, v0.y, v0.z);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v1.x, v1.y, v1.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v0.x, v0.y, v0.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v1.x, v1.y, v1.z);
   }
   {
     glm::vec3 v0(0.0f, 0.0f, 0.0f);
     glm::vec3 v1(max.x, 0.0f, 0.0f);
     glm::vec4 color(1, 0, 0, 1);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v0.x, v0.y, v0.z);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v1.x, v1.y, v1.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v0.x, v0.y, v0.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v1.x, v1.y, v1.z);
   }
   {
     glm::vec3 v0(0.0f, 0.0f, 0.0f);
     glm::vec3 v1(0.0f, max.y, 0.0f);
     glm::vec4 color(0, 1, 0, 1);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v0.x, v0.y, v0.z);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v1.x, v1.y, v1.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v0.x, v0.y, v0.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v1.x, v1.y, v1.z);
   }
   {
     glm::vec3 v0(0.0f, 0.0f, 0.0f);
     glm::vec3 v1(0.0f, 0.0f, max.z);
     glm::vec4 color(0, 0, 1, 1);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v0.x, v0.y, v0.z);
-    addColor(color.r, color.g, color.b, color.a);
-    addVertex(v1.x, v1.y, v1.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v0.x, v0.y, v0.z);
+    add_color(color.r, color.g, color.b, color.a);
+    add_vertex(v1.x, v1.y, v1.z);
   }
 }
 
-void grid_drawer::addVertex(float x, float y, float z) {
+void grid_drawer::add_vertex(float x, float y, float z) {
   vertices.push_back(x);
   vertices.push_back(y);
   vertices.push_back(z);
@@ -82,7 +82,7 @@ void grid_drawer::addVertex(float x, float y, float z) {
   indices.push_back(indices.size());
   indices.push_back(indices.size());
 }
-void grid_drawer::addColor(float r, float g, float b, float a) {
+void grid_drawer::add_color(float r, float g, float b, float a) {
   colors.push_back(r);
   colors.push_back(g);
   colors.push_back(b);

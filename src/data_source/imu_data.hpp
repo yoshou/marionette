@@ -7,14 +7,14 @@
 namespace marionette::data_source {
 
 #pragma pack(push, 1)
-struct Vec3 {
+struct vec_3 {
   double x, y, z;
 };
-struct Quat {
+struct quat {
   double x, y, z, w;
 };
 
-struct BNO055SensorInfo {
+struct bno055_sensor_info {
   char name[12];
   int32_t version;
   int32_t sensor_id;
@@ -24,19 +24,19 @@ struct BNO055SensorInfo {
   float resolution;
   int32_t min_delay;
 };
-struct BNO055ImuData {
+struct bno055_imu_data {
   uint8_t system, gyro, accel, mag;
 #if 0
-    Vec3 orientation;
-    Vec3 ang_velocity;
-    Vec3 linear_accel;
-    Vec3 magnetometer;
-    Vec3 accelerometer;
-    Vec3 gravity;
+    vec_3 orientation;
+    vec_3 ang_velocity;
+    vec_3 linear_accel;
+    vec_3 magnetometer;
+    vec_3 accelerometer;
+    vec_3 gravity;
 #endif
-  Quat orientation_quat;
+  quat orientation_quat;
 };
-struct BNO055CalibData {
+struct bno055_calib_data {
   int16_t accel_offset_x;
   int16_t accel_offset_y;
   int16_t accel_offset_z;
@@ -51,17 +51,17 @@ struct BNO055CalibData {
   int16_t accel_radius;
   int16_t mag_radius;
 };
-struct BNO055SystemStatus {
+struct bno055_system_status {
   uint8_t system_status, self_test_results, system_error;
 };
-struct FrameData {
+struct frame_data {
   uint64_t timestamp;
-  BNO055ImuData imu[NUM_SENSORS];
+  bno055_imu_data imu[NUM_SENSORS];
 #if 0
     int8_t temperature[NUM_SENSORS];
 #endif
 };
-struct ResponseHeader {
+struct response_header {
   uint8_t id;
   uint8_t type;
   uint8_t code;

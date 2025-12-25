@@ -127,15 +127,15 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
         assert(attrib_data >= 0);
         const tinygltf::Accessor &accessor = model.accessors[attrib_data];
 
-        const tinygltf::BufferView &bufferView = model.bufferViews[accessor.bufferView];
+        const tinygltf::BufferView &buffer_view = model.bufferViews[accessor.bufferView];
         std::size_t elem_size = get_elem_size_from_type(accessor.type);
         if ((attrib_name == "POSITION") || (attrib_name == "NORMAL") ||
             (attrib_name == "TEXCOORD_0") || (attrib_name == "JOINTS_0") ||
             (attrib_name == "WEIGHTS_0")) {
-          const tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
-          const auto data_ptr = &buffer.data[bufferView.byteOffset];
-          std::vector<std::uint8_t> base_data(data_ptr, data_ptr + bufferView.byteLength);
-          std::vector<std::uint8_t> data(data_ptr, data_ptr + bufferView.byteLength);
+          const tinygltf::Buffer &buffer = model.buffers[buffer_view.buffer];
+          const auto data_ptr = &buffer.data[buffer_view.byteOffset];
+          std::vector<std::uint8_t> base_data(data_ptr, data_ptr + buffer_view.byteLength);
+          std::vector<std::uint8_t> data(data_ptr, data_ptr + buffer_view.byteLength);
 
           for (int target_id = 0; target_id < primitive.targets.size(); target_id++) {
             const auto &target = primitive.targets[target_id];
@@ -149,9 +149,9 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
               const auto target_attrib_data = found->second;
               const tinygltf::Accessor &accessor = model.accessors[target_attrib_data];
 
-              const tinygltf::BufferView &bufferView = model.bufferViews[accessor.bufferView];
-              const tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
-              const auto data_ptr = &buffer.data[bufferView.byteOffset];
+              const tinygltf::BufferView &buffer_view = model.bufferViews[accessor.bufferView];
+              const tinygltf::Buffer &buffer = model.buffers[buffer_view.buffer];
+              const auto data_ptr = &buffer.data[buffer_view.byteOffset];
 
               for (size_t i = 0; i < data.size() / sizeof(float); i++) {
                 ((float *)data.data())[i] += ((float *)data_ptr)[i] * weight;
@@ -167,25 +167,25 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
 
           buffer_t *buf = &prim->buffers[attrib_name];
           glGenBuffers(1, &buf->id);
-          glBindBuffer(bufferView.target, buf->id);
-          glBufferData(bufferView.target, buf->data.size(), buf->data.data(), GL_STATIC_DRAW);
+          glBindBuffer(buffer_view.target, buf->id);
+          glBufferData(buffer_view.target, buf->data.size(), buf->data.data(), GL_STATIC_DRAW);
         }
       }
 
       {
-        const tinygltf::BufferView &bufferView = model.bufferViews[index_accessor.bufferView];
-        const tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
+        const tinygltf::BufferView &buffer_view = model.bufferViews[index_accessor.bufferView];
+        const tinygltf::Buffer &buffer = model.buffers[buffer_view.buffer];
 
-        const auto data_ptr = &buffer.data[bufferView.byteOffset];
-        std::vector<std::uint8_t> data(data_ptr, data_ptr + bufferView.byteLength);
+        const auto data_ptr = &buffer.data[buffer_view.byteOffset];
+        std::vector<std::uint8_t> data(data_ptr, data_ptr + buffer_view.byteLength);
         prim->index_buffer = buffer_t{std::move(data), 1, 0};
 
         buffer_t *buf = &prim->index_buffer;
         glGenBuffers(1, &buf->id);
-        glBindBuffer(bufferView.target, buf->id);
+        glBindBuffer(buffer_view.target, buf->id);
 
-        glBufferData(bufferView.target, bufferView.byteLength,
-                     &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+        glBufferData(buffer_view.target, buffer_view.byteLength,
+                     &buffer.data.at(0) + buffer_view.byteOffset, GL_STATIC_DRAW);
       }
     }
 
@@ -234,51 +234,51 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
 
       for (auto iter = prim->buffers.begin(); iter != prim->buffers.end(); iter++) {
         const tinygltf::Accessor &accessor = model.accessors[primitive.attributes.at(iter->first)];
-        const tinygltf::BufferView &bufferView = model.bufferViews[accessor.bufferView];
+        const tinygltf::BufferView &buffer_view = model.bufferViews[accessor.bufferView];
 
         if (iter->first == "POSITION") {
           const buffer_t *buffer = &iter->second;
           glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
-          int byteStride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
-          assert(byteStride != -1);
+          int byte_stride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
+          assert(byte_stride != -1);
           glEnableVertexAttribArray(0);
           glVertexAttribPointer(0, buffer->elem_size, accessor.componentType,
-                                accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
+                                accessor.normalized ? GL_TRUE : GL_FALSE, byte_stride,
                                 BUFFER_OFFSET(accessor.byteOffset));
         } else if (iter->first == "NORMAL") {
           const buffer_t *buffer = &iter->second;
           glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
-          int byteStride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
-          assert(byteStride != -1);
+          int byte_stride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
+          assert(byte_stride != -1);
           glEnableVertexAttribArray(1);
           glVertexAttribPointer(1, buffer->elem_size, accessor.componentType,
-                                accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
+                                accessor.normalized ? GL_TRUE : GL_FALSE, byte_stride,
                                 BUFFER_OFFSET(accessor.byteOffset));
         } else if (iter->first == "TEXCOORD_0") {
           const buffer_t *buffer = &iter->second;
           glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
-          int byteStride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
-          assert(byteStride != -1);
+          int byte_stride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
+          assert(byte_stride != -1);
           glEnableVertexAttribArray(2);
           glVertexAttribPointer(2, buffer->elem_size, accessor.componentType,
-                                accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
+                                accessor.normalized ? GL_TRUE : GL_FALSE, byte_stride,
                                 BUFFER_OFFSET(accessor.byteOffset));
         } else if (iter->first == "JOINTS_0") {
           const buffer_t *buffer = &iter->second;
           glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
-          int byteStride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
-          assert(byteStride != -1);
+          int byte_stride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
+          assert(byte_stride != -1);
           glEnableVertexAttribArray(3);
-          glVertexAttribIPointer(3, buffer->elem_size, accessor.componentType, byteStride,
+          glVertexAttribIPointer(3, buffer->elem_size, accessor.componentType, byte_stride,
                                  BUFFER_OFFSET(accessor.byteOffset));
         } else if (iter->first == "WEIGHTS_0") {
           const buffer_t *buffer = &iter->second;
           glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
-          int byteStride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
-          assert(byteStride != -1);
+          int byte_stride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
+          assert(byte_stride != -1);
           glEnableVertexAttribArray(4);
           glVertexAttribPointer(4, buffer->elem_size, accessor.componentType,
-                                accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
+                                accessor.normalized ? GL_TRUE : GL_FALSE, byte_stride,
                                 BUFFER_OFFSET(accessor.byteOffset));
         }
       }
@@ -460,10 +460,10 @@ model_drawer::model_drawer(std::string path) : data(new model_data()) {
     const auto &tex = data->model.textures[i];
     {
       tinygltf::Image &image = data->model.images[tex.source];
-      GLuint texId;
+      GLuint tex_id;
       int target = GL_TEXTURE_2D;
-      glGenTextures(1, &texId);
-      glBindTexture(target, texId);
+      glGenTextures(1, &tex_id);
+      glBindTexture(target, tex_id);
       glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
       glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
       glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -481,7 +481,7 @@ model_drawer::model_drawer(std::string path) : data(new model_data()) {
       // glGenerateMipmap(GL_TEXTURE_2D);
       glBindTexture(target, 0);
 
-      data->resources.textures[i] = texture_t{texId};
+      data->resources.textures[i] = texture_t{tex_id};
     }
   }
 

@@ -41,11 +41,11 @@ void imu_capture::start(std::function<void(const pose_frame &)> frame_received) 
     }
 
     for (const auto &line : lines) {
-      ResponseHeader header;
+      response_header header;
       size_t header_size = 0;
       decode_base64(line, (uint8_t *)&header, sizeof(header), &header_size);
       if (header_size <= line.size()) {
-        FrameData frame;
+        frame_data frame;
         size_t frame_size = 0;
         decode_base64(line.substr(header_size), (uint8_t *)&frame, sizeof(frame), &frame_size);
         if (header_size + frame_size + 1 /* \r */ == line.size()) {

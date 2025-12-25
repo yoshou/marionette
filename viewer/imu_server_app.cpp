@@ -83,7 +83,8 @@ struct imu_server_viewer : public window_base {
 #undef far
 #endif
 
-  void set_camera(float posX, float posY, float posZ, float targetX, float targetY, float targetZ) {
+  void set_camera(float pos_x, float pos_y, float pos_z, float target_x, float target_y,
+                  float target_z) {
     float fovy = 45.0f;
     float aspect = (float)(width) / height;
     float near_plane = 0.01f;
@@ -93,7 +94,7 @@ struct imu_server_viewer : public window_base {
 
     glm::mat4 proj = glm::perspective(fovy, aspect, near_plane, far_plane);
     glm::mat4 view =
-        glm::lookAt(glm::vec3(posX, posY, posZ), glm::vec3(targetX, targetY, targetZ), up);
+        glm::lookAt(glm::vec3(pos_x, pos_y, pos_z), glm::vec3(target_x, target_y, target_z), up);
     glm::mat4 world = glm::identity<glm::mat4>();
     pvw = proj * view * world;
   }

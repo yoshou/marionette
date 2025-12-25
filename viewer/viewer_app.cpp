@@ -112,7 +112,8 @@ struct ir_viewer : public window_base {
     }
   }
 
-  void set_camera(float posX, float posY, float posZ, float targetX, float targetY, float targetZ) {
+  void set_camera(float pos_x, float pos_y, float pos_z, float target_x, float target_y,
+                  float target_z) {
     float fovy = 45.0f;
     float aspect = (float)(width) / height;
     float near_z = 0.1f;
@@ -123,7 +124,7 @@ struct ir_viewer : public window_base {
 
     glm::mat4 proj = glm::perspective(fovy, aspect, near_z, far_z);
     glm::mat4 view =
-        glm::lookAt(glm::vec3(posX, posY, posZ), glm::vec3(targetX, targetY, targetZ), up);
+        glm::lookAt(glm::vec3(pos_x, pos_y, pos_z), glm::vec3(target_x, target_y, target_z), up);
     glm::mat4 world = glm::identity<glm::mat4>();
     pvw = proj * view * world;
   }
@@ -209,15 +210,15 @@ struct ir_viewer : public window_base {
         // bone_drawer_.draw(pvw* pose* glm::scale(glm::vec3(1.f, 0.3f, 1.f)));
       }
 
-      float lineColor[] = {std::clamp(tmp_color.r / 255.f, 0.f, 1.f),
-                           std::clamp(tmp_color.g / 255.f, 0.f, 1.f),
-                           std::clamp(tmp_color.b / 255.f, 0.f, 1.f), 1.f};
+      float line_color[] = {std::clamp(tmp_color.r / 255.f, 0.f, 1.f),
+                            std::clamp(tmp_color.g / 255.f, 0.f, 1.f),
+                            std::clamp(tmp_color.b / 255.f, 0.f, 1.f), 1.f};
 
       for (const auto &marker : tmp_markers) {
         const auto pos = world * glm::vec4(marker, 1.0f);
-        sphere_drawer_.drawWithLines(
+        sphere_drawer_.draw_with_lines(
             pvw * glm::translate(glm::vec3(pos)) * glm::scale(glm::vec3(0.01f, 0.01f, 0.01f)),
-            lineColor);
+            line_color);
       }
 
       for (auto iter = tmp_poses.begin(); iter != tmp_poses.end(); iter++) {
