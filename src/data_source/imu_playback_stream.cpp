@@ -1,12 +1,13 @@
 #include "imu_playback_stream.hpp"
 
 #include <filesystem>
-namespace fs = std::filesystem;
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <thread>
 
 #include "glm_json_ext.hpp"
+
+namespace fs = std::filesystem;
 
 namespace marionette::data_source {
 
