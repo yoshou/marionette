@@ -16,10 +16,10 @@ namespace marionette::optimization {
 
 using namespace marionette::core;
 
-static auto solve_articuated_pair(const rigid_cluster &parent_cluster,
-                                  const rigid_cluster &child_cluster,
-                                  const std::vector<find_fit_result> &parent_results,
-                                  const std::vector<find_fit_result> &child_results) {
+[[maybe_unused]] static auto solve_articuated_pair(
+    const rigid_cluster &parent_cluster, const rigid_cluster &child_cluster,
+    const std::vector<find_fit_result> &parent_results,
+    const std::vector<find_fit_result> &child_results) {
   std::size_t min_i;
   std::size_t min_j;
   float min_dist = std::numeric_limits<float>::max();
@@ -114,7 +114,8 @@ static std::deque<vertex_t> get_path(vertex_t from, vertex_t to, std::vector<ver
   return path;
 }
 
-static void print_path(const graph_t &g, const std::deque<vertex_t> &path, float distance_to) {
+[[maybe_unused]] static void print_path(const graph_t &g, const std::deque<vertex_t> &path,
+                                        float distance_to) {
   for (const auto &v : path) {
     std::cout << g[v].cluster_name << ", " << g[v].candidate_idx;
     if (v != path.back()) {
@@ -179,9 +180,6 @@ std::tuple<std::map<std::string, std::size_t>, float, float> solve_articulation_
     std::vector<glm::mat3> articulation_rot_a_candidates(parent_results.size());
     std::vector<glm::mat3> articulation_rot_b_candidates(child_results.size());
 
-    const auto parent_inv_pose = glm::inverse(parent_cluster.pose);
-    const auto child_inv_pose = glm::inverse(child_cluster.pose);
-
     auto angle_axis_a = to_line(parent_cluster.pose);
     auto angle_axis_b = to_line(child_cluster.pose);
 
@@ -223,7 +221,6 @@ std::tuple<std::map<std::string, std::size_t>, float, float> solve_articulation_
       const auto &parent_result = parent_results[i];
 
       const auto &articulation_pos_a = articulation_pos_a_candidates[i];
-      const auto &articulation_rot_a = articulation_rot_a_candidates[i];
 
       std::vector<glm::vec3> parent_points;
       transform_to_target(parent_cluster, parent_result, parent_points);
@@ -235,9 +232,6 @@ std::tuple<std::map<std::string, std::size_t>, float, float> solve_articulation_
       for (std::size_t k = 0; k < result.size(); k++) {
         const auto j = result[k].first;
         const auto &child_result = child_results[j];
-
-        const auto &articulation_pos_b = articulation_pos_b_candidates[j];
-        const auto &articulation_rot_b = articulation_rot_b_candidates[j];
 
         std::vector<glm::vec3> child_points;
         transform_to_target(child_cluster, child_result, child_points);
@@ -268,8 +262,6 @@ std::tuple<std::map<std::string, std::size_t>, float, float> solve_articulation_
 
         const auto articulation_dist_sq = result[k].second;
         const auto articulation_dist = std::sqrt(articulation_dist_sq);
-        // const auto dist = (parent_result.error + child_result.error + constraint_error * 0.5 +
-        // articulation_dist);
         const auto dist = ((parent_result.error + child_result.error) + articulation_dist * 0.5f +
                            constraint_error * 0.1f);
 
@@ -371,11 +363,11 @@ std::tuple<glm::vec3, glm::mat4, glm::vec3, glm::mat4> compute_articuated_pair_p
                          articulation_rot_b);
 }
 
-static auto compute_paired_points(const glm::vec3 &point1, const glm::vec3 &point2,
-                                  const rigid_cluster &parent_cluster,
-                                  const rigid_cluster &child_cluster,
-                                  const find_fit_result &parent_result,
-                                  const find_fit_result &child_result) {
+[[maybe_unused]] static auto compute_paired_points(const glm::vec3 &point1, const glm::vec3 &point2,
+                                                   const rigid_cluster &parent_cluster,
+                                                   const rigid_cluster &child_cluster,
+                                                   const find_fit_result &parent_result,
+                                                   const find_fit_result &child_result) {
   glm::vec3 pos_a, pos_b;
 
   {

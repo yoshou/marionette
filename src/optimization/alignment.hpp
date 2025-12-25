@@ -10,8 +10,8 @@ namespace marionette::optimization {
 
 using namespace marionette::core;
 
-static void transform_to_target(const rigid_cluster &cluster, const find_fit_result &result,
-                                std::vector<glm::vec3> &points) {
+static inline void transform_to_target(const rigid_cluster &cluster, const find_fit_result &result,
+                                       std::vector<glm::vec3> &points) {
   const auto translation = result.translation;
   const auto rotation = result.rotation;
   const auto twist_angle = result.twist_angle;
@@ -30,8 +30,8 @@ static void transform_to_target(const rigid_cluster &cluster, const find_fit_res
   }
 }
 
-static glm::mat4 compute_transform_matrix_to_target(const rigid_cluster &cluster,
-                                                    const find_fit_result &result) {
+static inline glm::mat4 compute_transform_matrix_to_target(const rigid_cluster &cluster,
+                                                           const find_fit_result &result) {
   const auto translation = glm::translate(result.translation);
   const auto rotation = glm::mat4(result.rotation);
 
@@ -43,23 +43,23 @@ static glm::mat4 compute_transform_matrix_to_target(const rigid_cluster &cluster
   return transform;
 }
 
-static glm::mat4 transform_to_target_pose(const rigid_cluster &cluster,
-                                          const find_fit_result &result) {
+static inline glm::mat4 transform_to_target_pose(const rigid_cluster &cluster,
+                                                 const find_fit_result &result) {
   const auto source_pose = cluster.pose;
   const auto transform = compute_transform_matrix_to_target(cluster, result);
   return transform * source_pose;
 }
 
-static glm::mat4 transform_to_source_pose(const glm::mat4 &target_pose,
-                                          const rigid_cluster &cluster,
-                                          const find_fit_result &result) {
+static inline glm::mat4 transform_to_source_pose(const glm::mat4 &target_pose,
+                                                 const rigid_cluster &cluster,
+                                                 const find_fit_result &result) {
   const auto transform = compute_transform_matrix_to_target(cluster, result);
   return glm::inverse(transform) * target_pose;
 }
 
-static std::vector<weighted_point> find_target_points(const rigid_cluster &cluster,
-                                                      const find_fit_result &result,
-                                                      const point_cloud &target_points) {
+static inline std::vector<weighted_point> find_target_points(const rigid_cluster &cluster,
+                                                             const find_fit_result &result,
+                                                             const point_cloud &target_points) {
   const auto translation = result.translation;
   const auto rotation = result.rotation;
   const auto twist_angle = result.twist_angle;
@@ -86,7 +86,7 @@ static std::vector<weighted_point> find_target_points(const rigid_cluster &clust
   return paired_target_points;
 }
 
-static std::vector<weighted_point> find_target_points(
+static inline std::vector<weighted_point> find_target_points(
     const rigid_cluster &cluster, const find_fit_result &result, const point_cloud &target_points,
     std::vector<std::pair<std::size_t, std::size_t>> &pairs) {
   const auto translation = result.translation;
@@ -114,9 +114,9 @@ static std::vector<weighted_point> find_target_points(
   return paired_target_points;
 }
 
-static std::vector<weighted_point> find_source_points(const rigid_cluster &cluster,
-                                                      const find_fit_result &result,
-                                                      const point_cloud &target_points) {
+static inline std::vector<weighted_point> find_source_points(const rigid_cluster &cluster,
+                                                             const find_fit_result &result,
+                                                             const point_cloud &target_points) {
   const auto translation = result.translation;
   const auto rotation = result.rotation;
   const auto twist_angle = result.twist_angle;

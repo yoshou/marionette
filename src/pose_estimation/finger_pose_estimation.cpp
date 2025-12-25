@@ -403,9 +403,7 @@ void estimate_finger_pose(std::map<std::string, glm::mat4>& poses, const model_d
   }
 
   for (std::size_t i = 0; i < bones.size(); i++) {
-    const auto& bone = bones[i];
     double* rotation_param = &rotation_params[4 * i];
-    double* translation_param = &translation_params[3 * i];
 
     problem.SetManifold(rotation_param, new ceres::EigenQuaternionManifold());
   }
@@ -432,7 +430,6 @@ void estimate_finger_pose(std::map<std::string, glm::mat4>& poses, const model_d
   for (std::size_t i = 0; i < bones.size(); i++) {
     const auto& bone = bones[i];
     double* rotation_param = &rotation_params[4 * i];
-    double* translation_param = &translation_params[3 * i];
     const auto orientation = glm::toMat3(
         glm::quat(rotation_param[3], rotation_param[0], rotation_param[1], rotation_param[2]));
     poses.at(bone) = glm::mat4(glm::vec4(orientation[0], 0.0), glm::vec4(orientation[1], 0.0),

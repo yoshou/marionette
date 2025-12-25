@@ -1,5 +1,7 @@
 #define _USE_MATH_DEFINES
+#ifndef GLM_ENABLE_EXPERIMENTAL
 #define GLM_ENABLE_EXPERIMENTAL
+#endif
 
 #include "fbx_loader.hpp"
 
@@ -24,7 +26,7 @@ static glm::mat4 ofbx_matrix_to_glm(const ofbx::DMatrix &m) {
       static_cast<float>(m.m[15]));
 }
 
-static glm::vec3 ofbx_vec3_to_glm(const ofbx::Vec3 &v) {
+[[maybe_unused]] static glm::vec3 ofbx_vec3_to_glm(const ofbx::Vec3 &v) {
   return glm::vec3(static_cast<float>(v.x), static_cast<float>(v.y), static_cast<float>(v.z));
 }
 

@@ -8,7 +8,7 @@
 
 namespace marionette::pose_estimation {
 
-static glm::vec3 parse_vec3(const nlohmann::json& obj) {
+[[maybe_unused]] static glm::vec3 parse_vec3(const nlohmann::json& obj) {
   glm::vec3 result;
   for (std::size_t i = 0; i < 3; i++) {
     result[i] = obj[i].get<float>();

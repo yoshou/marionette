@@ -1,8 +1,11 @@
 #pragma once
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 #include <Eigen/Core>
 #include <Eigen/LU>
 #include <Eigen/QR>
+#pragma GCC diagnostic pop
 #include <chrono>
 #include <cstdint>
 #include <iostream>
@@ -427,12 +430,12 @@ struct parameter_block {
 };
 
 template <typename Tuple, typename Func, std::size_t... idxs>
-inline void for_each_apply(const Func &f, const Tuple &t, std::index_sequence<idxs...>) {
+static inline void for_each_apply(const Func &f, const Tuple &t, std::index_sequence<idxs...>) {
   (f(std::get<idxs>(t)), ...);
 }
 
 template <typename Tuple, typename Func>
-inline void for_each_apply(const Func &f, const Tuple &t) {
+static inline void for_each_apply(const Func &f, const Tuple &t) {
   constexpr std::size_t n = std::tuple_size_v<Tuple>;
   for_each_apply(f, t, std::make_index_sequence<n>{});
 }
@@ -755,15 +758,13 @@ static optimization_result solve_lbfgs_method(const function &obj_func, double *
 
     Eigen::VectorXd d = q;
 
-    for (std::size_t i = 0; i < d.size(); i++) {
+    for (Eigen::Index i = 0; i < d.size(); i++) {
       if (std::isnan(d(i))) {
         d(i) = 0.0;
       }
     }
 
     const auto alpha = armijo(obj_func, params_v, grad_v, d);
-    const auto step = 1.0;
-    // const auto alpha = (iter == 0) ? step * 0.01 : step;
 
     Eigen::VectorXd next_params_v = params_v + alpha * d;
 
@@ -813,9 +814,10 @@ static optimization_result solve_lbfgs_method(const function &obj_func, double *
   return result;
 }
 
-static optimization_result solve_bfgs_method(const function &obj_func, double *params,
-                                             std::size_t num_params, double terminate_thresold,
-                                             std::size_t max_iteration) {
+static inline optimization_result solve_bfgs_method(const function &obj_func, double *params,
+                                                    std::size_t num_params,
+                                                    double terminate_thresold,
+                                                    std::size_t max_iteration) {
   optimization_result result;
 
   {

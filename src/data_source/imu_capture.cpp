@@ -28,7 +28,7 @@ void imu_capture::start(std::function<void(const pose_frame &)> frame_received) 
     }
 
     std::vector<uint8_t> data(receive_len);
-    size_t read_len = port.read(data.data(), data.size());
+    port.read(data.data(), data.size());
 
     std::vector<std::string> lines;
     for (const auto c : data) {

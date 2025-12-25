@@ -18,8 +18,8 @@ struct frame_data_t {
   uint64_t frame_number;
 };
 
-static void load_frames(std::string path, std::vector<frame_data_t> &frames,
-                        const glm::mat4 &transform) {
+static inline void load_frames(std::string path, std::vector<frame_data_t> &frames,
+                               const glm::mat4 &transform) {
   std::ifstream ifs;
   ifs.open(path, std::ios::binary | std::ios::in);
   using json = nlohmann::json;

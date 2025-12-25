@@ -30,9 +30,8 @@ struct camera_t {
   camera_extrin_t extrin;
   uint32_t width, height;
 };
-
-static void get_cv_intrinsic(const camera_intrin_t &intrin, cv::Mat &camera_matrix,
-                             cv::Mat &dist_coeffs) {
+static inline void get_cv_intrinsic(const camera_intrin_t &intrin, cv::Mat &camera_matrix,
+                                    cv::Mat &dist_coeffs) {
   camera_matrix = cv::Mat::eye(3, 3, CV_64F);
   camera_matrix.at<double>(0, 0) = intrin.fx;
   camera_matrix.at<double>(1, 1) = intrin.fy;
@@ -53,7 +52,7 @@ struct camera_module_t {
   camera_t color;
 };
 
-static std::map<std::string, camera_module_t> load_camera_params(std::string path) {
+static inline std::map<std::string, camera_module_t> load_camera_params(std::string path) {
   std::ifstream ifs;
   ifs.open(path, std::ios::binary | std::ios::in);
 

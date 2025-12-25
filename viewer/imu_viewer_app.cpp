@@ -102,7 +102,6 @@ struct imu_viewer : public window_base {
   imu_viewer()
       : window_base("IMR Viewer", SCREEN_WIDTH, SCREEN_HEIGHT),
         sphere_drawer_(36, 18, false),
-        drawer_initialized(false),
         bone_drawer_r_(glm::u8vec4(255, 0, 0, 255)),
         bone_drawer_g_(glm::u8vec4(0, 255, 0, 255)),
         bone_drawer_b_(glm::u8vec4(0, 0, 255, 255)) {
@@ -190,15 +189,7 @@ struct imu_viewer : public window_base {
       drawer_initialized = true;
     }
 
-    const auto on_selected = [this](glm::vec2 beg, glm::vec2 end) {
-      glm::vec2 rect_min(std::min(beg.x, end.x), std::min(beg.y, end.y));
-      glm::vec2 rect_max(std::max(beg.x, end.x), std::max(beg.y, end.y));
-
-      const auto clip_pos =
-          glm::vec2(rect_min.x / SCREEN_WIDTH * 2 - 1, rect_max.y / SCREEN_HEIGHT * -2 + 1);
-      const auto clip_size = glm::vec2(std::abs(rect_max.x - rect_min.x) / SCREEN_WIDTH * 2,
-                                       std::abs(rect_max.y - rect_min.y) / SCREEN_HEIGHT * 2);
-
+    const auto on_selected = [this](glm::vec2, glm::vec2) {
       selected_index = -1;
       widget_drawer_.selected_name = "";
     };
@@ -266,6 +257,7 @@ static void shutdown() {
   exit_flag.store(true);
 }
 
+[[maybe_unused]]
 static void sigint_handler(int) {
   shutdown();
   exit(0);
@@ -337,7 +329,6 @@ int imu_viewer_main() {
           for (size_t k = 0; k < 3; k++) {
             default_sensor_orientation[k] = glm::normalize(default_sensor_orientation[k]);
           }
-          glm::vec3 default_sensor_position = obj->position;
 
           glm::mat4 default_bone_pose(1.0f);
           {
@@ -378,9 +369,6 @@ int imu_viewer_main() {
               orientations[i].w, orientations[i].x, orientations[i].z, -orientations[i].y)));
           const auto sensor_orientation0 = glm::toMat4(glm::normalize(glm::quat(
               orientations[5].w, orientations[5].x, orientations[5].z, -orientations[5].y)));
-
-          const auto bone_orientation = sensor_orientation * tracker.sensor_to_bone[i];
-          const auto bone_orientation0 = sensor_orientation0 * tracker.sensor_to_bone[5];
 
           const auto sensor_pose0 =
               glm::mat4(sensor_orientation0[0], sensor_orientation0[1], sensor_orientation0[2],

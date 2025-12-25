@@ -29,7 +29,7 @@ static void transform(const T *p, const glm::mat3 &m, T *result) {
 }
 
 template <typename T>
-inline void rotate(const T axis[3], const T theta, const T pt[3], T result[3]) {
+static inline void rotate(const T axis[3], const T theta, const T pt[3], T result[3]) {
   if (theta > T(std::numeric_limits<double>::epsilon())) {
     const T costheta = cos(theta);
     const T sintheta = sin(theta);
@@ -52,7 +52,7 @@ inline void rotate(const T axis[3], const T theta, const T pt[3], T result[3]) {
 }
 
 template <typename T>
-inline vec3_t<T> rotate(const vec3_t<T> &axis_v, const T theta, const vec3_t<T> &pt_v) {
+static inline vec3_t<T> rotate(const vec3_t<T> &axis_v, const T theta, const vec3_t<T> &pt_v) {
   if (theta > T(std::numeric_limits<double>::epsilon())) {
     const T costheta = cos(theta);
     const T sintheta = sin(theta);
@@ -944,6 +944,7 @@ struct sr_articulation_least_square_constraint {
     residuals[0] = (constraints[0] * constraints[0] + constraints[1] * constraints[1] +
                     constraints[2] * constraints[2]) *
                    10.0;
+    return true;
   }
 };
 
@@ -1083,9 +1084,9 @@ struct twisted_rt_least_square_functor {
                                   const std::vector<double> &weights)
       : points(points),
         target_points(target_points),
+        weights(weights),
         twist_weights(twist_weights),
-        twist_axis(twist_axis),
-        weights(weights) {}
+        twist_axis(twist_axis) {}
 
   template <typename T>
   inline T operator()(const T *const rotation, const T *const translation,
@@ -1194,9 +1195,9 @@ struct quat_twisted_rt_least_square_functor {
                                        const line3 &twist_axis, const std::vector<double> &weights)
       : points(points),
         target_points(target_points),
+        weights(weights),
         twist_weights(twist_weights),
-        twist_axis(twist_axis),
-        weights(weights) {}
+        twist_axis(twist_axis) {}
 
   template <typename T>
   inline T operator()(const T *const rotation, const T *const translation,

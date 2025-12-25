@@ -1,8 +1,11 @@
 #pragma once
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 #include <Eigen/Core>
 #include <Eigen/LU>
 #include <Eigen/QR>
+#pragma GCC diagnostic pop
 #include <chrono>
 #include <cstdint>
 #include <memory>
@@ -220,7 +223,7 @@ class least_square_problem {
       lm.parameters.maxfev = max_iteration;
       lm.parameters.xtol = terminate_thresold;
       const auto start = std::chrono::system_clock::now();
-      const auto info = lm.minimize(params_v);
+      lm.minimize(params_v);
       const auto end = std::chrono::system_clock::now();
       for (std::size_t i = 0; i < params.size(); i++) {
         params[i] = params_v(i);

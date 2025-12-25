@@ -248,7 +248,7 @@ struct log_viewer : public window_base {
           continue;
         }
 
-        if (i == selected_index) {
+        if (static_cast<int>(i) == selected_index) {
           color = glm::u8vec3(0, 255, 255);
         }
 
@@ -286,6 +286,7 @@ static void shutdown() {
   exit_flag.store(true);
 }
 
+[[maybe_unused]]
 static void sigint_handler(int) {
   shutdown();
   exit(0);

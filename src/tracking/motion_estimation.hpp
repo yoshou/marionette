@@ -1,6 +1,9 @@
 #pragma once
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 #include <Eigen/QR>
+#pragma GCC diagnostic pop
 #include <algorithm>
 #include <glm/glm.hpp>
 #include <vector>
@@ -19,10 +22,10 @@ static void polyfit(const std::vector<double> &t, const std::vector<double> &v,
 
   // check to make sure inputs are correct
   assert(t.size() == v.size());
-  assert(t.size() >= order + 1);
+  assert(t.size() >= static_cast<size_t>(order + 1));
   // Populate the matrix
   for (size_t i = 0; i < t.size(); ++i) {
-    for (size_t j = 0; j < order + 1; ++j) {
+    for (size_t j = 0; j < static_cast<size_t>(order + 1); ++j) {
       T(i, j) = pow(t.at(i), j);
     }
   }

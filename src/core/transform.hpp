@@ -1,6 +1,8 @@
 #pragma once
 
+#ifndef GLM_ENABLE_EXPERIMENTAL
 #define GLM_ENABLE_EXPERIMENTAL
+#endif
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
@@ -13,7 +15,7 @@ struct line3 {
   glm::vec3 direction;
 };
 
-static line3 to_line(const glm::mat4 &m) {
+static inline line3 to_line(const glm::mat4 &m) {
   return line3{glm::vec3(m[3]), glm::normalize(glm::mat3(m) * glm::vec3(0.f, 1.f, 0.f))};
 }
 
@@ -46,7 +48,7 @@ static inline glm::vec3 rotate_local(const glm::vec3 &point, const glm::mat4 &po
 }
 
 template <typename T>
-static glm::vec3 scaling(const glm::vec3 &p, const glm::vec3 &origin, const T *scale) {
+static inline glm::vec3 scaling(const glm::vec3 &p, const glm::vec3 &origin, const T *scale) {
   glm::vec3 scale_vec(static_cast<float>(scale[0]), static_cast<float>(scale[1]),
                       static_cast<float>(scale[2]));
 
@@ -54,8 +56,8 @@ static glm::vec3 scaling(const glm::vec3 &p, const glm::vec3 &origin, const T *s
 }
 
 template <typename T>
-static glm::vec3 transform_axis_angle(const glm::vec3 &p, const T *axis_angle,
-                                      const T *translation) {
+static inline glm::vec3 transform_axis_angle(const glm::vec3 &p, const T *axis_angle,
+                                             const T *translation) {
   glm::vec3 axis_angle_vec(static_cast<float>(axis_angle[0]), static_cast<float>(axis_angle[1]),
                            static_cast<float>(axis_angle[2]));
 
@@ -74,9 +76,10 @@ static glm::vec3 transform_axis_angle(const glm::vec3 &p, const T *axis_angle,
 }
 
 template <typename T>
-static glm::vec3 transform_twist_axis_angle(const glm::vec3 &p, const T twist_angle,
-                                            const line3 &twist_axis, const float twist_weight,
-                                            const T *axis_angle, const T *translation) {
+static inline glm::vec3 transform_twist_axis_angle(const glm::vec3 &p, const T twist_angle,
+                                                   const line3 &twist_axis,
+                                                   const float twist_weight, const T *axis_angle,
+                                                   const T *translation) {
   const auto twist_quat = glm::angleAxis(static_cast<float>(twist_angle) * twist_weight,
                                          glm::normalize(twist_axis.direction));
   const auto twisted_p = (twist_quat * (p - twist_axis.origin)) + twist_axis.origin;
@@ -85,7 +88,8 @@ static glm::vec3 transform_twist_axis_angle(const glm::vec3 &p, const T twist_an
 }
 
 template <typename T>
-static glm::vec3 transform_quat(const glm::vec3 &p, const T *rotation, const T *translation) {
+static inline glm::vec3 transform_quat(const glm::vec3 &p, const T *rotation,
+                                       const T *translation) {
   const glm::quat quat(static_cast<float>(rotation[0]), static_cast<float>(rotation[1]),
                        static_cast<float>(rotation[2]), static_cast<float>(rotation[3]));
 
@@ -96,9 +100,9 @@ static glm::vec3 transform_quat(const glm::vec3 &p, const T *rotation, const T *
 }
 
 template <typename T>
-static glm::vec3 transform_twist_quat(const glm::vec3 &p, const T twist_angle,
-                                      const line3 &twist_axis, const float twist_weight,
-                                      const T *rotation, const T *translation) {
+static inline glm::vec3 transform_twist_quat(const glm::vec3 &p, const T twist_angle,
+                                             const line3 &twist_axis, const float twist_weight,
+                                             const T *rotation, const T *translation) {
   const auto twist_quat = glm::angleAxis(static_cast<float>(twist_angle) * twist_weight,
                                          glm::normalize(twist_axis.direction));
   const auto twisted_p = (twist_quat * (p - twist_axis.origin)) + twist_axis.origin;
@@ -107,7 +111,8 @@ static glm::vec3 transform_twist_quat(const glm::vec3 &p, const T twist_angle,
 }
 
 template <typename T>
-static line3 transform_axis_angle(const line3 &l, const T *axis_angle, const T *translation) {
+static inline line3 transform_axis_angle(const line3 &l, const T *axis_angle,
+                                         const T *translation) {
   glm::vec3 axis_angle_vec(static_cast<float>(axis_angle[0]), static_cast<float>(axis_angle[1]),
                            static_cast<float>(axis_angle[2]));
 
@@ -126,7 +131,7 @@ static line3 transform_axis_angle(const line3 &l, const T *axis_angle, const T *
 }
 
 template <typename T>
-static line3 transform_quat(const line3 &l, const T *rotation, const T *translation) {
+static inline line3 transform_quat(const line3 &l, const T *rotation, const T *translation) {
   const glm::quat quat(static_cast<float>(rotation[0]), static_cast<float>(rotation[1]),
                        static_cast<float>(rotation[2]), static_cast<float>(rotation[3]));
 

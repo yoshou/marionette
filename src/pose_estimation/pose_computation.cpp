@@ -33,26 +33,6 @@ std::vector<glm::mat4> compute_pose(const model_instance_data &model_instance,
     const auto rotation = &params.mutable_quat_rotations[i * 4];
     const auto translation = &params.mutable_translations[i * 3];
 
-    const auto transform_angle_axis = [](glm::mat4 m, const double *axis_angle,
-                                         const double *translation) {
-      glm::vec3 axis_angle_vec(static_cast<float>(axis_angle[0]), static_cast<float>(axis_angle[1]),
-                               static_cast<float>(axis_angle[2]));
-
-      glm::vec3 trans_vec(static_cast<float>(translation[0]), static_cast<float>(translation[1]),
-                          static_cast<float>(translation[2]));
-
-      const auto angle = glm::length(axis_angle_vec);
-
-      if (angle > std::numeric_limits<float>::epsilon()) {
-        const auto axis = glm::normalize(axis_angle_vec);
-        const auto quat = glm::angleAxis(angle, axis);
-
-        return glm::translate(trans_vec) * glm::toMat4(quat) * m;
-      } else {
-        return glm::translate(trans_vec) * m;
-      }
-    };
-
     const auto transform_quat = [](glm::mat4 m, const double *rotation, const double *translation) {
       glm::quat quat(static_cast<float>(rotation[0]), static_cast<float>(rotation[1]),
                      static_cast<float>(rotation[2]), static_cast<float>(rotation[3]));

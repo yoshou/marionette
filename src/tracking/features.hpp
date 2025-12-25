@@ -85,7 +85,7 @@ struct segment_feature {
   std::vector<float> values;
 };
 
-static segment_feature extract_segment_feature(const glm::vec3 &keypoint,
+static inline segment_feature extract_segment_feature(const glm::vec3 &keypoint,
                                                const std::vector<glm::vec3> &points,
                                                float max_radius) {
   segment_feature feature;
@@ -102,7 +102,7 @@ static segment_feature extract_segment_feature(const glm::vec3 &keypoint,
   return feature;
 }
 
-static float compute_feature_distance(const segment_feature &feature1,
+static inline float compute_feature_distance(const segment_feature &feature1,
                                       const segment_feature &feature2) {
   if (feature1.values.size() == 0 || feature2.values.size() == 0) {
     return std::numeric_limits<float>::max();
@@ -115,7 +115,6 @@ static float compute_feature_distance(const segment_feature &feature1,
       const auto value1 = feature1.values[i];
 
       float min_dist = std::numeric_limits<float>::max();
-      std::size_t min_idx = 0;
       for (std::size_t j = 0; j < feature2.values.size(); j++) {
         if (assigned.find(j) != assigned.end()) {
           continue;
@@ -124,11 +123,9 @@ static float compute_feature_distance(const segment_feature &feature1,
         const auto d = std::abs(value1 - value2);
         if (d < min_dist) {
           min_dist = d;
-          min_idx = j;
         }
       }
 
-      // assigned.insert(min_idx);
       dists[i] = min_dist;
     }
     return *std::max_element(dists.begin(), dists.end());
@@ -139,7 +136,6 @@ static float compute_feature_distance(const segment_feature &feature1,
       const auto value2 = feature2.values[i];
 
       float min_dist = std::numeric_limits<float>::max();
-      std::size_t min_idx = 0;
       for (std::size_t j = 0; j < feature1.values.size(); j++) {
         const auto value1 = feature1.values[j];
         if (assigned.find(j) != assigned.end()) {
@@ -148,11 +144,9 @@ static float compute_feature_distance(const segment_feature &feature1,
         const auto d = std::abs(value1 - value2);
         if (d < min_dist) {
           min_dist = d;
-          min_idx = j;
         }
       }
 
-      // assigned.insert(min_idx);
       dists[i] = min_dist;
     }
     return *std::max_element(dists.begin(), dists.end());

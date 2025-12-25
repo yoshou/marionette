@@ -121,7 +121,6 @@ class local_geometry_correnspondance_matcher final : public correnspondance_matc
             if (min_cost != std::numeric_limits<float>::max()) {
               sum_count++;
               sum_cost += min_cost;
-              // sum_cost += avg_cost;
             }
           }
 
@@ -188,7 +187,6 @@ float icp_3d_3d_minimizer::update(std::size_t iter, const model_data& model,
       const auto cluster_pose =
           transform_to_target_pose(registered_cluster.cluster, registered_cluster.fit_result);
       const auto twist_axis = to_line(cluster_pose);
-      const auto current_twist_axis = transform_quat(twist_axis, rotation, translation);
 
       for (std::size_t j = 0; j < registered_cluster.target.size(); j++) {
         const auto point = registered_cluster.target[j];
@@ -202,29 +200,8 @@ float icp_3d_3d_minimizer::update(std::size_t iter, const model_data& model,
         source_points[i].push_back(source_point);
 
         auto estimated_point = source_point;
-#if 0
-                const auto pred_pos = estimated_pos.at(point.id);
-                if (glm::distance(pred_pos, estimated_point.position) < 0.2f)
-                {
-                    estimated_point.position = pred_pos;
-                }
-#endif
         estimated_points[i].push_back(estimated_point);
-
-#if 0
-                {
-                    debug_point.add(point.position, glm::u8vec3(0, 0, 255));
-                    debug_point.add(pred_pos, glm::u8vec3(255, 255, 0));
-                }
-#endif
       }
-
-#if 0
-            {
-                debug_point.add(current_twist_axis.origin, glm::u8vec3(0, 255, 255));
-                debug_point.add(current_twist_axis.origin + current_twist_axis.direction * 0.3f, glm::u8vec3(0, 255, 255));
-            }
-#endif
     }
     const auto pairs = matcher->find_correnspondance(source_points, estimated_points, marker_cloud);
 
@@ -262,14 +239,11 @@ float icp_3d_3d_minimizer::update(std::size_t iter, const model_data& model,
       debug_point.add(marker, color);
     }
 
-#if 1
     {
       std::vector<int> assignment(markers.size(), -1);
       for (std::size_t i = 0; i < residual_datas.size(); i++) {
         for (std::size_t j = 0; j < residual_datas[i].size(); j++) {
           const auto dist = residual_datas[i][j].distance;
-          const auto point = residual_datas[i][j].source_point;
-          const auto closest_point = residual_datas[i][j].target_point;
           const auto target_index = residual_datas[i][j].target_index;
 
           if (dist == dists[target_index] && assignment[target_index] == -1) {
@@ -292,7 +266,6 @@ float icp_3d_3d_minimizer::update(std::size_t iter, const model_data& model,
 
       residual_datas = new_residual_datas;
     }
-#endif
 
     const auto end = std::chrono::system_clock::now();
     const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
@@ -761,13 +734,11 @@ float icp_3d_3d_minimizer::update(std::size_t iter, const model_data& model,
 
 #if USE_CERES_SOLVER
     if (use_quaternion) {
-#if 1
       ceres::Manifold* rotation_manifold = new ceres::QuaternionManifold{};
       for (std::size_t i = 0; i < num_clusters; i++) {
         const auto rotate_param = &rotation_params[i * rotation_param_size];
         problem.SetManifold(rotate_param, rotation_manifold);
       }
-#endif
     }
 
     const auto end = std::chrono::system_clock::now();
@@ -776,9 +747,6 @@ float icp_3d_3d_minimizer::update(std::size_t iter, const model_data& model,
     std::cout << "Total elapsed for build problem " << (elapsed / 1000.0) << " [ms]" << std::endl;
   }
 
-  // debug_point.save("temp_" + std::to_string(frame.frame_number) + "_" + std::to_string(iter) +
-  // ".pcd");
-
 #ifdef DUMP_PROBLEM
   {
     std::ofstream ofs("./prob.json", std::ios::out);
@@ -786,7 +754,6 @@ float icp_3d_3d_minimizer::update(std::size_t iter, const model_data& model,
   }
 #endif
 
-  float cost = 0.f;
   {
     const auto start = std::chrono::system_clock::now();
 
@@ -816,7 +783,6 @@ float icp_3d_3d_minimizer::update(std::size_t iter, const model_data& model,
     // std::cout << "Residuals : " << summary.num_residual_blocks << std::endl;
     // std::cout << "Report : " << summary.FullReport() << std::endl;
     //  std::cout << summary.FullReport() << std::endl;
-    cost = summary.final_cost;
 
     {
       const auto start = std::chrono::system_clock::now();
@@ -857,8 +823,6 @@ float icp_3d_3d_minimizer::update(std::size_t iter, const model_data& model,
         const auto mutable_translation = &mutable_translations[i * 3];
         const auto mutable_twist_angle = &mutable_twist_angles[i];
 
-        const auto angle_axis = glm::normalize(to_vec3(mutable_rotation));
-        const auto len = glm::length(to_vec3(mutable_rotation));
         const auto rotation = glm::normalize(to_quat(mutable_quat_rotation));
         // const auto rotation = (std::abs(len) <= std::numeric_limits<float>::epsilon()) ?
         // glm::dquat(1.0, 0.0, 0.0, 0.0) : glm::angleAxis(len, angle_axis);

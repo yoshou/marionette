@@ -36,7 +36,10 @@ const int SCREEN_HEIGHT = 720;
 
 // JSON serialization helpers for glm types
 namespace glm {
-static void to_json(nlohmann::json &j, const glm::quat &v) { j = {v.x, v.y, v.z, v.w}; }
+[[maybe_unused]]
+static void to_json(nlohmann::json &j, const glm::quat &v) {
+  j = {v.x, v.y, v.z, v.w};
+}
 }  // namespace glm
 
 // imu_server_viewer - GUI window for IMU visualization
@@ -143,7 +146,6 @@ struct imu_server_viewer : public window_base {
         }
       }
 
-      float box_scale = 0.01f;
       float axis_scale = 0.1f;
 
       axis_drawer_.draw(pvw * box_position * box_orientation *

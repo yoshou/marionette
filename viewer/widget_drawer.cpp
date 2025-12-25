@@ -36,6 +36,7 @@
 
 enum theme { THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK };
 
+[[maybe_unused]]
 static void set_style(struct nk_context *ctx, enum theme theme) {
   struct nk_color table[NK_COLOR_COUNT];
   if (theme == THEME_WHITE) {
@@ -261,7 +262,6 @@ void widget_drawer::initialize(void *handle, std::size_t width, std::size_t heig
 void widget_drawer::draw() {
   auto ctx = pimpl->ctx;
   auto win = pimpl->win;
-  auto bg = pimpl->bg;
 
   if (ctx == nullptr) {
     return;
@@ -285,8 +285,6 @@ void widget_drawer::draw() {
                NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_WINDOW_MINIMIZABLE |
                    NK_WINDOW_TITLE)) {
     enum { EASY, HARD };
-    static int op = EASY;
-    static int property = 20;
     nk_layout_row_static(ctx, 30, 80, 1);
     if (nk_button_label(ctx, "button")) fprintf(stdout, "button pressed\n");
 

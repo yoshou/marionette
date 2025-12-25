@@ -205,10 +205,6 @@ struct ir_viewer : public window_base {
       model->set_blend_weight("Joy", 1.0f);
 
       model->draw(pvw);
-      for (const auto &name : model->get_bone_names()) {
-        const auto pose = model->get_bone_global_transform(name);
-        // bone_drawer_.draw(pvw* pose* glm::scale(glm::vec3(1.f, 0.3f, 1.f)));
-      }
 
       float line_color[] = {std::clamp(tmp_color.r / 255.f, 0.f, 1.f),
                             std::clamp(tmp_color.g / 255.f, 0.f, 1.f),
@@ -219,13 +215,6 @@ struct ir_viewer : public window_base {
         sphere_drawer_.draw_with_lines(
             pvw * glm::translate(glm::vec3(pos)) * glm::scale(glm::vec3(0.01f, 0.01f, 0.01f)),
             line_color);
-      }
-
-      for (auto iter = tmp_poses.begin(); iter != tmp_poses.end(); iter++) {
-        const auto name = iter->first;
-        const auto transform = get_bone_global_transform(name, parents, local_norm_poses);
-        // bone_drawer_.draw(pvw *glm::translate(glm::vec3(0, 0, 1))* transform*
-        // glm::scale(glm::vec3(1.f, 0.3f, 1.f)));
       }
     }
     widget_drawer_.draw();
@@ -241,7 +230,7 @@ static void shutdown() {
   exit_flag.store(true);
 }
 
-static void sigint_handler(int) {
+[[maybe_unused]] static void sigint_handler(int) {
   shutdown();
   exit(0);
 }

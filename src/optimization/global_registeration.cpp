@@ -1,8 +1,11 @@
 #include "global_registeration.hpp"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 #include <Eigen/Core>
 #include <Eigen/LU>
 #include <Eigen/SVD>
+#pragma GCC diagnostic pop
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtx/norm.hpp>
@@ -527,6 +530,7 @@ struct initial_rotations {
   }
 };
 
+[[maybe_unused]]
 static void compute_max_rotation_dists(const std::vector<weighted_point> &source_points,
                                        std::vector<std::vector<float>> &max_rotation_dists) {
   std::vector<float> source_point_norms;
@@ -645,6 +649,7 @@ static void find_fit(const std::vector<weighted_point> &source_points, const glm
   }
 }
 
+[[maybe_unused]]
 static void find_fit_batch(const std::vector<weighted_point> &source_points,
                            const glm::mat4 &source_pose, const point_cloud &target_points,
                            float initial_twist_angle, float min_twist_angle, float max_twist_angle,
@@ -671,24 +676,17 @@ static void find_fit_batch(const std::vector<weighted_point> &source_points,
   for (std::size_t i = 0; i < target_points.size(); i++) {
     const auto initial_translation = target_points[i];
 
-    {
-      float min_error = std::numeric_limits<float>::max();
-      glm::mat3 best_rotation(1.f);
-      glm::vec3 best_translation(0.f);
-      float best_twist_angle = 0.f;
+    for (std::size_t j = 0; j < rots.size(); j++) {
+      icp_context ctx;
+      ctx.i = i;
+      ctx.j = j;
+      ctx.rotation = rots[j];
+      ctx.translation = initial_translation;
+      ctx.twist_angle = initial_twist_angle;
+      ctx.error = std::numeric_limits<float>::max();
+      ctx.done = false;
 
-      for (std::size_t j = 0; j < rots.size(); j++) {
-        icp_context ctx;
-        ctx.i = i;
-        ctx.j = j;
-        ctx.rotation = rots[j];
-        ctx.translation = initial_translation;
-        ctx.twist_angle = initial_twist_angle;
-        ctx.error = std::numeric_limits<float>::max();
-        ctx.done = false;
-
-        ctxs.push_back(ctx);
-      }
+      ctxs.push_back(ctx);
     }
   }
 

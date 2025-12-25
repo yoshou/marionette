@@ -15,8 +15,10 @@ using namespace marionette::core;
 using namespace marionette::optimization;
 using namespace marionette::utils;
 
-static find_fit_result update_result(const find_fit_result &fit_result, const double *rotation,
-                                     const double *translation, double twist_angle) {
+[[maybe_unused]] static find_fit_result update_result(const find_fit_result &fit_result,
+                                                      const double *rotation,
+                                                      const double *translation,
+                                                      double twist_angle) {
   const auto transform_by_param = [](glm::mat4 m, const double *axis_angle,
                                      const double *translation) {
     glm::vec3 axis_angle_vec(static_cast<float>(axis_angle[0]), static_cast<float>(axis_angle[1]),
@@ -48,6 +50,7 @@ static find_fit_result update_result(const find_fit_result &fit_result, const do
                          glm::vec3(updated_pose[3]), updated_twist_angle, fit_result.error);
 }
 
+[[maybe_unused]]
 static float compute_articulation_distance(const model_instance_data &model_instance,
                                            const clusters_transform_params &params,
                                            const glm::mat4 world) {
@@ -74,13 +77,11 @@ static float compute_articulation_distance(const model_instance_data &model_inst
     {
       const auto rotation = &params.mutable_rotations[parent_cluster_idx * 3];
       const auto translation = &params.mutable_translations[parent_cluster_idx * 3];
-      const auto &cluster = parent_cluster;
       updated_vec1 = transform_axis_angle(vec1, rotation, translation);
     }
     {
       const auto rotation = &params.mutable_rotations[child_cluster_idx * 3];
       const auto translation = &params.mutable_translations[child_cluster_idx * 3];
-      const auto &cluster = child_cluster;
       updated_vec2 = transform_axis_angle(vec2, rotation, translation);
     }
     const auto dist = glm::distance(updated_vec1, updated_vec2);
@@ -120,13 +121,13 @@ void motion_tracker::track_interplated_frame(const model_data &model,
                                              const frame_data_t &prev_frame,
                                              const model_instance_data &prev_clusters,
                                              glm::mat4 world, bool verbose, std::size_t max_iter) {
-  const auto threshold = 0.01f;
   // icp_3d_2d_minimizer minimizer;
   icp_3d_3d_minimizer minimizer;
   for (std::size_t iter = 0; iter < max_iter; iter++) {
     // const auto cost_change = minimizer.update(iter, model, cameras, frame, keyframe_clusters,
     // world, params, true, verbose);
 
+    // const auto threshold = 0.01f;
     // if (cost_change < threshold)
     // {
     //     break;

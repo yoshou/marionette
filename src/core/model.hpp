@@ -190,7 +190,7 @@ class model_data {
   }
 };
 
-static std::vector<std::pair<std::string, std::string>> get_articulation_pairs() {
+static inline std::vector<std::pair<std::string, std::string>> get_articulation_pairs() {
   static const std::vector<std::pair<std::string, std::string>> articulation_pairs = {
       {"Spine", "upper_leg.R"},
       {"upper_leg.R", "lower_leg.R"},

@@ -42,15 +42,8 @@ static bool solve_articulation(const model_data &model,
     add_articulation(articulations, "upper_leg.L", "lower_leg.L");
     add_articulation(articulations, "lower_leg.L", "foot.L");
 
-    auto start = std::chrono::system_clock::now();
     const auto [best_indices, error, max_error] =
         solve_articulation_chain_constraint(model, articulations, "foot.L", "foot.R");
-    auto end = std::chrono::system_clock::now();
-    double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
-    // std::cout << "Dijkstra " << elapsed << " [ms]" << std::endl;
-
-    // std::cout << max_error << std::endl;
 
     if (max_error > articulation_solved_threshold) {
       return false;
@@ -76,8 +69,6 @@ static bool solve_articulation(const model_data &model,
     const auto [best_indices, error, max_error] =
         solve_articulation_chain_constraint(model, articulations, "hand.L", "hand.R");
 
-    // std::cout << max_error << std::endl;
-
     if (max_error > articulation_solved_threshold) {
       return false;
     }
@@ -96,7 +87,6 @@ static bool solve_articulation(const model_data &model,
 
     const auto [best_indices, error, max_error] =
         solve_articulation_chain_constraint(model, articulations, "Neck", "Chest");
-    // std::cout << max_error << std::endl;
 
     if (max_error > articulation_solved_threshold) {
       return false;

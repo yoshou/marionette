@@ -2,7 +2,10 @@
 
 #include <immintrin.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 #include <Eigen/Core>
+#pragma GCC diagnostic pop
 #include <cmath>
 
 #define _mm256_set_m128d(vh, vl) _mm256_insertf128_pd(_mm256_castpd128_pd256(vl), (vh), 1)
@@ -143,23 +146,23 @@ static inline dual_t<T> square(const dual_t<T> &f) {
 }
 
 template <typename T>
-inline bool isinf(const dual_t<T> &f) {
+static inline bool isinf(const dual_t<T> &f) {
   return std::isinf(f.a);
 }
 template <typename T>
-inline bool isnan(const dual_t<T> &f) {
+static inline bool isnan(const dual_t<T> &f) {
   return std::isnan(f.a);
 }
 template <typename T>
-inline bool isless(const dual_t<T> &f, const dual_t<T> &g) {
+static inline bool isless(const dual_t<T> &f, const dual_t<T> &g) {
   return std::isless(f.a, g.a);
 }
 template <typename T>
-inline bool isgreater(const dual_t<T> &f, const dual_t<T> &g) {
+static inline bool isgreater(const dual_t<T> &f, const dual_t<T> &g) {
   return std::isgreater(f.a, g.a);
 }
 template <typename T>
-inline bool islessgreater(const dual_t<T> &f, const dual_t<T> &g) {
+static inline bool islessgreater(const dual_t<T> &f, const dual_t<T> &g) {
   return std::islessgreater(f.a, g.a);
 }
 template <typename T>
@@ -456,23 +459,23 @@ static inline hyper_dual_t<T> cos(const hyper_dual_t<T> &f) {
 }
 
 template <typename T>
-inline bool isinf(const hyper_dual_t<T> &f) {
+static inline bool isinf(const hyper_dual_t<T> &f) {
   return std::isinf(f.a);
 }
 template <typename T>
-inline bool isnan(const hyper_dual_t<T> &f) {
+static inline bool isnan(const hyper_dual_t<T> &f) {
   return std::isnan(f.a);
 }
 template <typename T>
-inline bool isless(const hyper_dual_t<T> &f, const hyper_dual_t<T> &g) {
+static inline bool isless(const hyper_dual_t<T> &f, const hyper_dual_t<T> &g) {
   return std::isless(f.a, g.a);
 }
 template <typename T>
-inline bool isgreater(const hyper_dual_t<T> &f, const hyper_dual_t<T> &g) {
+static inline bool isgreater(const hyper_dual_t<T> &f, const hyper_dual_t<T> &g) {
   return std::isgreater(f.a, g.a);
 }
 template <typename T>
-inline bool islessgreater(const hyper_dual_t<T> &f, const hyper_dual_t<T> &g) {
+static inline bool islessgreater(const hyper_dual_t<T> &f, const hyper_dual_t<T> &g) {
   return std::islessgreater(f.a, g.a);
 }
 template <typename T>

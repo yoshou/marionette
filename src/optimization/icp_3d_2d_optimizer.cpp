@@ -50,9 +50,9 @@ static glm::vec3 project_ortho(const camera_t &camera, const glm::vec3 &pt) {
   return proj_pt;
 }
 
-static void project_target(const model_instance_data &model_instance,
-                           const glm::mat4 &inverse_world, const camera_t &camera,
-                           std::vector<labeled_point> &points) {
+[[maybe_unused]] static void project_target(const model_instance_data &model_instance,
+                                            const glm::mat4 &inverse_world, const camera_t &camera,
+                                            std::vector<labeled_point> &points) {
   const auto &registered_clusters = model_instance.clusters;
   for (std::size_t i = 0; i < registered_clusters.size(); i++) {
     const auto &registered_cluster = registered_clusters[i];

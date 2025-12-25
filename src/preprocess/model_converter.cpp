@@ -1,5 +1,7 @@
 #define _USE_MATH_DEFINES
+#ifndef GLM_ENABLE_EXPERIMENTAL
 #define GLM_ENABLE_EXPERIMENTAL
+#endif
 
 #include "model_converter.hpp"
 

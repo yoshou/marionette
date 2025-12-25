@@ -137,7 +137,7 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
           std::vector<std::uint8_t> base_data(data_ptr, data_ptr + buffer_view.byteLength);
           std::vector<std::uint8_t> data(data_ptr, data_ptr + buffer_view.byteLength);
 
-          for (int target_id = 0; target_id < primitive.targets.size(); target_id++) {
+          for (size_t target_id = 0; target_id < primitive.targets.size(); target_id++) {
             const auto &target = primitive.targets[target_id];
             if (resources.weights.find(&mesh) == resources.weights.end()) {
               continue;
@@ -234,7 +234,6 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
 
       for (auto iter = prim->buffers.begin(); iter != prim->buffers.end(); iter++) {
         const tinygltf::Accessor &accessor = model.accessors[primitive.attributes.at(iter->first)];
-        const tinygltf::BufferView &buffer_view = model.bufferViews[accessor.bufferView];
 
         if (iter->first == "POSITION") {
           const buffer_t *buffer = &iter->second;
@@ -306,8 +305,6 @@ static void draw_node(tinygltf::Model &model, const tinygltf::Node &node, resour
     for (auto &transform : resources.transforms) {
       transform = glm::mat4(1.f);
     }
-
-    const node_t &mesh_node = resources.nodes.at(&node);
 
     if (node.skin >= 0) {
       const tinygltf::Skin &skin = model.skins[node.skin];
@@ -392,20 +389,18 @@ static void apply_blend_shape(tinygltf::Model &model, resources_t &resources) {
   const auto &groups = blendshape.Get("blendShapeGroups");
   assert(groups.IsArray());
 
-  for (int i = 0; i < groups.Size(); i++) {
-    const auto &group = groups.Get(i);
+  for (size_t i = 0; i < static_cast<size_t>(groups.Size()); i++) {
+    const auto &group = groups.Get(static_cast<int>(i));
 
-    const auto &is_binary = group.Get("isBinary").Get<bool>();
     const auto &name = group.Get("name").Get<std::string>();
-    const auto &preset_name = group.Get("presetName").Get<std::string>();
     const auto &binds = group.Get("binds");
 
     const auto blend_weight = resources.blend_weights.find(name) != resources.blend_weights.end()
                                   ? resources.blend_weights.at(name)
                                   : 0.0;
 
-    for (int j = 0; j < binds.Size(); j++) {
-      const auto &bind = binds.Get(j);
+    for (size_t j = 0; j < static_cast<size_t>(binds.Size()); j++) {
+      const auto &bind = binds.Get(static_cast<int>(j));
 
       const auto mesh = bind.Get("mesh").Get<int>();
       const auto index = bind.Get("index").Get<int>();

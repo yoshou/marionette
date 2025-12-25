@@ -1,4 +1,7 @@
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 #include <Eigen/Core>
+#pragma GCC diagnostic pop
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -558,7 +561,7 @@ class smpl_model {
     std::vector<T> g_verts(batch_size * j_regressor_body25.rows() * 3);
 
     for (size_t b = 0; b < poses_shape[0]; b++) {
-      for (size_t i = 0; i < j_regressor_body25.rows(); i++) {
+      for (Eigen::Index i = 0; i < j_regressor_body25.rows(); i++) {
         std::array<T, 3> vert;
         for (size_t j = 0; j < 3; j++) {
           vert[j] = T(verts[b * (verts_size * 3) + (j_regressor.rows() + i) * 3 + j]);
@@ -568,8 +571,6 @@ class smpl_model {
         for (size_t j = 0; j < 3; j++) {
           rot_vec[j] = T(rh[b * 3 + j]);
         }
-
-        const auto theta2 = dot_product(rot_vec.data(), rot_vec.data());
 
         std::array<T, 9> rot_mat;
         rodrigues(rot_vec.data(), rot_mat.data());
@@ -689,7 +690,7 @@ struct keypoints3d_loss {
   keypoints3d_loss(const std::vector<float> &keypoints3d,
                    const std::vector<uint32_t> &keypoints3d_shape,
                    const std::vector<int32_t> &indices)
-      : keypoints3d(keypoints3d), keypoints3d_shape(keypoints3d_shape), indices(indices) {
+      : indices(indices), keypoints3d(keypoints3d), keypoints3d_shape(keypoints3d_shape) {
     if (indices.empty()) {
       this->indices.resize(keypoints3d_shape[1]);
       std::iota(this->indices.begin(), this->indices.end(), 0);
@@ -1265,7 +1266,7 @@ class lbgfs_optimizer {
         const auto m = std::min(n_iter, max_m);
         std::vector<double> a(max_m);
 
-        for (std::size_t j = 0; j < m; j++) {
+        for (int j = 0; j < m; j++) {
           const auto i = n_iter - 1 - j;
           a[i % max_m] = s[i % max_m].dot(q) / y[i % max_m].dot(s[i % max_m]);
           q = q - a[i % max_m] * y[i % max_m];
@@ -1274,7 +1275,7 @@ class lbgfs_optimizer {
         const auto i = n_iter - 1;
         q = s[i % max_m].dot(y[i % max_m]) / y[i % max_m].dot(y[i % max_m]) * q;
 
-        for (std::size_t j = 0; j < m; j++) {
+        for (int j = 0; j < m; j++) {
           const auto i = n_iter - m + j;
 
           const auto b = y[i % max_m].dot(q) / y[i % max_m].dot(s[i % max_m]);
