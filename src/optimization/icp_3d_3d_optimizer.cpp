@@ -1,6 +1,9 @@
+#include "icp_3d_3d_optimizer.hpp"
+
 #include <cstddef>
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <iostream>
 #include <vector>
 
 #include "articulation_solver.hpp"
@@ -17,23 +20,17 @@
 #include "srt_transform.hpp"
 #include "transform.hpp"
 
-using namespace marionette::core;
-using namespace marionette::utils;
-using namespace marionette::optimization;
-using namespace marionette::tracking;
-
-#include <iostream>
-
-#include "icp_3d_3d_optimizer.hpp"
-
-using namespace marionette::core;
-
 #define USE_CERES_SOLVER 1
 
 #if USE_CERES_SOLVER
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
 #endif
+
+using namespace marionette::core;
+using namespace marionette::utils;
+using namespace marionette::optimization;
+using namespace marionette::tracking;
 
 class closest_point_correnspondance_matcher final : public correnspondance_matcher {
  public:

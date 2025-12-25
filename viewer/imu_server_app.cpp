@@ -27,9 +27,9 @@
 #include "stream_server.hpp"
 #include "viewer.hpp"
 
-using namespace marionette::data_source;
-
 namespace fs = std::filesystem;
+
+using namespace marionette::data_source;
 
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;

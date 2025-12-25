@@ -5,6 +5,10 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
+#include <fstream>
+#include <iostream>
+#include <string>
+
 grid_drawer::grid_drawer() {
   const auto unit_length = 0.5f;
   const auto num_lines = 16;
@@ -96,10 +100,6 @@ void grid_drawer::draw(glm::mat4 wvp) const {
 
   glUseProgram(0);
 }
-
-#include <fstream>
-#include <iostream>
-#include <string>
 
 static int load_shader(GLuint shaderObj, std::string fileName) {
   std::ifstream ifs(fileName);

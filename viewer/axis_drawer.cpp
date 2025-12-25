@@ -6,6 +6,9 @@
 // clang-format on
 
 #include <array>
+#include <fstream>
+#include <iostream>
+#include <string>
 
 axis_drawer::axis_drawer() {
   glm::vec3 max(1.f, 1.f, 1.f);
@@ -64,10 +67,6 @@ void axis_drawer::draw(glm::mat4 wvp) const {
 
   glUseProgram(0);
 }
-
-#include <fstream>
-#include <iostream>
-#include <string>
 
 static int load_shader(GLuint shaderObj, std::string fileName) {
   std::ifstream ifs(fileName);

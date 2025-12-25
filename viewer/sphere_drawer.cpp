@@ -5,6 +5,10 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
+#include <fstream>
+#include <iostream>
+#include <string>
+
 sphere_drawer::sphere_drawer(int sectors, int stacks, bool smooth) : interleavedStride(32) {
   set(sectors, stacks, smooth);
 }
@@ -84,10 +88,6 @@ void sphere_drawer::clearArrays() {
   std::vector<unsigned int>().swap(indices);
   std::vector<unsigned int>().swap(lineIndices);
 }
-
-#include <fstream>
-#include <iostream>
-#include <string>
 
 static int load_shader(GLuint shaderObj, std::string fileName) {
   std::ifstream ifs(fileName);

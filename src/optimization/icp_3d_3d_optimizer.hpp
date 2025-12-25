@@ -6,6 +6,7 @@
 #include "camera_info.hpp"
 #include "frame.hpp"
 #include "model.hpp"
+#include "model_detector.hpp"
 #include "registration.hpp"
 
 namespace marionette::optimization {

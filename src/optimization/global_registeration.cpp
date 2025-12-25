@@ -16,12 +16,6 @@
 #include "nanoflann.hpp"
 #include "transform.hpp"
 
-using namespace marionette::core;
-using namespace marionette::tracking;
-
-using namespace marionette::core;
-using namespace marionette::optimization;
-
 #ifdef USE_CUDA
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
@@ -30,6 +24,12 @@ using namespace marionette::optimization;
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #endif
+
+using namespace marionette::core;
+using namespace marionette::tracking;
+
+using namespace marionette::core;
+using namespace marionette::optimization;
 
 namespace marionette::optimization {
 

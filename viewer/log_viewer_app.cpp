@@ -2,7 +2,6 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-namespace fs = std::filesystem;
 // clang-format off
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -23,6 +22,8 @@ namespace fs = std::filesystem;
 #include "sphere_drawer.hpp"
 #include "viewer.hpp"
 #include "widget_drawer.hpp"
+
+namespace fs = std::filesystem;
 
 using namespace marionette::utils;
 

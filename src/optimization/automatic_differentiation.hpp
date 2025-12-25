@@ -502,8 +502,6 @@ struct std::common_type<marionette::optimization::dual_t<T>, marionette::optimiz
 
 namespace marionette::optimization {
 
-#include <immintrin.h>
-
 template <typename T>
 struct vec3_t {
   T x;

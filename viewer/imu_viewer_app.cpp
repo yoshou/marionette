@@ -32,11 +32,6 @@
 #include "sphere_drawer.hpp"
 #include "widget_drawer.hpp"
 
-using namespace marionette::core;
-using namespace marionette::tracking;
-using namespace marionette::data_source;
-using namespace marionette::pose_estimation;
-
 #ifdef _WIN32
 #else
 #include <signal.h>
@@ -44,6 +39,11 @@ using namespace marionette::pose_estimation;
 #endif
 
 #include "viewer.hpp"
+
+using namespace marionette::core;
+using namespace marionette::tracking;
+using namespace marionette::data_source;
+using namespace marionette::pose_estimation;
 
 const int SCREEN_WIDTH = 1680;
 const int SCREEN_HEIGHT = 1050;

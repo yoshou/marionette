@@ -5,6 +5,11 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
+#include <fstream>
+#include <glm/gtx/transform.hpp>
+#include <iostream>
+#include <string>
+
 #include "grid_drawer.hpp"
 
 drawer2d::drawer2d() {
@@ -47,8 +52,6 @@ void drawer2d::addColor(float r, float g, float b, float a) {
   colors.push_back(a);
 }
 
-#include <glm/gtx/transform.hpp>
-
 void drawer2d::draw_rect(const glm::vec2 &position, const glm::vec2 &size,
                          const glm::vec4 &color) const {
   glm::mat4 wvp = glm::translate(glm::vec3(-1.0f, 1.0f, 0.0f)) *
@@ -69,10 +72,6 @@ void drawer2d::draw_rect(const glm::vec2 &position, const glm::vec2 &size,
 
   glUseProgram(0);
 }
-
-#include <fstream>
-#include <iostream>
-#include <string>
 
 static int load_shader(GLuint shaderObj, std::string fileName) {
   std::ifstream ifs(fileName);

@@ -2,7 +2,6 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-namespace fs = std::filesystem;
 // clang-format off
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -22,23 +21,25 @@ namespace fs = std::filesystem;
 #include "glm_json_ext.hpp"
 #include "grid_drawer.hpp"
 #include "model.hpp"
+#include "model_detection_worker.hpp"
 #include "model_detector.hpp"
 #include "model_drawer.hpp"
+#include "model_tracking_worker.hpp"
 #include "motion_tracker.hpp"
 #include "playback_stream.hpp"
+#include "pose_computation.hpp"
 #include "remote_sensor_stream.hpp"
 #include "retarget.hpp"
 #include "sphere_drawer.hpp"
 #include "viewer.hpp"
 #include "widget_drawer.hpp"
 
+namespace fs = std::filesystem;
+
 using namespace marionette::core;
 using namespace marionette::data_source;
 using namespace marionette::tracking;
 using namespace marionette::pose_estimation;
-#include "model_detection_worker.hpp"
-#include "model_tracking_worker.hpp"
-#include "pose_computation.hpp"
 
 #define PLAYBACK 1
 

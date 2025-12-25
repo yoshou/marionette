@@ -6,6 +6,9 @@
 // clang-format on
 
 #include <array>
+#include <fstream>
+#include <iostream>
+#include <string>
 
 bone_drawer::bone_drawer(const glm::u8vec4 color) {
   constexpr float length = 1.0f;
@@ -86,10 +89,6 @@ void bone_drawer::draw(glm::mat4 wvp) const {
 
   glUseProgram(0);
 }
-
-#include <fstream>
-#include <iostream>
-#include <string>
 
 static int load_shader(GLuint shaderObj, std::string fileName) {
   std::ifstream ifs(fileName);

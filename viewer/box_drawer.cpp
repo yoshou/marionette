@@ -6,6 +6,9 @@
 // clang-format on
 
 #include <array>
+#include <fstream>
+#include <iostream>
+#include <string>
 
 box_drawer::box_drawer() {
   std::array<glm::vec4, 8> points = {{{-1.f, -1.f, -1.f, 1.f},
@@ -118,10 +121,6 @@ void box_drawer::draw(glm::mat4 wvp) const {
 
   glUseProgram(0);
 }
-
-#include <fstream>
-#include <iostream>
-#include <string>
 
 static int load_shader(GLuint shaderObj, std::string fileName) {
   std::ifstream ifs(fileName);
