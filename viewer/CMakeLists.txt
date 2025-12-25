@@ -22,6 +22,7 @@ add_executable(ir_viewer
     ${CMAKE_CURRENT_LIST_DIR}/axis_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/widget_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/viewer_app.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/shader_utils.cpp
 )
 
 target_compile_definitions(ir_viewer
@@ -101,6 +102,7 @@ add_executable(log_viewer_app
     ${CMAKE_CURRENT_LIST_DIR}/axis_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/widget_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/log_viewer_app.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/shader_utils.cpp
 )
 
 target_include_directories(log_viewer_app
@@ -165,6 +167,7 @@ add_executable(imu_viewer_app
     ${CMAKE_CURRENT_LIST_DIR}/axis_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/widget_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/imu_viewer_app.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/shader_utils.cpp
 )
 
 target_include_directories(imu_viewer_app
@@ -248,6 +251,7 @@ add_executable(imu_server_app
     ${CMAKE_CURRENT_LIST_DIR}/axis_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/box_drawer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/imu_server_app.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/shader_utils.cpp
 )
 
 target_include_directories(imu_server_app

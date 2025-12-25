@@ -9,6 +9,8 @@
 #include <iostream>
 #include <string>
 
+#include "shader_utils.hpp"
+
 grid_drawer::grid_drawer() {
   const auto unit_length = 0.5f;
   const auto num_lines = 16;
@@ -101,69 +103,9 @@ void grid_drawer::draw(glm::mat4 wvp) const {
   glUseProgram(0);
 }
 
-static int load_shader(GLuint shaderObj, std::string fileName) {
-  std::ifstream ifs(fileName);
-  if (!ifs) {
-    std::cout << "error" << std::endl;
-    return -1;
-  }
-
-  std::string source;
-  std::string line;
-  while (getline(ifs, line)) {
-    source += line + "\n";
-  }
-
-  const GLchar *sourcePtr = (const GLchar *)source.c_str();
-  GLint length = source.length();
-  glShaderSource(shaderObj, 1, &sourcePtr, &length);
-
-  return 0;
-}
-
-static GLint load_program(std::string vertexFileName, std::string fragmentFileName) {
-  GLuint vertShaderObj = glCreateShader(GL_VERTEX_SHADER);
-  GLuint fragShaderObj = glCreateShader(GL_FRAGMENT_SHADER);
-  GLuint shader;
-  GLint compiled, linked;
-
-  if (load_shader(vertShaderObj, vertexFileName)) return -1;
-  if (load_shader(fragShaderObj, fragmentFileName)) return -1;
-
-  glCompileShader(vertShaderObj);
-  glGetShaderiv(vertShaderObj, GL_COMPILE_STATUS, &compiled);
-  if (compiled == GL_FALSE) {
-    fprintf(stderr, "Compile error in vertex shader.\n");
-    return -1;
-  }
-
-  glCompileShader(fragShaderObj);
-  glGetShaderiv(fragShaderObj, GL_COMPILE_STATUS, &compiled);
-  if (compiled == GL_FALSE) {
-    fprintf(stderr, "Compile error in fragment shader.\n");
-    return -1;
-  }
-
-  shader = glCreateProgram();
-
-  glAttachShader(shader, vertShaderObj);
-  glAttachShader(shader, fragShaderObj);
-
-  glDeleteShader(vertShaderObj);
-  glDeleteShader(fragShaderObj);
-
-  glLinkProgram(shader);
-  glGetProgramiv(shader, GL_LINK_STATUS, &linked);
-  if (linked == GL_FALSE) {
-    fprintf(stderr, "Link error.\n");
-    return -1;
-  }
-
-  return shader;
-}
-
 void grid_drawer::initialize() {
-  shader = load_program("../viewer/shaders/color.vert", "../viewer/shaders/color.frag");
+  shader =
+      shader_utils::load_program("../viewer/shaders/color.vert", "../viewer/shaders/color.frag");
 
   glGenBuffers(1, &vertex_buffer);
   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
