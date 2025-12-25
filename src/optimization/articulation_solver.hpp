@@ -5,9 +5,9 @@
 #include "global_registeration.hpp"
 #include "model.hpp"
 
-using namespace marionette::core;
-
 namespace marionette::optimization {
+
+using namespace marionette::core;
 
 struct articulation_results {
   rigid_cluster parent_cluster;

@@ -6,9 +6,9 @@
 #include "global_registeration.hpp"
 #include "model.hpp"
 
-using namespace marionette::core;
-
 namespace marionette::optimization {
+
+using namespace marionette::core;
 
 static void transform_to_target(const rigid_cluster &cluster, const find_fit_result &result,
                                 std::vector<glm::vec3> &points) {

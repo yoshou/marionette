@@ -25,7 +25,7 @@ class model_tracking_worker {
   model_data model;
   model_data instanced_model;
   model_instance_data model_instance;
-  std::shared_ptr<::frame_cursor> frame_cursor;
+  std::shared_ptr<marionette::core::frame_cursor> frame_cursor;
 
   mutable std::mutex poses_mtx;
   std::map<std::string, glm::mat4> poses;
@@ -34,7 +34,7 @@ class model_tracking_worker {
 
  public:
   model_tracking_worker(const model_data& model, const model_instance_data& model_instance,
-                        const std::shared_ptr<::frame_cursor>& frame_cursor);
+                        const std::shared_ptr<marionette::core::frame_cursor>& frame_cursor);
 
   void start();
 

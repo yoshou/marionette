@@ -8,10 +8,10 @@
 #include "model.hpp"
 #include "registration.hpp"
 
+namespace marionette::optimization {
+
 using namespace marionette::core;
 using namespace marionette::tracking;
-
-namespace marionette::optimization {
 
 class correnspondance_matcher {
  public:

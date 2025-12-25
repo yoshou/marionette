@@ -10,10 +10,10 @@
 #include "registration.hpp"
 #include "transform.hpp"
 
+namespace marionette::optimization {
+
 using namespace marionette::core;
 using namespace marionette::tracking;
-
-namespace marionette::optimization {
 
 struct icp_3d_2d_minimizer {
   std::size_t frame_no;

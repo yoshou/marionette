@@ -10,9 +10,9 @@
 #include "point_cloud.hpp"
 #include "transform.hpp"
 
-using namespace marionette::core;
-
 namespace marionette::optimization {
+
+using namespace marionette::core;
 
 struct twist_rt_transform {
   glm::mat3 rotation;

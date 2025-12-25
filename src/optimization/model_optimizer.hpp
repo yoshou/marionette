@@ -18,9 +18,9 @@
 #include "registration.hpp"
 #include "transform.hpp"
 
-using namespace marionette::core;
-
 namespace marionette::optimization {
+
+using namespace marionette::core;
 
 struct zero_function {
   template <typename T>
