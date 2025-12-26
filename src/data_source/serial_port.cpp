@@ -2,8 +2,10 @@
 
 #ifdef _WIN32
 
-#include <setupapi.h>
+// clang-format off
 #include <windows.h>
+#include <setupapi.h>
+// clang-format on
 
 #include <sstream>
 
