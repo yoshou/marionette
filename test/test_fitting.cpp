@@ -432,9 +432,10 @@ class smpl_model {
           for (size_t v = 0; v < shapedirs_shape[0]; v++) {
             const auto dst_idx =
                 i * j_shapedirs_steps[0] + j * j_shapedirs_steps[1] + k * j_shapedirs_steps[2];
-            j_shapedirs[dst_idx] += static_cast<float>(j_regressor_ext(i, v) *
-                                    shapedirs_data[v * shapedirs_steps[0] + j * shapedirs_steps[1] +
-                                                   k * shapedirs_steps[2]]);
+            j_shapedirs[dst_idx] +=
+                static_cast<float>(j_regressor_ext(i, v) *
+                                   shapedirs_data[v * shapedirs_steps[0] + j * shapedirs_steps[1] +
+                                                  k * shapedirs_steps[2]]);
           }
         }
       }
@@ -451,7 +452,8 @@ class smpl_model {
           for (size_t v = 0; v < posedirs_shape[0]; v++) {
             const auto dst_idx =
                 i * j_posedirs_steps[0] + j * j_posedirs_steps[1] + k * j_posedirs_steps[2];
-            j_posedirs[dst_idx] += static_cast<float>(j_regressor_ext(i, v) *
+            j_posedirs[dst_idx] +=
+                static_cast<float>(j_regressor_ext(i, v) *
                                    posedirs_data[v * posedirs_steps[0] + j * posedirs_steps[1] +
                                                  k * posedirs_steps[2]]);
           }

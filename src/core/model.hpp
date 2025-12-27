@@ -70,7 +70,8 @@ class model_data {
     glm::mat4 result;
     for (std::size_t i = 0; i < 4; i++) {
       for (std::size_t j = 0; j < 4; j++) {
-        result[static_cast<glm::mat4::length_type>(i)][static_cast<glm::vec4::length_type>(j)] = obj[i * 4 + j].get<float>();
+        result[static_cast<glm::mat4::length_type>(i)][static_cast<glm::vec4::length_type>(j)] =
+            obj[i * 4 + j].get<float>();
       }
     }
     return result;
@@ -233,7 +234,8 @@ class skeleton_data {
     glm::mat4 result;
     for (std::size_t i = 0; i < 4; i++) {
       for (std::size_t j = 0; j < 4; j++) {
-        result[static_cast<glm::mat4::length_type>(i)][static_cast<glm::vec4::length_type>(j)] = obj[i * 4 + j].get<float>();
+        result[static_cast<glm::mat4::length_type>(i)][static_cast<glm::vec4::length_type>(j)] =
+            obj[i * 4 + j].get<float>();
       }
     }
     return result;

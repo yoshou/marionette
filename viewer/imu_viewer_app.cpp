@@ -312,7 +312,8 @@ int imu_viewer_main() {
       if (obj != model.bones.end()) {
         glm::mat3 orientation = obj->pose;
         for (size_t k = 0; k < 3; k++) {
-          orientation[static_cast<glm::mat3::length_type>(k)] = glm::normalize(orientation[static_cast<glm::mat3::length_type>(k)]);
+          orientation[static_cast<glm::mat3::length_type>(k)] =
+              glm::normalize(orientation[static_cast<glm::mat3::length_type>(k)]);
         }
         glm::vec3 position = obj->pose[3];
         base_orientation = orientation;
@@ -327,7 +328,8 @@ int imu_viewer_main() {
         if (obj != model.objects.end()) {
           glm::mat3 default_sensor_orientation = obj->orientation;
           for (size_t k = 0; k < 3; k++) {
-            default_sensor_orientation[static_cast<glm::mat3::length_type>(k)] = glm::normalize(default_sensor_orientation[static_cast<glm::mat3::length_type>(k)]);
+            default_sensor_orientation[static_cast<glm::mat3::length_type>(k)] =
+                glm::normalize(default_sensor_orientation[static_cast<glm::mat3::length_type>(k)]);
           }
 
           glm::mat4 default_bone_pose(1.0f);
@@ -337,7 +339,8 @@ int imu_viewer_main() {
             if (obj != model.bones.end()) {
               glm::mat3 orientation = obj->pose;
               for (size_t k = 0; k < 3; k++) {
-                orientation[static_cast<glm::mat3::length_type>(k)] = glm::normalize(orientation[static_cast<glm::mat3::length_type>(k)]);
+                orientation[static_cast<glm::mat3::length_type>(k)] =
+                    glm::normalize(orientation[static_cast<glm::mat3::length_type>(k)]);
               }
               glm::vec3 position = obj->pose[3];
               default_bone_pose[0] = glm::vec4(orientation[0], 0.0f);
@@ -355,7 +358,8 @@ int imu_viewer_main() {
             if (obj != model.bones.end()) {
               glm::mat3 orientation = obj->pose;
               for (size_t k = 0; k < 3; k++) {
-                orientation[static_cast<glm::mat3::length_type>(k)] = glm::normalize(orientation[static_cast<glm::mat3::length_type>(k)]);
+                orientation[static_cast<glm::mat3::length_type>(k)] =
+                    glm::normalize(orientation[static_cast<glm::mat3::length_type>(k)]);
               }
               glm::vec3 position = obj->pose[3];
               default_bone_pose0[0] = glm::vec4(orientation[0], 0.0f);

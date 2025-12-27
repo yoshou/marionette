@@ -431,7 +431,8 @@ void estimate_finger_pose(std::map<std::string, glm::mat4>& poses, const model_d
     const auto& bone = bones[i];
     double* rotation_param = &rotation_params[4 * i];
     const auto orientation = glm::toMat3(
-        glm::quat(static_cast<float>(rotation_param[3]), static_cast<float>(rotation_param[0]), static_cast<float>(rotation_param[1]), static_cast<float>(rotation_param[2])));
+        glm::quat(static_cast<float>(rotation_param[3]), static_cast<float>(rotation_param[0]),
+                  static_cast<float>(rotation_param[1]), static_cast<float>(rotation_param[2])));
     poses.at(bone) = glm::mat4(glm::vec4(orientation[0], 0.0), glm::vec4(orientation[1], 0.0),
                                glm::vec4(orientation[2], 0.0), poses.at(bone)[3]);
   }

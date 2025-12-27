@@ -211,7 +211,8 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
     glUniformMatrix4fv(glGetUniformLocation(resources.shader, "pvw"), 1, GL_FALSE,
                        &resources.wvp[0][0]);
     glUniformMatrix4fv(glGetUniformLocation(resources.shader, "transforms"),
-                       static_cast<GLsizei>(resources.transforms.size()), GL_FALSE, &resources.transforms[0][0][0]);
+                       static_cast<GLsizei>(resources.transforms.size()), GL_FALSE,
+                       &resources.transforms[0][0][0]);
     glUniform1i(glGetUniformLocation(resources.shader, "tex"), 0);
     if (primitive.material >= 0) {
       tinygltf::Material &mat = model.materials[primitive.material];
@@ -268,8 +269,8 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
           int byte_stride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
           assert(byte_stride != -1);
           glEnableVertexAttribArray(3);
-          glVertexAttribIPointer(3, static_cast<GLint>(buffer->elem_size), accessor.componentType, byte_stride,
-                                 BUFFER_OFFSET(accessor.byteOffset));
+          glVertexAttribIPointer(3, static_cast<GLint>(buffer->elem_size), accessor.componentType,
+                                 byte_stride, BUFFER_OFFSET(accessor.byteOffset));
         } else if (iter->first == "WEIGHTS_0") {
           const buffer_t *buffer = &iter->second;
           glBindBuffer(GL_ARRAY_BUFFER, buffer->id);

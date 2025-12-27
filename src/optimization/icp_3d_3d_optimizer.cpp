@@ -863,7 +863,8 @@ float icp_3d_3d_minimizer::update(std::size_t iter, const model_data& model,
       std::cout << "Total elapsed for update pose : " << elapsed / 1000.0 << " [ms]" << std::endl;
     }
 
-    return static_cast<float>(std::abs(summary.final_cost - summary.initial_cost) / summary.initial_cost);
+    return static_cast<float>(std::abs(summary.final_cost - summary.initial_cost) /
+                              summary.initial_cost);
   }
 #else
     optimization::function func(residuals);

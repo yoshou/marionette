@@ -86,8 +86,8 @@ struct segment_feature {
 };
 
 static inline segment_feature extract_segment_feature(const glm::vec3 &keypoint,
-                                               const std::vector<glm::vec3> &points,
-                                               float max_radius) {
+                                                      const std::vector<glm::vec3> &points,
+                                                      float max_radius) {
   segment_feature feature;
 
   for (std::size_t i = 0; i < points.size(); i++) {
@@ -103,7 +103,7 @@ static inline segment_feature extract_segment_feature(const glm::vec3 &keypoint,
 }
 
 static inline float compute_feature_distance(const segment_feature &feature1,
-                                      const segment_feature &feature2) {
+                                             const segment_feature &feature2) {
   if (feature1.values.size() == 0 || feature2.values.size() == 0) {
     return std::numeric_limits<float>::max();
   }

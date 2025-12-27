@@ -412,7 +412,8 @@ struct icp_minimizer {
     glm::mat3 rot(1.f);
     for (std::size_t i = 0; i < 3; i++) {
       for (std::size_t j = 0; j < 3; j++) {
-        rot[static_cast<glm::mat3::length_type>(j)][static_cast<glm::vec3::length_type>(i)] = r(i, j);
+        rot[static_cast<glm::mat3::length_type>(j)][static_cast<glm::vec3::length_type>(i)] =
+            r(i, j);
       }
     }
 

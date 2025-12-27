@@ -69,9 +69,10 @@ void imu_capture::start(std::function<void(const pose_frame &)> frame_received) 
             data.accel_status = frame.imu[i].accel;
             data.gyro_status = frame.imu[i].gyro;
             data.mag_status = frame.imu[i].mag;
-            data.orientation =
-                glm::quat(static_cast<float>(frame.imu[i].orientation_quat.w), static_cast<float>(frame.imu[i].orientation_quat.x),
-                          static_cast<float>(frame.imu[i].orientation_quat.y), static_cast<float>(frame.imu[i].orientation_quat.z));
+            data.orientation = glm::quat(static_cast<float>(frame.imu[i].orientation_quat.w),
+                                         static_cast<float>(frame.imu[i].orientation_quat.x),
+                                         static_cast<float>(frame.imu[i].orientation_quat.y),
+                                         static_cast<float>(frame.imu[i].orientation_quat.z));
             pose.poses.push_back(data);
           }
 
