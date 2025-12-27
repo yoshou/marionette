@@ -36,7 +36,7 @@ void azimuth_elevation::update(mouse_state mouse) {
     if (previous_state.right_button == GLFW_RELEASE) {
       begin_rotation(mouse_x, mouse_y);
     } else {
-      update_rotation(mouse_x, mouse_y);
+      update_rotation(static_cast<float>(mouse_x), static_cast<float>(mouse_y));
     }
   } else if (mouse.right_button == GLFW_RELEASE) {
     end_rotation();

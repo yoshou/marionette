@@ -193,7 +193,7 @@ model_instance_data detect_model(const model_data &model, const frame_data_t &fr
 #endif
 
     auto end = std::chrono::system_clock::now();
-    double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    double elapsed = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 
     std::cout << "Total elapsed for registeration " << elapsed << " [ms]" << std::endl;
   }
@@ -283,7 +283,7 @@ model_instance_data detect_model(const model_data &model, const frame_data_t &fr
 #endif
 
     auto end = std::chrono::system_clock::now();
-    double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    double elapsed = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 
     std::cout << "Total elapsed for articulation solver " << elapsed << " [ms]" << std::endl;
 

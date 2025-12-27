@@ -19,7 +19,7 @@ int load_shader(GLuint shader_obj, const std::string& file_name) {
   }
 
   const GLchar* sourcePtr = (const GLchar*)source.c_str();
-  GLint length = source.length();
+  GLint length = static_cast<GLint>(source.length());
   glShaderSource(shader_obj, 1, &sourcePtr, &length);
 
   return 0;

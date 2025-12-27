@@ -111,7 +111,7 @@ size_t serial_port::get_received_size() const {
 
 size_t serial_port::read(uint8_t *buf, size_t size) {
   unsigned long read_len;
-  ReadFile(handle->value, buf, size, &read_len, NULL);
+  ReadFile(handle->value, buf, static_cast<DWORD>(size), &read_len, NULL);
   return read_len;
 }
 

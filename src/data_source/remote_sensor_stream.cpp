@@ -62,8 +62,8 @@ void remote_sensor_stream::subscribe_sphere(
     std::vector<glm::vec3> markers;
 
     for (std::size_t i = 0; i < static_cast<std::size_t>(response.values_size()); i++) {
-      const auto sphere = response.values(i);
-      markers.push_back(glm::vec3(sphere.point().x(), sphere.point().y(), sphere.point().z()));
+      const auto sphere = response.values(static_cast<int>(i));
+      markers.push_back(glm::vec3(static_cast<float>(sphere.point().x()), static_cast<float>(sphere.point().y()), static_cast<float>(sphere.point().z())));
     }
 
     callback(markers);
@@ -88,8 +88,8 @@ void remote_sensor_stream::subscribe_quat(
     std::vector<glm::quat> quats;
 
     for (std::size_t i = 0; i < static_cast<std::size_t>(response.values_size()); i++) {
-      const auto quat = response.values(i);
-      quats.push_back(glm::quat(quat.w(), quat.x(), quat.y(), quat.z()));
+      const auto quat = response.values(static_cast<int>(i));
+      quats.push_back(glm::quat(static_cast<float>(quat.w()), static_cast<float>(quat.x()), static_cast<float>(quat.y()), static_cast<float>(quat.z())));
     }
 
     callback(quats);

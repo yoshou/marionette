@@ -1,7 +1,11 @@
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
 #include <Eigen/Core>
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
+#endif
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -428,9 +432,9 @@ class smpl_model {
           for (size_t v = 0; v < shapedirs_shape[0]; v++) {
             const auto dst_idx =
                 i * j_shapedirs_steps[0] + j * j_shapedirs_steps[1] + k * j_shapedirs_steps[2];
-            j_shapedirs[dst_idx] += j_regressor_ext(i, v) *
+            j_shapedirs[dst_idx] += static_cast<float>(j_regressor_ext(i, v) *
                                     shapedirs_data[v * shapedirs_steps[0] + j * shapedirs_steps[1] +
-                                                   k * shapedirs_steps[2]];
+                                                   k * shapedirs_steps[2]]);
           }
         }
       }
@@ -447,9 +451,9 @@ class smpl_model {
           for (size_t v = 0; v < posedirs_shape[0]; v++) {
             const auto dst_idx =
                 i * j_posedirs_steps[0] + j * j_posedirs_steps[1] + k * j_posedirs_steps[2];
-            j_posedirs[dst_idx] += j_regressor_ext(i, v) *
+            j_posedirs[dst_idx] += static_cast<float>(j_regressor_ext(i, v) *
                                    posedirs_data[v * posedirs_steps[0] + j * posedirs_steps[1] +
-                                                 k * posedirs_steps[2]];
+                                                 k * posedirs_steps[2]]);
           }
         }
       }
@@ -955,8 +959,8 @@ struct init_rt_obj_func {
         poses_shape(poses_shape),
         model(model),
         keypoints3d(keypoints3d, keypoints3d_shape, {2, 5, 9, 12}),
-        smooth_keypoints({keypoints3d_shape[0], keypoints3d_shape[1], 3}, {0.5, 0.3, 0.1, 0.1}),
-        smooth_th({keypoints3d_shape[0], 1, 3}, {0.5, 0.3, 0.1, 0.1}) {}
+        smooth_keypoints({keypoints3d_shape[0], keypoints3d_shape[1], 3}, {0.5f, 0.3f, 0.1f, 0.1f}),
+        smooth_th({keypoints3d_shape[0], 1, 3}, {0.5f, 0.3f, 0.1f, 0.1f}) {}
 
   template <typename T>
   inline T operator()(const T *const rh, const T *const th) const {
@@ -1001,9 +1005,9 @@ struct refine_pose_obj_func {
         poses_shape(poses_shape),
         model(model),
         keypoints3d(keypoints3d, keypoints3d_shape, {}),
-        smooth_keypoints({keypoints3d_shape[0], keypoints3d_shape[1], 3}, {0.5, 0.3, 0.1, 0.1}),
-        smooth_th({keypoints3d_shape[0], 1, 3}, {0.5, 0.3, 0.1, 0.1}),
-        smooth_poses({poses_shape[0], 1, poses_shape[1]}, {0.5, 0.3, 0.1, 0.1}),
+        smooth_keypoints({keypoints3d_shape[0], keypoints3d_shape[1], 3}, {0.5f, 0.3f, 0.1f, 0.1f}),
+        smooth_th({keypoints3d_shape[0], 1, 3}, {0.5f, 0.3f, 0.1f, 0.1f}),
+        smooth_poses({poses_shape[0], 1, poses_shape[1]}, {0.5f, 0.3f, 0.1f, 0.1f}),
         prior(poses_shape) {}
 
   template <typename T>
@@ -1220,7 +1224,7 @@ class lbgfs_optimizer {
   float tolerance_grad = 1e-7f;
   float tolerance_change = 1e-7f;
   int history_size = 100;
-  float alpha = 1.0f;
+  double alpha = 1.0;
 
   Eigen::VectorXd params_v;
   Eigen::VectorXd prev_grad_v;

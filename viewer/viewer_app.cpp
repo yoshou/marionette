@@ -162,7 +162,7 @@ struct ir_viewer : public window_base {
     glm::vec3 view_pos =
         glm::rotate(glm::inverse(view_controller->get_rotation_quaternion()), forward * radius);
 
-    set_camera(view_pos.x, view_pos.y + 1.5, view_pos.z, 0, 1.5, 0);
+    set_camera(view_pos.x, static_cast<float>(view_pos.y + 1.5), view_pos.z, 0, 1.5f, 0);
 
     grid_drawer_.draw(pvw);
 

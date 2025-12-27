@@ -160,9 +160,9 @@ float icp_3d_2d_minimizer::update(std::size_t iter, const model_data &model,
         continue;
       }
       observations.push_back(closest_point);
-      camera_index.push_back(i);
-      point_index.push_back(j);
-      cluster_index.push_back(point.cluster);
+      camera_index.push_back(static_cast<int>(i));
+      point_index.push_back(static_cast<int>(j));
+      cluster_index.push_back(static_cast<int>(point.cluster));
       weights.push_back(glm::distance(closest_point, point.p));
 
       observed_count[j]++;
@@ -381,7 +381,7 @@ float icp_3d_2d_minimizer::update(std::size_t iter, const model_data &model,
     ceres::Solve(options, &problem, &summary);
 
     auto end = std::chrono::system_clock::now();
-    double elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    double elapsed = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
 
     if (verbose) {
       std::cout << "Num residual blocks : " << summary.num_residual_blocks << std::endl;
@@ -395,7 +395,7 @@ float icp_3d_2d_minimizer::update(std::size_t iter, const model_data &model,
     std::cout << "Cost : " << summary.final_cost << std::endl;
     std::cout << "Steps : " << summary.num_successful_steps << std::endl;
     std::cout << "Residuals : " << summary.num_residual_blocks << std::endl;
-    return std::abs(summary.final_cost - summary.initial_cost) / summary.initial_cost;
+    return static_cast<float>(std::abs(summary.final_cost - summary.initial_cost) / summary.initial_cost);
   }
 }
 

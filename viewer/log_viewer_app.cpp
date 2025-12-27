@@ -197,7 +197,7 @@ struct log_viewer : public window_base {
         if (pos.x >= clip_pos.x && pos.y >= clip_pos.y && pos.x <= (clip_pos.x + clip_size.x) &&
             pos.y <= (clip_pos.y + clip_size.y)) {
           widget_drawer_.selected_name = glm::to_string(pos);
-          selected_index = i;
+          selected_index = static_cast<int>(i);
           return;
         }
       }

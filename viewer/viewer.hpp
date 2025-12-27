@@ -189,7 +189,7 @@ class azimuth_elevation {
     if (on_target(x, y)) {
       drag_rotation = true;
       previous_rotation = current_rotation;
-      start_position = screen_to_vector((float)x, (float)y);
+      start_position = screen_to_vector(static_cast<float>(x), static_cast<float>(y));
     }
   }
   void update_rotation(float x, float y) {

@@ -44,7 +44,7 @@ void drawer2d::add_vertex(float x, float y, float z) {
   vertices.push_back(y);
   vertices.push_back(z);
 
-  indices.push_back(indices.size());
+  indices.push_back(static_cast<unsigned int>(indices.size()));
 }
 void drawer2d::add_color(float r, float g, float b, float a) {
   colors.push_back(r);

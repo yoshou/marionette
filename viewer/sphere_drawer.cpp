@@ -133,7 +133,7 @@ void sphere_drawer::initialize() {
 }
 
 void sphere_drawer::build_vertices_smooth() {
-  const float PI = acos(-1);
+  const float PI = static_cast<float>(acos(-1));
 
   // clear memory of prev arrays
   clear_arrays();
@@ -210,7 +210,7 @@ void sphere_drawer::build_vertices_smooth() {
 }
 
 void sphere_drawer::build_vertices_flat() {
-  const float PI = acos(-1);
+  const float PI = static_cast<float>(acos(-1));
 
   // tmp vertex definition (x,y,z,s,t)
   struct Vertex {

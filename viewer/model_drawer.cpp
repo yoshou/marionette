@@ -154,7 +154,7 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
               const auto data_ptr = &buffer.data[buffer_view.byteOffset];
 
               for (size_t i = 0; i < data.size() / sizeof(float); i++) {
-                ((float *)data.data())[i] += ((float *)data_ptr)[i] * weight;
+                ((float *)data.data())[i] += static_cast<float>(((float *)data_ptr)[i] * weight);
               }
             }
           }
@@ -211,7 +211,7 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
     glUniformMatrix4fv(glGetUniformLocation(resources.shader, "pvw"), 1, GL_FALSE,
                        &resources.wvp[0][0]);
     glUniformMatrix4fv(glGetUniformLocation(resources.shader, "transforms"),
-                       resources.transforms.size(), GL_FALSE, &resources.transforms[0][0][0]);
+                       static_cast<GLsizei>(resources.transforms.size()), GL_FALSE, &resources.transforms[0][0][0]);
     glUniform1i(glGetUniformLocation(resources.shader, "tex"), 0);
     if (primitive.material >= 0) {
       tinygltf::Material &mat = model.materials[primitive.material];
@@ -241,7 +241,7 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
           int byte_stride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
           assert(byte_stride != -1);
           glEnableVertexAttribArray(0);
-          glVertexAttribPointer(0, buffer->elem_size, accessor.componentType,
+          glVertexAttribPointer(0, static_cast<GLint>(buffer->elem_size), accessor.componentType,
                                 accessor.normalized ? GL_TRUE : GL_FALSE, byte_stride,
                                 BUFFER_OFFSET(accessor.byteOffset));
         } else if (iter->first == "NORMAL") {
@@ -250,7 +250,7 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
           int byte_stride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
           assert(byte_stride != -1);
           glEnableVertexAttribArray(1);
-          glVertexAttribPointer(1, buffer->elem_size, accessor.componentType,
+          glVertexAttribPointer(1, static_cast<GLint>(buffer->elem_size), accessor.componentType,
                                 accessor.normalized ? GL_TRUE : GL_FALSE, byte_stride,
                                 BUFFER_OFFSET(accessor.byteOffset));
         } else if (iter->first == "TEXCOORD_0") {
@@ -259,7 +259,7 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
           int byte_stride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
           assert(byte_stride != -1);
           glEnableVertexAttribArray(2);
-          glVertexAttribPointer(2, buffer->elem_size, accessor.componentType,
+          glVertexAttribPointer(2, static_cast<GLint>(buffer->elem_size), accessor.componentType,
                                 accessor.normalized ? GL_TRUE : GL_FALSE, byte_stride,
                                 BUFFER_OFFSET(accessor.byteOffset));
         } else if (iter->first == "JOINTS_0") {
@@ -268,7 +268,7 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
           int byte_stride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
           assert(byte_stride != -1);
           glEnableVertexAttribArray(3);
-          glVertexAttribIPointer(3, buffer->elem_size, accessor.componentType, byte_stride,
+          glVertexAttribIPointer(3, static_cast<GLint>(buffer->elem_size), accessor.componentType, byte_stride,
                                  BUFFER_OFFSET(accessor.byteOffset));
         } else if (iter->first == "WEIGHTS_0") {
           const buffer_t *buffer = &iter->second;
@@ -276,7 +276,7 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
           int byte_stride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
           assert(byte_stride != -1);
           glEnableVertexAttribArray(4);
-          glVertexAttribPointer(4, buffer->elem_size, accessor.componentType,
+          glVertexAttribPointer(4, static_cast<GLint>(buffer->elem_size), accessor.componentType,
                                 accessor.normalized ? GL_TRUE : GL_FALSE, byte_stride,
                                 BUFFER_OFFSET(accessor.byteOffset));
         }
@@ -289,7 +289,7 @@ static void draw_mesh(tinygltf::Model &model, const tinygltf::Mesh &mesh, resour
 
     glBindVertexArray(prim->vao);
 
-    glDrawElements(mode, index_accessor.count, index_accessor.componentType,
+    glDrawElements(mode, static_cast<GLsizei>(index_accessor.count), index_accessor.componentType,
                    BUFFER_OFFSET(index_accessor.byteOffset));
 
     glBindVertexArray(0);
@@ -408,7 +408,7 @@ static void apply_blend_shape(tinygltf::Model &model, resources_t &resources) {
 
       auto &weights = resources.weights[&model.meshes[mesh]];
       weights.resize(index + 1);
-      weights[index] = weight / 100 * blend_weight;
+      weights[index] = static_cast<float>(weight / 100 * blend_weight);
     }
   }
 }

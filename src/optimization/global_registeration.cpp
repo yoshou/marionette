@@ -1,11 +1,15 @@
 #include "global_registeration.hpp"
 
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
 #include <Eigen/Core>
 #include <Eigen/LU>
 #include <Eigen/SVD>
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
+#endif
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtx/norm.hpp>
@@ -408,7 +412,7 @@ struct icp_minimizer {
     glm::mat3 rot(1.f);
     for (std::size_t i = 0; i < 3; i++) {
       for (std::size_t j = 0; j < 3; j++) {
-        rot[j][i] = r(i, j);
+        rot[static_cast<glm::mat3::length_type>(j)][static_cast<glm::vec3::length_type>(i)] = r(i, j);
       }
     }
 
@@ -546,7 +550,7 @@ static void compute_max_rotation_dists(const std::vector<weighted_point> &source
     auto max_angle = std::sqrt(3.0) * sigma;
     max_angle = std::min(max_angle, glm::pi<double>());
     for (std::size_t j = 0; j < source_point_norms.size(); j++) {
-      const auto dist = 2.0 * std::sin(max_angle / 2.0) * source_point_norms[j];
+      const auto dist = static_cast<float>(2.0 * std::sin(max_angle / 2.0) * source_point_norms[j]);
       max_rotation_dists[l].push_back(dist);
     }
   }

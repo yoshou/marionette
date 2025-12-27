@@ -26,13 +26,13 @@ void finger_tracker::initialize() {
     }
     glm::mat4 sensor_pose = sensor->orientation;
     for (size_t k = 0; k < 3; k++) {
-      sensor_pose[k] = glm::normalize(sensor_pose[k]);
+      sensor_pose[static_cast<glm::mat4::length_type>(k)] = glm::normalize(sensor_pose[static_cast<glm::mat4::length_type>(k)]);
     }
     sensor_pose[3] = glm::vec4(sensor->position, 1.f);
 
     glm::mat4 bone_pose = bone->pose;
     for (size_t k = 0; k < 3; k++) {
-      bone_pose[k] = glm::normalize(bone_pose[k]);
+      bone_pose[static_cast<glm::mat4::length_type>(k)] = glm::normalize(bone_pose[static_cast<glm::mat4::length_type>(k)]);
     }
 
     sensor_to_bone.push_back(glm::inverse(sensor_pose) * bone_pose);

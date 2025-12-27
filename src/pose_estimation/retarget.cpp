@@ -11,7 +11,7 @@ namespace marionette::pose_estimation {
 [[maybe_unused]] static glm::vec3 parse_vec3(const nlohmann::json& obj) {
   glm::vec3 result;
   for (std::size_t i = 0; i < 3; i++) {
-    result[i] = obj[i].get<float>();
+    result[static_cast<glm::vec3::length_type>(i)] = obj[i].get<float>();
   }
   return result;
 }
@@ -20,7 +20,7 @@ static glm::mat4 parse_mat4(const nlohmann::json& obj) {
   glm::mat4 result;
   for (std::size_t i = 0; i < 4; i++) {
     for (std::size_t j = 0; j < 4; j++) {
-      result[i][j] = obj[i * 4 + j].get<float>();
+      result[static_cast<glm::mat4::length_type>(i)][static_cast<glm::vec4::length_type>(j)] = obj[i * 4 + j].get<float>();
     }
   }
   return result;
@@ -125,13 +125,13 @@ std::map<std::string, glm::mat4> retarget(const std::map<std::string, glm::mat4>
         {
           for (std::size_t i = 0; i < 4; i++) {
             for (std::size_t j = 0; j < 3; j++) {
-              transform[i][j] = trans[i][j];
+              transform[static_cast<glm::mat4::length_type>(i)][static_cast<glm::vec4::length_type>(j)] = trans[static_cast<glm::mat4::length_type>(i)][static_cast<glm::vec4::length_type>(j)];
             }
           }
         } else {
           for (std::size_t i = 0; i < 3; i++) {
             for (std::size_t j = 0; j < 3; j++) {
-              transform[i][j] = trans[i][j];
+              transform[static_cast<glm::mat4::length_type>(i)][static_cast<glm::vec4::length_type>(j)] = trans[static_cast<glm::mat4::length_type>(i)][static_cast<glm::vec4::length_type>(j)];
             }
           }
         }

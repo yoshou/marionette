@@ -65,7 +65,8 @@ target_compile_options(ir_viewer
     PRIVATE
     $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wno-unused-parameter -pg>
     $<$<CONFIG:RELEASE>:-O2>
-    $<$<CONFIG:DEBUG>:-g -O0>)
+    $<$<AND:$<CONFIG:DEBUG>,$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>>:-g -O0>
+    $<$<AND:$<CONFIG:DEBUG>,$<CXX_COMPILER_ID:MSVC>>:/Zi /Od>)
 
 if(WIN32)
     add_custom_command(TARGET ir_viewer POST_BUILD
@@ -141,7 +142,8 @@ target_compile_options(log_viewer_app
     PRIVATE
     $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wno-unused-parameter -pg>
     $<$<CONFIG:RELEASE>:-O2>
-    $<$<CONFIG:DEBUG>:-g -O0>)
+    $<$<AND:$<CONFIG:DEBUG>,$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>>:-g -O0>
+    $<$<AND:$<CONFIG:DEBUG>,$<CXX_COMPILER_ID:MSVC>>:/Zi /Od>)
 
 target_sources(log_viewer_app
     PRIVATE
@@ -217,7 +219,8 @@ target_compile_options(imu_viewer_app
     PRIVATE
     $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wno-unused-parameter -pg>
     $<$<CONFIG:RELEASE>:-O2>
-    $<$<CONFIG:DEBUG>:-g -O0>)
+    $<$<AND:$<CONFIG:DEBUG>,$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>>:-g -O0>
+    $<$<AND:$<CONFIG:DEBUG>,$<CXX_COMPILER_ID:MSVC>>:/Zi /Od>)
 
 if(WIN32)
     add_custom_command(TARGET imu_viewer_app POST_BUILD
@@ -290,7 +293,8 @@ target_compile_options(imu_server_app
     PRIVATE
     $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wno-unused-parameter>
     $<$<CONFIG:RELEASE>:-O2>
-    $<$<CONFIG:DEBUG>:-g -O0>)
+    $<$<AND:$<CONFIG:DEBUG>,$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>>:-g -O0>
+    $<$<AND:$<CONFIG:DEBUG>,$<CXX_COMPILER_ID:MSVC>>:/Zi /Od>)
 
 if(WIN32)
     add_custom_command(TARGET imu_server_app POST_BUILD

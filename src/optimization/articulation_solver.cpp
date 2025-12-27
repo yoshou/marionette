@@ -298,7 +298,7 @@ std::tuple<std::map<std::string, std::size_t>, float, float> solve_articulation_
                                        .predecessor_map(&parents[0])
                                        .distance_map(&distance[0])
                                        .visitor(vis));
-  } catch (std::exception &e) {
+  } catch (std::exception &) {
   }
 
   if (parents[to] == to) {
