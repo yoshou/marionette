@@ -74,8 +74,8 @@ static inline std::map<std::string, camera_module_t> load_camera_params(std::str
     camera_module_t param;
 
     auto extract = [](camera_t &dst, const YAML::Node &doc) {
-      dst.width = doc["width"].as<float>();
-      dst.height = doc["height"].as<float>();
+      dst.width = static_cast<uint32_t>(doc["width"].as<float>());
+      dst.height = static_cast<uint32_t>(doc["height"].as<float>());
       dst.intrin.fx = doc["fx"].as<float>();
       dst.intrin.fy = doc["fy"].as<float>();
       dst.intrin.cx = doc["ppx"].as<float>();

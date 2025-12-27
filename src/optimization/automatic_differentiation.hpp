@@ -2,13 +2,19 @@
 
 #include <immintrin.h>
 
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
 #include <Eigen/Core>
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
+#endif
 #include <cmath>
 
+#ifndef _mm256_set_m128d
 #define _mm256_set_m128d(vh, vl) _mm256_insertf128_pd(_mm256_castpd128_pd256(vl), (vh), 1)
+#endif
 
 namespace marionette::optimization {
 template <typename T>

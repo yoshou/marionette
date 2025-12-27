@@ -1,11 +1,15 @@
 #pragma once
 
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
 #include <Eigen/Core>
 #include <Eigen/LU>
 #include <Eigen/QR>
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
+#endif
 #include <chrono>
 #include <cstdint>
 #include <memory>
@@ -199,7 +203,7 @@ class least_square_problem {
       double terminate_thresold = 1e-7;
       std::size_t max_iteration = 50;
       if (const auto it = options.find("terminate_thresold"); it != options.end()) {
-        max_iteration = static_cast<double>(it->second);
+        max_iteration = static_cast<std::size_t>(it->second);
       }
       if (const auto it = options.find("max_iteration"); it != options.end()) {
         max_iteration = static_cast<std::size_t>(it->second);

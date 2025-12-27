@@ -25,7 +25,7 @@ struct point_cloud {
   inline std::size_t kdtree_get_point_count() const { return points.size(); }
 
   inline float kdtree_get_pt(const std::size_t idx, const std::size_t dim) const {
-    return points[idx][dim];
+    return points[idx][static_cast<glm::vec3::length_type>(dim)];
   }
 
   template <class BoundingBox>

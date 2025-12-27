@@ -34,7 +34,7 @@ static inline void to_json(nlohmann::json &j, const glm::mat3 &m) {
   std::array<float, 9> values;
   for (std::size_t i = 0; i < 3; i++) {
     for (std::size_t j = 0; j < 3; j++) {
-      values[i * 3 + j] = m[i][j];
+      values[i * 3 + j] = m[static_cast<glm::mat3::length_type>(i)][static_cast<glm::vec3::length_type>(j)];
     }
   }
   j = values;
@@ -42,7 +42,7 @@ static inline void to_json(nlohmann::json &j, const glm::mat3 &m) {
 static inline void from_json(const nlohmann::json &j, glm::mat3 &m) {
   for (std::size_t i = 0; i < 3; i++) {
     for (std::size_t k = 0; k < 3; k++) {
-      m[i][k] = j[i * 3 + k].get<float>();
+      m[static_cast<glm::mat3::length_type>(i)][static_cast<glm::vec3::length_type>(k)] = j[i * 3 + k].get<float>();
     }
   }
 }
@@ -50,7 +50,7 @@ static inline void to_json(nlohmann::json &j, const glm::mat4 &m) {
   std::array<float, 16> values;
   for (std::size_t i = 0; i < 4; i++) {
     for (std::size_t j = 0; j < 4; j++) {
-      values[i * 4 + j] = m[i][j];
+      values[i * 4 + j] = m[static_cast<glm::mat4::length_type>(i)][static_cast<glm::vec4::length_type>(j)];
     }
   }
   j = values;
@@ -58,7 +58,7 @@ static inline void to_json(nlohmann::json &j, const glm::mat4 &m) {
 static inline void from_json(const nlohmann::json &j, glm::mat4 &m) {
   for (std::size_t i = 0; i < 4; i++) {
     for (std::size_t k = 0; k < 4; k++) {
-      m[i][k] = j[i * 4 + k].get<float>();
+      m[static_cast<glm::mat4::length_type>(i)][static_cast<glm::vec4::length_type>(k)] = j[i * 4 + k].get<float>();
     }
   }
 }

@@ -61,7 +61,7 @@ class model_data {
   static glm::vec3 parse_vec3(const json &obj) {
     glm::vec3 result;
     for (std::size_t i = 0; i < 3; i++) {
-      result[i] = obj[i].get<float>();
+      result[static_cast<glm::vec3::length_type>(i)] = obj[i].get<float>();
     }
     return result;
   }
@@ -70,7 +70,7 @@ class model_data {
     glm::mat4 result;
     for (std::size_t i = 0; i < 4; i++) {
       for (std::size_t j = 0; j < 4; j++) {
-        result[i][j] = obj[i * 4 + j].get<float>();
+        result[static_cast<glm::mat4::length_type>(i)][static_cast<glm::vec4::length_type>(j)] = obj[i * 4 + j].get<float>();
       }
     }
     return result;
@@ -224,7 +224,7 @@ class skeleton_data {
   static glm::vec3 parse_vec3(const json &obj) {
     glm::vec3 result;
     for (std::size_t i = 0; i < 3; i++) {
-      result[i] = obj[i].get<float>();
+      result[static_cast<glm::vec3::length_type>(i)] = obj[i].get<float>();
     }
     return result;
   }
@@ -233,7 +233,7 @@ class skeleton_data {
     glm::mat4 result;
     for (std::size_t i = 0; i < 4; i++) {
       for (std::size_t j = 0; j < 4; j++) {
-        result[i][j] = obj[i * 4 + j].get<float>();
+        result[static_cast<glm::mat4::length_type>(i)][static_cast<glm::vec4::length_type>(j)] = obj[i * 4 + j].get<float>();
       }
     }
     return result;

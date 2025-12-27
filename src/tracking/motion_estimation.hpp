@@ -1,9 +1,13 @@
 #pragma once
 
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
 #include <Eigen/QR>
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
+#endif
 #include <algorithm>
 #include <glm/glm.hpp>
 #include <vector>
@@ -63,15 +67,15 @@ struct polynomial_regression {
     std::transform(values.begin(), values.end(), std::back_inserter(z_values),
                    [](glm::vec3 value) { return value.z; });
     for (std::size_t i = 0; i < values.size(); i++) {
-      t_values.push_back(-static_cast<float>(i));
+      t_values.push_back(-static_cast<double>(i));
     }
 
     std::vector<double> x_coeffs;
     std::vector<double> y_coeffs;
     std::vector<double> z_coeffs;
-    polyfit(t_values, x_values, x_coeffs, order);
-    polyfit(t_values, y_values, y_coeffs, order);
-    polyfit(t_values, z_values, z_coeffs, order);
+    polyfit(t_values, x_values, x_coeffs, static_cast<int>(order));
+    polyfit(t_values, y_values, y_coeffs, static_cast<int>(order));
+    polyfit(t_values, z_values, z_coeffs, static_cast<int>(order));
 
     const auto t = static_cast<float>(1);
 
