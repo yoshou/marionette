@@ -243,6 +243,185 @@ class SMPLModel {
   torch::Tensor posedirs;
   std::vector<int32_t> parents;
 
+ private:
+  // Convert axis-angle to rotation matrix using Rodrigues formula
+  torch::Tensor batch_rodrigues(const torch::Tensor& pose_vec) {
+    // pose_vec: [N, 3] or [3] - axis-angle representation
+    auto pose_reshaped = pose_vec.dim() == 1 ? pose_vec.unsqueeze(0) : pose_vec;
+
+    auto theta2 = (pose_reshaped * pose_reshaped).sum(1, true);  // [N, 1]
+    auto theta = torch::sqrt(theta2 + 1e-8);
+    auto w = pose_reshaped / (theta + 1e-8);  // [N, 3]
+
+    auto wx = w.select(1, 0).unsqueeze(1);
+    auto wy = w.select(1, 1).unsqueeze(1);
+    auto wz = w.select(1, 2).unsqueeze(1);
+
+    auto cos_theta = torch::cos(theta);
+    auto sin_theta = torch::sin(theta);
+    auto one_minus_cos = 1.0 - cos_theta;
+
+    auto r00 = cos_theta + wx * wx * one_minus_cos;
+    auto r01 = wx * wy * one_minus_cos - wz * sin_theta;
+    auto r02 = wy * sin_theta + wx * wz * one_minus_cos;
+    auto r10 = wz * sin_theta + wx * wy * one_minus_cos;
+    auto r11 = cos_theta + wy * wy * one_minus_cos;
+    auto r12 = -wx * sin_theta + wy * wz * one_minus_cos;
+    auto r20 = -wy * sin_theta + wx * wz * one_minus_cos;
+    auto r21 = wx * sin_theta + wy * wz * one_minus_cos;
+    auto r22 = cos_theta + wz * wz * one_minus_cos;
+
+    auto row0 = torch::cat({r00, r01, r02}, 1).unsqueeze(1);
+    auto row1 = torch::cat({r10, r11, r12}, 1).unsqueeze(1);
+    auto row2 = torch::cat({r20, r21, r22}, 1).unsqueeze(1);
+    return torch::cat({row0, row1, row2}, 1);  // [N, 3, 3]
+  }
+
+  // Apply shape blending: v_template + shapedirs * betas
+  torch::Tensor apply_shape_blend(const torch::Tensor& betas) {
+    auto v_shaped = v_template.unsqueeze(0);  // [1, 6890, 3]
+
+    if (betas.defined() && betas.numel() > 0) {
+      // shapedirs: [6890, 3, 10], betas: [1, 10] -> [1, 6890, 3]
+      auto shape_disps = torch::einsum("mkl,bl->bmk", {shapedirs, betas});
+      v_shaped = v_shaped + shape_disps;
+    }
+
+    return v_shaped;
+  }
+
+  // Apply pose-dependent vertex deformations
+  torch::Tensor apply_pose_blend(const torch::Tensor& v_shaped, const torch::Tensor& poses) {
+    if (!poses.defined() || poses.numel() != 69) {
+      return v_shaped;
+    }
+
+    auto poses_reshaped = poses.view({23, 3});
+
+    // Convert all joint poses to rotation matrices
+    std::vector<torch::Tensor> rot_mats_list;
+    for (int j = 0; j < 23; j++) {
+      auto pose_j = poses_reshaped.select(0, j);
+      auto R = batch_rodrigues(pose_j).squeeze(0);  // [3, 3]
+      rot_mats_list.push_back(R.view({9}));         // Flatten to [9]
+    }
+
+    auto rot_mats = torch::stack(rot_mats_list, 0);  // [23, 9]
+
+    // Pose feature: rot_mats - Identity
+    auto pose_feature = rot_mats.clone();
+    pose_feature.select(1, 0) -= 1.0f;  // R[0,0] -= 1
+    pose_feature.select(1, 4) -= 1.0f;  // R[1,1] -= 1
+    pose_feature.select(1, 8) -= 1.0f;  // R[2,2] -= 1
+
+    // Compute pose-dependent vertex displacements
+    auto pose_feature_flat = pose_feature.view({-1});                              // [207]
+    auto pose_offset = torch::einsum("vdp,p->vd", {posedirs, pose_feature_flat});  // [6890, 3]
+
+    return v_shaped + pose_offset.unsqueeze(0);
+  }
+
+  // Compute Linear Blend Skinning
+  torch::Tensor compute_lbs(const torch::Tensor& v_posed, const torch::Tensor& poses) {
+    if (!poses.defined() || poses.numel() != 69) {
+      return v_posed;
+    }
+
+    // 1. Compute 24 joints from v_posed
+    auto joints_24 = torch::einsum("bik,ji->bjk", {v_posed, j_regressor});  // [1, 24, 3]
+    auto joints_squeezed = joints_24.squeeze(0);                            // [24, 3]
+
+    // 2. Build rotation matrices for each joint
+    auto poses_reshaped = poses.view({23, 3});
+    std::vector<torch::Tensor> rot_mats_3x3_list;
+    for (int j = 0; j < 23; j++) {
+      auto pose_j = poses_reshaped.select(0, j);
+      auto R = batch_rodrigues(pose_j).squeeze(0);  // [3, 3]
+      rot_mats_3x3_list.push_back(R);
+    }
+
+    // 3. Build 4x4 transformation matrices for kinematic chain
+    std::vector<torch::Tensor> transform_mats_list;
+    for (int j = 0; j < 24; j++) {
+      auto I4 = torch::eye(4, poses.options());
+      auto transform_mat = I4.clone();
+
+      auto joint = joints_squeezed[j];
+      torch::Tensor parent_joint =
+          (j == 0) ? torch::zeros({3}, poses.options()) : joints_squeezed[parents[j]];
+      auto rel_joint = joint - parent_joint;
+
+      // Set rotation part (only for non-root joints)
+      if (j > 0) {
+        transform_mat.narrow(0, 0, 3).narrow(1, 0, 3) = rot_mats_3x3_list[j - 1];
+      }
+
+      // Set translation part
+      transform_mat.narrow(0, 0, 3).select(1, 3) = rel_joint;
+
+      // Multiply with parent transformation
+      if (j > 0 && parents[j] >= 0) {
+        transform_mat = torch::matmul(transform_mats_list[parents[j]], transform_mat);
+      }
+
+      transform_mats_list.push_back(transform_mat);
+    }
+
+    // 4. Convert to relative transformations
+    std::vector<torch::Tensor> rel_transform_mats_list;
+    for (int j = 0; j < 24; j++) {
+      auto transform_mat = transform_mats_list[j];
+      auto joint = joints_squeezed[j];
+      auto rel_transform = transform_mat.clone();
+
+      auto rot_part = transform_mat.narrow(0, 0, 3).narrow(1, 0, 3);
+      auto trans_part = transform_mat.narrow(0, 0, 3).select(1, 3);
+      rel_transform.narrow(0, 0, 3).select(1, 3) = trans_part - torch::matmul(rot_part, joint);
+
+      rel_transform_mats_list.push_back(rel_transform);
+    }
+
+    auto rel_transform_mats = torch::stack(rel_transform_mats_list, 0);  // [24, 4, 4]
+
+    // 5. Blend transformations using skinning weights
+    auto blended_mats =
+        torch::einsum("vj,jmn->vmn", {weights, rel_transform_mats});  // [6890, 4, 4]
+
+    // 6. Apply blended transformations to vertices
+    auto v_posed_homo = torch::cat({v_posed, torch::ones({1, 6890, 1}, poses.options())}, 2);
+    v_posed_homo = v_posed_homo.squeeze(0);  // [6890, 4]
+
+    auto verts_homo = torch::einsum("vmn,vn->vm", {blended_mats, v_posed_homo});  // [6890, 4]
+    return verts_homo.narrow(1, 0, 3).unsqueeze(0);                               // [1, 6890, 3]
+  }
+
+  // Apply global rotation (rh) and translation (th)
+  torch::Tensor apply_global_transform(torch::Tensor joints, const torch::Tensor& rh,
+                                       const torch::Tensor& th) {
+    // Apply Rodrigues rotation
+    if (rh.defined() && rh.numel() > 0) {
+      auto rh_flat = rh.view({-1, 3});                    // [1, 3]
+      auto R = batch_rodrigues(rh_flat);                  // [1, 3, 3]
+      joints = torch::matmul(joints, R.transpose(1, 2));  // [1, 25, 3]
+    }
+
+    // Add translation
+    if (th.defined() && th.numel() > 0) {
+      torch::Tensor th_reshaped;
+      if (th.dim() == 2 && th.size(0) > 1) {
+        // Multi-frame: average over frames
+        th_reshaped = th.mean(0).view({1, 1, 3}).expand({joints.size(0), joints.size(1), 3});
+      } else {
+        // Single frame
+        th_reshaped = th.view({1, 1, 3}).expand({joints.size(0), joints.size(1), 3});
+      }
+      joints = joints + th_reshaped;
+    }
+
+    return joints;
+  }
+
+ public:
   SMPLModel() {
     using path = std::filesystem::path;
     path param_dir("../data/opt/");
@@ -280,257 +459,27 @@ class SMPLModel {
 
   torch::Tensor forward(torch::Tensor betas, torch::Tensor poses, torch::Tensor rh,
                         torch::Tensor th) {
-    // Ensure input tensors require gradients and maintain gradient flow
+    // Ensure input tensors are on correct device and dtype
     if (betas.defined()) betas = betas.to(v_template.device()).to(v_template.dtype());
     if (poses.defined()) poses = poses.to(v_template.device()).to(v_template.dtype());
     if (rh.defined()) rh = rh.to(v_template.device()).to(v_template.dtype());
     if (th.defined()) th = th.to(v_template.device()).to(v_template.dtype());
 
     try {
-      // Shape blend: v_shaped = v_template + shapedirs * betas
-      auto v_shaped = v_template.unsqueeze(0);  // [1, 6890, 3]
+      // 1. Shape blending: v_template + shapedirs * betas
+      auto v_shaped = apply_shape_blend(betas);
 
-      if (betas.defined() && betas.numel() > 0) {
-        // Proper shape blending with gradient preservation
-        // shapedirs: [6890, 3, 10], betas: [1, 10] -> [1, 6890, 3]
-        auto shape_disps = torch::einsum("mkl,bl->bmk", {shapedirs, betas});
-        v_shaped = v_shaped + shape_disps;
-      }
+      // 2. Pose blending: add pose-dependent deformations
+      v_shaped = apply_pose_blend(v_shaped, poses);
 
-      // Pose blend: apply pose-dependent deformations
-      if (poses.defined() && poses.numel() > 0 && poses.numel() == 69) {
-        // poses: [1, 69] - 23 joints * 3 (axis-angle)
-        // Reshape to [23, 3]
-        auto poses_reshaped = poses.view({23, 3});
+      // 3. Linear Blend Skinning: apply joint transformations
+      auto verts = compute_lbs(v_shaped, poses);
 
-        // Batch Rodrigues: convert axis-angle to rotation matrices
-        std::vector<torch::Tensor> rot_mats_list;
-        for (int j = 0; j < 23; j++) {
-          auto pose_j = poses_reshaped.select(0, j).unsqueeze(0);  // [1, 3]
-
-          // Rodrigues formula
-          auto theta2 = (pose_j * pose_j).sum(1, true);
-          auto theta = torch::sqrt(theta2 + 1e-8);
-          auto w = pose_j / (theta + 1e-8);
-          auto wx = w.select(1, 0).unsqueeze(1);
-          auto wy = w.select(1, 1).unsqueeze(1);
-          auto wz = w.select(1, 2).unsqueeze(1);
-
-          auto cos_theta = torch::cos(theta);
-          auto sin_theta = torch::sin(theta);
-          auto one_minus_cos = 1.0 - cos_theta;
-
-          auto r00 = cos_theta + wx * wx * one_minus_cos;
-          auto r01 = wx * wy * one_minus_cos - wz * sin_theta;
-          auto r02 = wy * sin_theta + wx * wz * one_minus_cos;
-          auto r10 = wz * sin_theta + wx * wy * one_minus_cos;
-          auto r11 = cos_theta + wy * wy * one_minus_cos;
-          auto r12 = -wx * sin_theta + wy * wz * one_minus_cos;
-          auto r20 = -wy * sin_theta + wx * wz * one_minus_cos;
-          auto r21 = wx * sin_theta + wy * wz * one_minus_cos;
-          auto r22 = cos_theta + wz * wz * one_minus_cos;
-
-          auto row0 = torch::cat({r00, r01, r02}, 1).unsqueeze(1);
-          auto row1 = torch::cat({r10, r11, r12}, 1).unsqueeze(1);
-          auto row2 = torch::cat({r20, r21, r22}, 1).unsqueeze(1);
-          auto R = torch::cat({row0, row1, row2}, 1);  // [1, 3, 3]
-
-          rot_mats_list.push_back(R.squeeze(0).view({9}));  // [9]
-        }
-
-        // Stack all rotation matrices: [23, 9]
-        auto rot_mats = torch::stack(rot_mats_list, 0);  // [23, 9]
-
-        // Pose feature: rot_mats - Identity
-        auto pose_feature = rot_mats.clone();
-        pose_feature.select(1, 0) -= 1.0f;  // R[0,0] -= 1
-        pose_feature.select(1, 4) -= 1.0f;  // R[1,1] -= 1
-        pose_feature.select(1, 8) -= 1.0f;  // R[2,2] -= 1
-
-        // Compute pose-dependent vertex displacements
-        // posedirs: [6890, 3, 207] where 207 = 23 joints * 9
-        // pose_feature: [23, 9] -> flatten to [207]
-        auto pose_feature_flat = pose_feature.view({-1});  // [207]
-
-        // pose_offset = posedirs @ pose_feature
-        // posedirs: [6890, 3, 207], pose_feature: [207] -> [6890, 3]
-        auto pose_offset = torch::einsum("vdp,p->vd", {posedirs, pose_feature_flat});
-
-        // Add pose offset to shaped vertices
-        v_shaped = v_shaped + pose_offset.unsqueeze(0);  // [1, 6890, 3]
-      }
-
-      // LBS (Linear Blend Skinning) - apply joint transformations to vertices
-      torch::Tensor verts = v_shaped;  // Default: no LBS
-
-      // Check if we need to apply LBS (when poses is provided)
-      if (poses.defined() && poses.numel() == 69) {
-        // 1. Compute 24 joints from v_shaped (not body25 keypoints)
-        auto joints_24 = torch::einsum("bik,ji->bjk", {v_shaped, j_regressor});  // [1, 24, 3]
-        auto joints_squeezed = joints_24.squeeze(0);                             // [24, 3]
-
-        // 2. Batch rigid transform: build transformation matrices for kinematic chain
-        auto poses_reshaped = poses.view({23, 3});
-
-        // Batch Rodrigues for rotation matrices
-        std::vector<torch::Tensor> rot_mats_3x3_list;
-        for (int j = 0; j < 23; j++) {
-          auto pose_j = poses_reshaped.select(0, j).unsqueeze(0);
-          auto theta2 = (pose_j * pose_j).sum(1, true);
-          auto theta = torch::sqrt(theta2 + 1e-8);
-          auto w = pose_j / (theta + 1e-8);
-          auto wx = w.select(1, 0).unsqueeze(1);
-          auto wy = w.select(1, 1).unsqueeze(1);
-          auto wz = w.select(1, 2).unsqueeze(1);
-          auto cos_theta = torch::cos(theta);
-          auto sin_theta = torch::sin(theta);
-          auto one_minus_cos = 1.0 - cos_theta;
-
-          auto r00 = cos_theta + wx * wx * one_minus_cos;
-          auto r01 = wx * wy * one_minus_cos - wz * sin_theta;
-          auto r02 = wy * sin_theta + wx * wz * one_minus_cos;
-          auto r10 = wz * sin_theta + wx * wy * one_minus_cos;
-          auto r11 = cos_theta + wy * wy * one_minus_cos;
-          auto r12 = -wx * sin_theta + wy * wz * one_minus_cos;
-          auto r20 = -wy * sin_theta + wx * wz * one_minus_cos;
-          auto r21 = wx * sin_theta + wy * wz * one_minus_cos;
-          auto r22 = cos_theta + wz * wz * one_minus_cos;
-
-          auto row0 = torch::cat({r00, r01, r02}, 1).unsqueeze(1);
-          auto row1 = torch::cat({r10, r11, r12}, 1).unsqueeze(1);
-          auto row2 = torch::cat({r20, r21, r22}, 1).unsqueeze(1);
-          auto R = torch::cat({row0, row1, row2}, 1);  // [1, 3, 3]
-          rot_mats_3x3_list.push_back(R.squeeze(0));
-        }
-
-        // Build 4x4 transformation matrices for each joint
-        std::vector<torch::Tensor> transform_mats_list;
-        for (int j = 0; j < 24; j++) {
-          auto I4 = torch::eye(4, poses.options());
-          auto transform_mat = I4.clone();
-
-          auto joint = joints_squeezed[j];  // [3]
-          torch::Tensor parent_joint;
-          if (j == 0) {
-            parent_joint = torch::zeros({3}, poses.options());
-          } else {
-            parent_joint = joints_squeezed[parents[j]];
-          }
-          auto rel_joint = joint - parent_joint;
-
-          // Set rotation part (only for non-root joints)
-          if (j > 0) {
-            auto R = rot_mats_3x3_list[j - 1];  // [3, 3]
-            transform_mat.narrow(0, 0, 3).narrow(1, 0, 3) = R;
-          }
-
-          // Set translation part
-          transform_mat.narrow(0, 0, 3).select(1, 3) = rel_joint;
-
-          // Multiply with parent transformation
-          if (j > 0 && parents[j] >= 0) {
-            auto parent_transform = transform_mats_list[parents[j]];
-            transform_mat = torch::matmul(parent_transform, transform_mat);
-          }
-
-          transform_mats_list.push_back(transform_mat);
-        }
-
-        // 3. Convert to relative transformations (subtract joint positions)
-        std::vector<torch::Tensor> rel_transform_mats_list;
-        for (int j = 0; j < 24; j++) {
-          auto transform_mat = transform_mats_list[j];
-          auto joint = joints_squeezed[j];
-          auto rel_transform = transform_mat.clone();
-
-          auto rot_part = transform_mat.narrow(0, 0, 3).narrow(1, 0, 3);
-          auto trans_part = transform_mat.narrow(0, 0, 3).select(1, 3);
-          rel_transform.narrow(0, 0, 3).select(1, 3) = trans_part - torch::matmul(rot_part, joint);
-
-          rel_transform_mats_list.push_back(rel_transform);
-        }
-
-        // Stack transformation matrices: [24, 4, 4]
-        auto rel_transform_mats = torch::stack(rel_transform_mats_list, 0);
-
-        // 4. Blend transformations using skinning weights
-        // weights: [6890, 24], rel_transform_mats: [24, 4, 4]
-        // Result: [6890, 4, 4]
-        auto blended_mats = torch::einsum("vj,jmn->vmn", {weights, rel_transform_mats});
-
-        // 5. Apply blended transformations to vertices
-        auto v_posed_homo =
-            torch::cat({v_shaped, torch::ones({1, 6890, 1}, poses.options())}, 2);  // [1, 6890, 4]
-        v_posed_homo = v_posed_homo.squeeze(0);                                     // [6890, 4]
-
-        // Transform: verts = (blended_mats @ v_posed_homo).narrow(1, 0, 3)
-        auto verts_homo = torch::einsum("vmn,vn->vm", {blended_mats, v_posed_homo});  // [6890, 4]
-        verts = verts_homo.narrow(1, 0, 3).unsqueeze(0);  // [1, 6890, 3]
-      }
-
-      // Extract 25 body keypoints from transformed vertices
+      // 4. Extract body25 keypoints from transformed vertices
       auto joints = torch::einsum("bik,ji->bjk", {verts, j_regressor_body25});  // [1, 25, 3]
 
-      // Apply Rodrigues rotation (rh) and translation (th)
-      if (rh.defined() && rh.numel() > 0) {
-        // rh is [1, 3] - rotation vector (axis-angle representation)
-        // Rodrigues formula matching original implementation
-        auto rh_flat = rh.view({-1, 3});  // [1, 3]
-
-        // theta2 = ||rh||^2 = rh·rh
-        auto theta2 = (rh_flat * rh_flat).sum(1, true);  // [1, 1]
-        auto theta = torch::sqrt(theta2 + 1e-8);         // [1, 1]
-
-        // Normalized axis: w = rh / theta
-        auto w = rh_flat / (theta + 1e-8);      // [1, 3]
-        auto wx = w.select(1, 0).unsqueeze(1);  // [1, 1]
-        auto wy = w.select(1, 1).unsqueeze(1);  // [1, 1]
-        auto wz = w.select(1, 2).unsqueeze(1);  // [1, 1]
-
-        auto cos_theta = torch::cos(theta);    // [1, 1]
-        auto sin_theta = torch::sin(theta);    // [1, 1]
-        auto one_minus_cos = 1.0 - cos_theta;  // [1, 1]
-
-        // Build rotation matrix matching original rodrigues implementation
-        // R[0] = cos_theta + wx*wx*(1-cos_theta)
-        // R[3] = wz*sin_theta + wx*wy*(1-cos_theta)
-        // R[6] = -wy*sin_theta + wx*wz*(1-cos_theta)
-        // etc.
-        auto r00 = cos_theta + wx * wx * one_minus_cos;
-        auto r01 = wx * wy * one_minus_cos - wz * sin_theta;
-        auto r02 = wy * sin_theta + wx * wz * one_minus_cos;
-
-        auto r10 = wz * sin_theta + wx * wy * one_minus_cos;
-        auto r11 = cos_theta + wy * wy * one_minus_cos;
-        auto r12 = -wx * sin_theta + wy * wz * one_minus_cos;
-
-        auto r20 = -wy * sin_theta + wx * wz * one_minus_cos;
-        auto r21 = wx * sin_theta + wy * wz * one_minus_cos;
-        auto r22 = cos_theta + wz * wz * one_minus_cos;
-
-        // Stack into rotation matrix [1, 3, 3]
-        auto row0 = torch::cat({r00, r01, r02}, 1).unsqueeze(1);  // [1, 1, 3]
-        auto row1 = torch::cat({r10, r11, r12}, 1).unsqueeze(1);  // [1, 1, 3]
-        auto row2 = torch::cat({r20, r21, r22}, 1).unsqueeze(1);  // [1, 1, 3]
-        auto R = torch::cat({row0, row1, row2}, 1);               // [1, 3, 3]
-
-        // Apply rotation to joints: joints_rotated = joints @ R.T
-        joints = torch::matmul(joints, R.transpose(1, 2));  // [1, 25, 3]
-      }
-
-      // Add translation th
-      if (th.defined() && th.numel() > 0) {
-        // th can be [1, 3] for single frame or [10, 3] for multi-frame
-        torch::Tensor th_reshaped;
-        if (th.dim() == 2 && th.size(0) > 1) {
-          // Multi-frame: average over frames
-          th_reshaped = th.mean(0).view({1, 1, 3}).expand({joints.size(0), joints.size(1), 3});
-        } else {
-          // Single frame
-          th_reshaped = th.view({1, 1, 3}).expand({joints.size(0), joints.size(1), 3});
-        }
-        joints = joints + th_reshaped;
-      }
+      // 5. Apply global rotation and translation
+      joints = apply_global_transform(joints, rh, th);
 
       return joints;
     } catch (const std::exception& e) {
