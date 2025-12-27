@@ -41,3 +41,17 @@ target_link_libraries(test_fitting
     marionette
     nlohmann_json::nlohmann_json
 )
+
+find_package(Torch REQUIRED)
+
+add_executable(test_fitting_torch
+    ${CMAKE_CURRENT_LIST_DIR}/test_fitting_torch.cpp
+)
+
+target_link_libraries(test_fitting_torch
+    ${TORCH_LIBRARIES}
+    nlohmann_json::nlohmann_json
+)
+
+target_link_options(test_fitting_torch PRIVATE -Wl,--allow-multiple-definition)
+set_property(TARGET test_fitting_torch PROPERTY CXX_STANDARD 17)

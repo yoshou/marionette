@@ -395,9 +395,9 @@ class smpl_model {
     const auto weights =
         load_dense_matrix<double>((param_dir / "SMPL_NEUTRAL_weights.json").generic_string());
     j_regressor =
-        load_sparse_matrix<double>((param_dir / "SMPL_NEUTRAL_j_regressor.json").generic_string());
+        load_sparse_matrix<double>((param_dir / "SMPL_NEUTRAL_J_regressor.json").generic_string());
     j_regressor_body25 = load_dense_matrix<float>(
-        (param_dir / "SMPL_NEUTRAL_j_regressor_body25.json").generic_string());
+        (param_dir / "SMPL_NEUTRAL_J_regressor_body25.json").generic_string());
 
     const auto [posedirs_data, posedirs_shape] =
         load_tensor<double>((param_dir / "SMPL_NEUTRAL_posedirs.json").generic_string());

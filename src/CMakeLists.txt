@@ -50,6 +50,7 @@ target_link_libraries(marionette
     PUBLIC spdlog::spdlog
     PUBLIC stargazer_sensor_grpc_proto
     PRIVATE unoffical::openfbx::openfbx
+    PUBLIC Ceres::ceres
 
     # ${CUDA_CUFFT_LIBRARIES}
     # ${CUDA_CUBLAS_LIBRARIES}
