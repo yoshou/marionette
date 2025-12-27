@@ -283,7 +283,9 @@ class SMPLModel {
 
     if (betas.defined() && betas.numel() > 0) {
       // shapedirs: [6890, 3, 10], betas: [1, 10] -> [1, 6890, 3]
-      auto shape_disps = torch::einsum("mkl,bl->bmk", {shapedirs, betas});
+      // einsum("mkl,bl->bmk") = (shapedirs @ betas.T).permute(2, 0, 1)
+      // shapedirs @ betas.T: [6890, 3, 10] @ [10, 1] = [6890, 3, 1]
+      auto shape_disps = torch::matmul(shapedirs, betas.t()).permute({2, 0, 1});  // [1, 6890, 3]
       v_shaped = v_shaped + shape_disps;
     }
 
@@ -308,8 +310,9 @@ class SMPLModel {
     rot_mats.select(1, 8) -= 1.0f;  // R[2,2] -= 1
 
     // Compute pose-dependent vertex displacements
-    auto pose_feature_flat = rot_mats.view({-1});                                  // [207]
-    auto pose_offset = torch::einsum("vdp,p->vd", {posedirs, pose_feature_flat});  // [6890, 3]
+    auto pose_feature_flat = rot_mats.view({-1});  // [207]
+    auto pose_offset =
+        torch::matmul(posedirs, pose_feature_flat);  // [6890, 3, 207] @ [207] = [6890, 3]
 
     return v_shaped + pose_offset.unsqueeze(0);
   }
@@ -321,8 +324,9 @@ class SMPLModel {
     }
 
     // 1. Compute 24 joints from v_posed
-    auto joints_24 = torch::einsum("bik,ji->bjk", {v_posed, j_regressor});  // [1, 24, 3]
-    auto joints_squeezed = joints_24.squeeze(0);                            // [24, 3]
+    auto v_posed_squeezed = v_posed.squeeze(0);                              // [6890, 3]
+    auto joints_24_squeezed = torch::matmul(j_regressor, v_posed_squeezed);  // [24, 3]
+    auto joints_squeezed = joints_24_squeezed;                               // [24, 3]
 
     // 2. Build rotation matrices for each joint (batch operation)
     auto poses_reshaped = poses.view({23, 3});
@@ -374,15 +378,20 @@ class SMPLModel {
     auto rel_transform_mats = torch::stack(rel_transform_mats_list, 0);  // [24, 4, 4]
 
     // 5. Blend transformations using skinning weights
-    auto blended_mats =
-        torch::einsum("vj,jmn->vmn", {weights, rel_transform_mats});  // [6890, 4, 4]
+    // einsum("vj,jmn->vmn"): weights [6890, 24] @ rel_transform_mats [24, 4, 4]
+    // For each vertex v: sum over j of weights[v,j] * rel_transform_mats[j,:,:]
+    auto weights_expanded = weights.unsqueeze(2).unsqueeze(3);          // [6890, 24, 1, 1]
+    auto rel_mats_expanded = rel_transform_mats.unsqueeze(0);           // [1, 24, 4, 4]
+    auto blended_mats = (weights_expanded * rel_mats_expanded).sum(1);  // [6890, 4, 4]
 
     // 6. Apply blended transformations to vertices
     auto v_posed_homo = torch::cat({v_posed, torch::ones({1, 6890, 1}, poses.options())}, 2);
     v_posed_homo = v_posed_homo.squeeze(0);  // [6890, 4]
 
-    auto verts_homo = torch::einsum("vmn,vn->vm", {blended_mats, v_posed_homo});  // [6890, 4]
-    return verts_homo.narrow(1, 0, 3).unsqueeze(0);                               // [1, 6890, 3]
+    // einsum("vmn,vn->vm"): blended_mats [6890, 4, 4] @ v_posed_homo [6890, 4]
+    // Each vertex: blended_mats[v] @ v_posed_homo[v] = bmm with unsqueeze
+    auto verts_homo = torch::bmm(blended_mats, v_posed_homo.unsqueeze(2)).squeeze(2);  // [6890, 4]
+    return verts_homo.narrow(1, 0, 3).unsqueeze(0);  // [1, 6890, 3]
   }
 
   // Apply global rotation (rh) and translation (th)
@@ -466,7 +475,12 @@ class SMPLModel {
       auto verts = compute_lbs(v_shaped, poses);
 
       // 4. Extract body25 keypoints from transformed vertices
-      auto joints = torch::einsum("bik,ji->bjk", {verts, j_regressor_body25});  // [1, 25, 3]
+      // einsum("bik,ji->bjk"): verts [1, 6890, 3] @ j_regressor_body25 [25, 6890]
+      // = j_regressor_body25 @ verts[0] = [25, 6890] @ [6890, 3] = [25, 3] -> unsqueeze to [1, 25,
+      // 3]
+      auto verts_squeezed = verts.squeeze(0);                                    // [6890, 3]
+      auto joints_squeezed = torch::matmul(j_regressor_body25, verts_squeezed);  // [25, 3]
+      auto joints = joints_squeezed.unsqueeze(0);                                // [1, 25, 3]
 
       // 5. Apply global rotation and translation
       joints = apply_global_transform(joints, rh, th);
