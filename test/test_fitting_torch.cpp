@@ -298,24 +298,17 @@ class SMPLModel {
 
     auto poses_reshaped = poses.view({23, 3});
 
-    // Convert all joint poses to rotation matrices
-    std::vector<torch::Tensor> rot_mats_list;
-    for (int j = 0; j < 23; j++) {
-      auto pose_j = poses_reshaped.select(0, j);
-      auto R = batch_rodrigues(pose_j).squeeze(0);  // [3, 3]
-      rot_mats_list.push_back(R.view({9}));         // Flatten to [9]
-    }
+    // Convert all joint poses to rotation matrices (batch operation)
+    auto rot_mats_3x3 = batch_rodrigues(poses_reshaped);  // [23, 3, 3]
+    auto rot_mats = rot_mats_3x3.view({23, 9});           // [23, 9]
 
-    auto rot_mats = torch::stack(rot_mats_list, 0);  // [23, 9]
-
-    // Pose feature: rot_mats - Identity
-    auto pose_feature = rot_mats.clone();
-    pose_feature.select(1, 0) -= 1.0f;  // R[0,0] -= 1
-    pose_feature.select(1, 4) -= 1.0f;  // R[1,1] -= 1
-    pose_feature.select(1, 8) -= 1.0f;  // R[2,2] -= 1
+    // Pose feature: rot_mats - Identity (modify in-place)
+    rot_mats.select(1, 0) -= 1.0f;  // R[0,0] -= 1
+    rot_mats.select(1, 4) -= 1.0f;  // R[1,1] -= 1
+    rot_mats.select(1, 8) -= 1.0f;  // R[2,2] -= 1
 
     // Compute pose-dependent vertex displacements
-    auto pose_feature_flat = pose_feature.view({-1});                              // [207]
+    auto pose_feature_flat = rot_mats.view({-1});                                  // [207]
     auto pose_offset = torch::einsum("vdp,p->vd", {posedirs, pose_feature_flat});  // [6890, 3]
 
     return v_shaped + pose_offset.unsqueeze(0);
@@ -331,20 +324,14 @@ class SMPLModel {
     auto joints_24 = torch::einsum("bik,ji->bjk", {v_posed, j_regressor});  // [1, 24, 3]
     auto joints_squeezed = joints_24.squeeze(0);                            // [24, 3]
 
-    // 2. Build rotation matrices for each joint
+    // 2. Build rotation matrices for each joint (batch operation)
     auto poses_reshaped = poses.view({23, 3});
-    std::vector<torch::Tensor> rot_mats_3x3_list;
-    for (int j = 0; j < 23; j++) {
-      auto pose_j = poses_reshaped.select(0, j);
-      auto R = batch_rodrigues(pose_j).squeeze(0);  // [3, 3]
-      rot_mats_3x3_list.push_back(R);
-    }
+    auto rot_mats_3x3 = batch_rodrigues(poses_reshaped);  // [23, 3, 3]
 
     // 3. Build 4x4 transformation matrices for kinematic chain
     std::vector<torch::Tensor> transform_mats_list;
     for (int j = 0; j < 24; j++) {
-      auto I4 = torch::eye(4, poses.options());
-      auto transform_mat = I4.clone();
+      auto transform_mat = torch::eye(4, poses.options());
 
       auto joint = joints_squeezed[j];
       torch::Tensor parent_joint =
@@ -353,7 +340,7 @@ class SMPLModel {
 
       // Set rotation part (only for non-root joints)
       if (j > 0) {
-        transform_mat.narrow(0, 0, 3).narrow(1, 0, 3) = rot_mats_3x3_list[j - 1];
+        transform_mat.narrow(0, 0, 3).narrow(1, 0, 3) = rot_mats_3x3[j - 1];
       }
 
       // Set translation part
@@ -370,13 +357,16 @@ class SMPLModel {
     // 4. Convert to relative transformations
     std::vector<torch::Tensor> rel_transform_mats_list;
     for (int j = 0; j < 24; j++) {
-      auto transform_mat = transform_mats_list[j];
+      auto& transform_mat = transform_mats_list[j];
       auto joint = joints_squeezed[j];
-      auto rel_transform = transform_mat.clone();
 
       auto rot_part = transform_mat.narrow(0, 0, 3).narrow(1, 0, 3);
       auto trans_part = transform_mat.narrow(0, 0, 3).select(1, 3);
-      rel_transform.narrow(0, 0, 3).select(1, 3) = trans_part - torch::matmul(rot_part, joint);
+      auto new_trans = trans_part - torch::matmul(rot_part, joint);
+
+      auto rel_transform = torch::eye(4, poses.options());
+      rel_transform.narrow(0, 0, 3).narrow(1, 0, 3) = rot_part;
+      rel_transform.narrow(0, 0, 3).select(1, 3) = new_trans;
 
       rel_transform_mats_list.push_back(rel_transform);
     }
