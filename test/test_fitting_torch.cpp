@@ -9,14 +9,6 @@
 #include <tuple>
 #include <vector>
 
-extern "C" {
-void __attribute__((weak)) InitGoogleLogging(const char*) {}
-}
-
-#define GLOG_NO_ABBREVIATED_SEVERITIES
-#undef LOG
-#define LOG(severity) std::cout
-
 template <typename T>
 static std::string get_typename() {
   if constexpr (std::is_same_v<T, float>) {
