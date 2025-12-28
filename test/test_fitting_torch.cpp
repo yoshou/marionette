@@ -554,6 +554,55 @@ torch::Tensor compute_keypoints_loss(const torch::Tensor& pred_keypoints,
   return num / (denom + 1e-5f);
 }
 
+template <typename OptimizerFunc>
+void optimize_loop(torch::optim::Optimizer& optimizer, OptimizerFunc compute_loss, float initial_lr,
+                   int max_iterations, int patience, float convergence_threshold,
+                   bool use_relative_change = false) {
+  float prev_loss = std::numeric_limits<float>::max();
+  float best_loss = std::numeric_limits<float>::max();
+  int patience_counter = 0;
+  float current_lr = initial_lr;
+
+  for (int i = 0; i < max_iterations; i++) {
+    optimizer.zero_grad();
+
+    const auto loss = compute_loss();
+
+    loss.backward();
+    optimizer.step();
+
+    const auto current_loss = loss.template item<float>();
+    if (i == 0 || i == max_iterations - 1) {
+      std::cout << "Iteration " << i << ": loss = " << current_loss << ", lr = " << current_lr
+                << std::endl;
+    }
+
+    if (current_loss < best_loss - 1e-6f) {
+      best_loss = current_loss;
+      patience_counter = 0;
+    } else {
+      patience_counter++;
+      if (patience_counter >= patience && current_lr > 1e-5f) {
+        current_lr *= 0.5f;
+        for (auto& param_group : optimizer.param_groups()) {
+          static_cast<torch::optim::AdamOptions&>(param_group.options()).lr(current_lr);
+        }
+        patience_counter = 0;
+        std::cout << "  -> Reducing lr to " << current_lr << std::endl;
+      }
+    }
+
+    const auto change = use_relative_change
+                            ? std::abs(prev_loss - current_loss) / (prev_loss + 1e-8f)
+                            : std::abs(prev_loss - current_loss);
+    if (change < convergence_threshold) {
+      std::cout << "Converged at iteration " << i << ": loss = " << current_loss << std::endl;
+      break;
+    }
+    prev_loss = current_loss;
+  }
+}
+
 int main() {
   std::cout << "Starting optimization with LibTorch..." << std::endl;
   auto total_start = std::chrono::high_resolution_clock::now();
@@ -573,54 +622,19 @@ int main() {
     auto shapes_opt = shapes.clone().detach().requires_grad_(true);
     torch::optim::Adam optimizer({shapes_opt}, torch::optim::AdamOptions(0.05));
 
-    auto keypoints_vec = std::vector<float>(keypoints3d.data_ptr<float>(),
-                                            keypoints3d.data_ptr<float>() + keypoints3d.numel());
+    const auto keypoints_vec = std::vector<float>(
+        keypoints3d.data_ptr<float>(), keypoints3d.data_ptr<float>() + keypoints3d.numel());
 
-    float prev_loss = std::numeric_limits<float>::max();
-    float best_loss = std::numeric_limits<float>::max();
-    int patience_counter = 0;
-    float current_lr = 0.05f;
+    optimize_loop(
+        optimizer,
+        [&]() {
+          const auto all_pred_keypoints = model.forward(shapes_opt, poses, rh, th);
+          const auto limb_loss = compute_limb_length_loss(all_pred_keypoints, keypoints_vec);
+          const auto reg_loss = (shapes_opt * shapes_opt).sum() / shapes_opt.size(0);
+          return limb_loss * 100.0f + reg_loss * 0.1f;
+        },
+        0.05f, 1000, 20, 1e-5f);
 
-    for (int i = 0; i < 1000; i++) {
-      optimizer.zero_grad();
-
-      auto all_pred_keypoints = model.forward(shapes_opt, poses, rh, th);
-
-      auto limb_loss = compute_limb_length_loss(all_pred_keypoints, keypoints_vec);
-      auto reg_loss = (shapes_opt * shapes_opt).sum() / shapes_opt.size(0);
-
-      auto loss = limb_loss * 100.0f + reg_loss * 0.1f;
-
-      loss.backward();
-      optimizer.step();
-
-      float current_loss = loss.item<float>();
-      if (i == 0 || i == 999) {
-        std::cout << "Iteration " << i << ": loss = " << current_loss << ", lr = " << current_lr
-                  << std::endl;
-      }
-
-      if (current_loss < best_loss - 1e-6f) {
-        best_loss = current_loss;
-        patience_counter = 0;
-      } else {
-        patience_counter++;
-        if (patience_counter >= 20 && current_lr > 1e-5f) {
-          current_lr *= 0.5f;
-          for (auto& param_group : optimizer.param_groups()) {
-            static_cast<torch::optim::AdamOptions&>(param_group.options()).lr(current_lr);
-          }
-          patience_counter = 0;
-          std::cout << "  -> Reducing lr to " << current_lr << std::endl;
-        }
-      }
-
-      if (std::abs(prev_loss - current_loss) < 1e-5f) {
-        std::cout << "Converged at iteration " << i << ": loss = " << current_loss << std::endl;
-        break;
-      }
-      prev_loss = current_loss;
-    }
     shapes = shapes_opt.detach();
   }
   auto phase_end = std::chrono::high_resolution_clock::now();
@@ -637,58 +651,21 @@ int main() {
 
     const std::vector<int> phase2_indices = {2, 5, 9, 12};
 
-    float prev_loss = std::numeric_limits<float>::max();
-    float best_loss = std::numeric_limits<float>::max();
-    int patience_counter = 0;
-    float current_lr = 0.05f;
+    optimize_loop(
+        optimizer,
+        [&]() {
+          const auto all_pred_keypoints = model.forward(shapes, poses, rh_opt, th_opt);
+          const auto keypoints3d_loss =
+              compute_keypoints_loss(all_pred_keypoints, keypoints3d, phase2_indices);
+          const auto smooth_keypoints_loss =
+              compute_smooth_loss(all_pred_keypoints, {0.5f, 0.3f, 0.1f, 0.1f});
+          const auto th_reshaped = th_opt.unsqueeze(1);
+          const auto smooth_th_loss = compute_smooth_loss(th_reshaped, {0.5f, 0.3f, 0.1f, 0.1f});
+          return keypoints3d_loss * 100.0f +
+                 (smooth_keypoints_loss * 10.0f + smooth_th_loss * 100.0f) * 1.0f;
+        },
+        0.05f, 1000, 20, 1e-5f);
 
-    for (int iteration = 0; iteration < 1000; iteration++) {
-      optimizer.zero_grad();
-
-      auto all_pred_keypoints = model.forward(shapes, poses, rh_opt, th_opt);
-
-      auto keypoints3d_loss =
-          compute_keypoints_loss(all_pred_keypoints, keypoints3d, phase2_indices);
-
-      auto smooth_keypoints_loss =
-          compute_smooth_loss(all_pred_keypoints, {0.5f, 0.3f, 0.1f, 0.1f});
-      auto th_reshaped = th_opt.unsqueeze(1);
-      auto smooth_th_loss = compute_smooth_loss(th_reshaped, {0.5f, 0.3f, 0.1f, 0.1f});
-
-      auto loss = keypoints3d_loss * 100.0f +
-                  (smooth_keypoints_loss * 10.0f + smooth_th_loss * 100.0f) * 1.0f;
-
-      loss.backward();
-      optimizer.step();
-
-      float current_loss = loss.item<float>();
-      if (iteration == 0 || iteration == 999) {
-        std::cout << "Iteration " << iteration << ": loss = " << current_loss
-                  << ", lr = " << current_lr << std::endl;
-      }
-
-      if (current_loss < best_loss - 1e-6f) {
-        best_loss = current_loss;
-        patience_counter = 0;
-      } else {
-        patience_counter++;
-        if (patience_counter >= 20 && current_lr > 1e-5f) {
-          current_lr *= 0.5f;
-          for (auto& param_group : optimizer.param_groups()) {
-            static_cast<torch::optim::AdamOptions&>(param_group.options()).lr(current_lr);
-          }
-          patience_counter = 0;
-          std::cout << "  -> Reducing lr to " << current_lr << std::endl;
-        }
-      }
-
-      if (std::abs(prev_loss - current_loss) < 1e-5f) {
-        std::cout << "Converged at iteration " << iteration << ": loss = " << current_loss
-                  << std::endl;
-        break;
-      }
-      prev_loss = current_loss;
-    }
     rh = rh_opt.detach();
     th = th_opt.detach();
   }
@@ -706,64 +683,27 @@ int main() {
     auto th_opt = th.clone().requires_grad_(true);
     torch::optim::Adam optimizer({poses_opt, rh_opt, th_opt}, torch::optim::AdamOptions(0.02));
 
-    float prev_loss = std::numeric_limits<float>::max();
-    float best_loss = std::numeric_limits<float>::max();
-    int patience_counter = 0;
-    float current_lr = 0.02f;
+    optimize_loop(
+        optimizer,
+        [&]() {
+          const auto all_pred_keypoints = model.forward(shapes, poses_opt, rh_opt, th_opt);
+          const auto keypoints3d_loss = compute_keypoints_loss(all_pred_keypoints, keypoints3d);
 
-    for (int i = 0; i < 1000; i++) {
-      optimizer.zero_grad();
+          const auto poses_reshaped = poses_opt.unsqueeze(1);
+          const auto smooth_poses_loss =
+              compute_smooth_loss(poses_reshaped, {0.5f, 0.3f, 0.1f, 0.1f});
+          const auto smooth_keypoints_loss =
+              compute_smooth_loss(all_pred_keypoints, {0.5f, 0.3f, 0.1f, 0.1f});
+          const auto th_reshaped = th_opt.unsqueeze(1);
+          const auto smooth_th_loss = compute_smooth_loss(th_reshaped, {0.5f, 0.3f, 0.1f, 0.1f});
+          const auto prior_loss_value = prior_loss.compute(poses_opt);
 
-      auto all_pred_keypoints = model.forward(shapes, poses_opt, rh_opt, th_opt);
+          const auto smooth_loss =
+              smooth_poses_loss * 100.0f + smooth_keypoints_loss * 10.0f + smooth_th_loss * 10.0f;
+          return keypoints3d_loss * 1000.0f + smooth_loss * 1.0f + prior_loss_value * 0.1f;
+        },
+        0.02f, 1000, 30, 1e-5f, true);
 
-      auto keypoints3d_loss = compute_keypoints_loss(all_pred_keypoints, keypoints3d);
-
-      auto poses_reshaped = poses_opt.unsqueeze(1);
-      auto smooth_poses_loss = compute_smooth_loss(poses_reshaped, {0.5f, 0.3f, 0.1f, 0.1f});
-
-      auto smooth_keypoints_loss =
-          compute_smooth_loss(all_pred_keypoints, {0.5f, 0.3f, 0.1f, 0.1f});
-
-      auto th_reshaped = th_opt.unsqueeze(1);
-      auto smooth_th_loss = compute_smooth_loss(th_reshaped, {0.5f, 0.3f, 0.1f, 0.1f});
-
-      auto prior_loss_value = prior_loss.compute(poses_opt);
-
-      auto smooth_loss =
-          smooth_poses_loss * 100.0f + smooth_keypoints_loss * 10.0f + smooth_th_loss * 10.0f;
-      auto loss = keypoints3d_loss * 1000.0f + smooth_loss * 1.0f + prior_loss_value * 0.1f;
-
-      loss.backward();
-      optimizer.step();
-
-      float current_loss = loss.item<float>();
-      if (i == 0 || i == 999) {
-        std::cout << "Iteration " << i << ": loss = " << current_loss << ", lr = " << current_lr
-                  << std::endl;
-      }
-
-      if (current_loss < best_loss - 1e-4f) {
-        best_loss = current_loss;
-        patience_counter = 0;
-      } else {
-        patience_counter++;
-        if (patience_counter >= 30 && current_lr > 1e-5f) {
-          current_lr *= 0.5f;
-          for (auto& param_group : optimizer.param_groups()) {
-            static_cast<torch::optim::AdamOptions&>(param_group.options()).lr(current_lr);
-          }
-          patience_counter = 0;
-          std::cout << "  -> Reducing lr to " << current_lr << std::endl;
-        }
-      }
-
-      float relative_change = std::abs(prev_loss - current_loss) / (prev_loss + 1e-8f);
-      if (relative_change < 1e-5f) {
-        std::cout << "Converged at iteration " << i << ": loss = " << current_loss << std::endl;
-        break;
-      }
-      prev_loss = current_loss;
-    }
     poses = poses_opt.detach();
     rh = rh_opt.detach();
     th = th_opt.detach();
