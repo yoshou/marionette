@@ -46,6 +46,7 @@ find_package(Torch REQUIRED)
 
 add_executable(test_fitting_torch
     ${CMAKE_CURRENT_LIST_DIR}/test_fitting_torch.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../src/optimization/tensor_wrapper.cpp
 )
 
 target_link_libraries(test_fitting_torch
