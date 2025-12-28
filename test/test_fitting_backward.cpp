@@ -1,5 +1,3 @@
-#include <torch/torch.h>
-
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -41,19 +39,18 @@ static std::tuple<std::vector<T>, std::vector<uint32_t>> load_tensor(const std::
   return std::forward_as_tuple(data, shape);
 }
 
-Tensor load_tensor_as_torch(const std::string& file_name) {
+Tensor load_tensor_as_tensor(const std::string& file_name) {
   auto [data, shape] = load_tensor<float>(file_name);
 
-  std::vector<int64_t> torch_shape;
+  std::vector<int64_t> shape_i64;
   for (auto s : shape) {
-    torch_shape.push_back(static_cast<int64_t>(s));
+    shape_i64.push_back(static_cast<int64_t>(s));
   }
 
-  auto tensor = torch::from_blob(data.data(), torch_shape, torch::kFloat32).clone();
-  return Tensor(tensor);
+  return Tensor::from_blob(data.data(), shape_i64);
 }
 
-Tensor load_dense_matrix_as_torch(const std::string& file_name) {
+Tensor load_dense_matrix_as_tensor(const std::string& file_name) {
   std::ifstream ifs;
   ifs.open(file_name, std::ios::in);
   nlohmann::json j = nlohmann::json::parse(ifs);
@@ -82,7 +79,7 @@ Tensor load_dense_matrix_as_torch(const std::string& file_name) {
   return tensor.to_float32();
 }
 
-Tensor load_sparse_matrix_as_torch(const std::string& file_name) {
+Tensor load_sparse_matrix_as_tensor(const std::string& file_name) {
   std::ifstream ifs;
   ifs.open(file_name, std::ios::in);
   nlohmann::json j = nlohmann::json::parse(ifs);
@@ -402,25 +399,25 @@ class SMPLModel {
     path param_dir("../data/opt/");
 
     v_template =
-        load_dense_matrix_as_torch((param_dir / "SMPL_NEUTRAL_v_template.json").generic_string());
+        load_dense_matrix_as_tensor((param_dir / "SMPL_NEUTRAL_v_template.json").generic_string());
     weights =
-        load_dense_matrix_as_torch((param_dir / "SMPL_NEUTRAL_weights.json").generic_string());
-    j_regressor =
-        load_sparse_matrix_as_torch((param_dir / "SMPL_NEUTRAL_J_regressor.json").generic_string());
-    j_regressor_body25 = load_dense_matrix_as_torch(
+        load_dense_matrix_as_tensor((param_dir / "SMPL_NEUTRAL_weights.json").generic_string());
+    j_regressor = load_sparse_matrix_as_tensor(
+        (param_dir / "SMPL_NEUTRAL_J_regressor.json").generic_string());
+    j_regressor_body25 = load_dense_matrix_as_tensor(
         (param_dir / "SMPL_NEUTRAL_J_regressor_body25.json").generic_string());
 
     auto [posedirs_data, posedirs_shape] =
         load_tensor<double>((param_dir / "SMPL_NEUTRAL_posedirs.json").generic_string());
-    std::vector<int64_t> posedirs_torch_shape;
-    for (const auto s : posedirs_shape) posedirs_torch_shape.push_back(static_cast<int64_t>(s));
-    posedirs = Tensor::from_blob(posedirs_data.data(), posedirs_torch_shape).to_float32();
+    std::vector<int64_t> posedirs_shape_i64;
+    for (const auto s : posedirs_shape) posedirs_shape_i64.push_back(static_cast<int64_t>(s));
+    posedirs = Tensor::from_blob(posedirs_data.data(), posedirs_shape_i64).to_float32();
 
     auto [shapedirs_data, shapedirs_shape] =
         load_tensor<double>((param_dir / "SMPL_NEUTRAL_shapedirs.json").generic_string());
-    std::vector<int64_t> shapedirs_torch_shape;
-    for (const auto s : shapedirs_shape) shapedirs_torch_shape.push_back(static_cast<int64_t>(s));
-    shapedirs = Tensor::from_blob(shapedirs_data.data(), shapedirs_torch_shape).to_float32();
+    std::vector<int64_t> shapedirs_shape_i64;
+    for (const auto s : shapedirs_shape) shapedirs_shape_i64.push_back(static_cast<int64_t>(s));
+    shapedirs = Tensor::from_blob(shapedirs_data.data(), shapedirs_shape_i64).to_float32();
 
     auto [kintree_table_data, kintree_table_shape] =
         load_tensor<uint32_t>((param_dir / "SMPL_NEUTRAL_kintree_table.json").generic_string());
@@ -429,7 +426,7 @@ class SMPLModel {
   }
 
   Tensor forward(Tensor betas, Tensor poses, Tensor rh, Tensor th) {
-    // Type conversions are handled internally by PyTorch
+    // Type conversions are handled by the current backend
     const auto batch_size = poses.size(0);
 
     auto v_shaped = apply_shape_blend(betas);
@@ -632,15 +629,15 @@ void optimize_loop(Adam& optimizer, OptimizerFunc compute_loss, float initial_lr
 }
 
 int main() {
-  std::cout << "Starting optimization with LibTorch..." << std::endl;
+  std::cout << "Starting optimization..." << std::endl;
   auto total_start = std::chrono::high_resolution_clock::now();
 
-  Tensor keypoints3d = load_tensor_as_torch("../data/opt/observations_keypoints3d.json");
+  Tensor keypoints3d = load_tensor_as_tensor("../data/opt/observations_keypoints3d.json");
   std::cout << "keypoints3d loaded shape: " << keypoints3d.sizes() << std::endl;
-  Tensor poses = load_tensor_as_torch("../data/opt/params_poses.json");
-  Tensor shapes = load_tensor_as_torch("../data/opt/params_shapes.json");
-  Tensor rh = load_tensor_as_torch("../data/opt/params_Rh.json");
-  Tensor th = load_tensor_as_torch("../data/opt/params_Th.json");
+  Tensor poses = load_tensor_as_tensor("../data/opt/params_poses.json");
+  Tensor shapes = load_tensor_as_tensor("../data/opt/params_shapes.json");
+  Tensor rh = load_tensor_as_tensor("../data/opt/params_Rh.json");
+  Tensor th = load_tensor_as_tensor("../data/opt/params_Th.json");
 
   SMPLModel model;
 
