@@ -9,12 +9,10 @@
 #include <tuple>
 #include <vector>
 
-// Prevent glog from initializing by defining these symbols
 extern "C" {
 void __attribute__((weak)) InitGoogleLogging(const char*) {}
 }
 
-// Disable glog to avoid conflicts
 #define GLOG_NO_ABBREVIATED_SEVERITIES
 #undef LOG
 #define LOG(severity) std::cout
@@ -126,18 +124,16 @@ torch::Tensor load_sparse_matrix_as_torch(const std::string& file_name) {
   return dense;
 }
 
-// Prior loss using GMM
 class PriorLoss {
  public:
-  torch::Tensor gmm_means;       // [8, 69]
-  torch::Tensor gmm_precisions;  // [8, 69, 69] - inverse of covariance
-  torch::Tensor nll_weights;     // [8]
+  torch::Tensor gmm_means;
+  torch::Tensor gmm_precisions;
+  torch::Tensor nll_weights;
 
   PriorLoss() {
     using path = std::filesystem::path;
     path param_dir("../data/opt/");
 
-    // Load GMM parameters
     auto [means_data, means_shape] =
         load_tensor<double>((param_dir / "gmm_means.json").generic_string());
     gmm_means = torch::from_blob(
@@ -162,7 +158,6 @@ class PriorLoss {
                                         {static_cast<int64_t>(weights_shape[0])}, torch::kFloat64)
                            .clone();
 
-    // Compute precisions (inverse of covariance) and determinants
     int num_gaussians = covs.size(0);
     std::vector<torch::Tensor> precisions_list;
     std::vector<double> sqrdets;
@@ -179,7 +174,6 @@ class PriorLoss {
 
     gmm_precisions = torch::stack(precisions_list, 0).to(torch::kFloat32);
 
-    // Compute nll_weights
     const double PI = 3.141592653589793;
     const double c = std::pow(2.0 * PI, 69.0 / 2.0);
     double min_sqrdet = *std::min_element(sqrdets.begin(), sqrdets.end());
@@ -196,41 +190,24 @@ class PriorLoss {
   }
 
   torch::Tensor compute(const torch::Tensor& poses) {
-    // poses: [num_frames, 69]
-    // Batch process all frames at once
+    auto poses_expanded = poses.unsqueeze(1);
+    auto means_expanded = gmm_means.unsqueeze(0);
+    auto d = poses_expanded - means_expanded;
 
-    // Compute differences from all gaussian means for all frames
-    // poses: [B, 69], gmm_means: [8, 69]
-    // Expand: poses: [B, 1, 69], gmm_means: [1, 8, 69]
-    auto poses_expanded = poses.unsqueeze(1);      // [B, 1, 69]
-    auto means_expanded = gmm_means.unsqueeze(0);  // [1, 8, 69]
-    auto d = poses_expanded - means_expanded;      // [B, 8, 69]
+    auto d_expanded = d.unsqueeze(2);
+    auto prec_expanded = gmm_precisions.unsqueeze(0);
+    auto prec_d = torch::matmul(d_expanded, prec_expanded).squeeze(2);
 
-    // Compute prec_d = d @ precision^T for each gaussian and frame
-    // d: [B, 8, 69], gmm_precisions: [8, 69, 69]
-    // Expand d to [B, 8, 1, 69] and precisions to [1, 8, 69, 69]
-    auto d_expanded = d.unsqueeze(2);                                   // [B, 8, 1, 69]
-    auto prec_expanded = gmm_precisions.unsqueeze(0);                   // [1, 8, 69, 69]
-    auto prec_d = torch::matmul(d_expanded, prec_expanded).squeeze(2);  // [B, 8, 69]
+    auto prec_dd = (d * prec_d).sum(2);
 
-    // Compute prec_dd = d @ prec_d for each gaussian and frame
-    auto prec_dd = (d * prec_d).sum(2);  // [B, 8]
+    auto nll_expanded = nll_weights.unsqueeze(0);
+    auto loglikelihood = 0.5f * prec_dd + nll_expanded;
 
-    // Compute log-likelihood for each gaussian and frame
-    auto nll_expanded = nll_weights.unsqueeze(0);        // [1, 8]
-    auto loglikelihood = 0.5f * prec_dd + nll_expanded;  // [B, 8]
-
-    // Take minimum log-likelihood across gaussians for each frame
-    auto min_likelihood = std::get<0>(loglikelihood.min(1));  // [B]
-
-    // Average over frames
-    auto total_loss = min_likelihood.mean();
-
-    return total_loss;
+    auto min_likelihood = std::get<0>(loglikelihood.min(1));
+    return min_likelihood.mean();
   }
 };
 
-// Forward declaration of SMPL model
 class SMPLModel {
  public:
   torch::Tensor v_template;
@@ -242,14 +219,12 @@ class SMPLModel {
   std::vector<int32_t> parents;
 
  private:
-  // Convert axis-angle to rotation matrix using Rodrigues formula
   torch::Tensor batch_rodrigues(const torch::Tensor& pose_vec) {
-    // pose_vec: [N, 3] or [3] - axis-angle representation
     auto pose_reshaped = pose_vec.dim() == 1 ? pose_vec.unsqueeze(0) : pose_vec;
 
-    auto theta2 = (pose_reshaped * pose_reshaped).sum(1, true);  // [N, 1]
+    auto theta2 = (pose_reshaped * pose_reshaped).sum(1, true);
     auto theta = torch::sqrt(theta2 + 1e-8);
-    auto w = pose_reshaped / (theta + 1e-8);  // [N, 3]
+    auto w = pose_reshaped / (theta + 1e-8);
 
     auto wx = w.select(1, 0).unsqueeze(1);
     auto wy = w.select(1, 1).unsqueeze(1);
@@ -272,58 +247,46 @@ class SMPLModel {
     auto row0 = torch::cat({r00, r01, r02}, 1).unsqueeze(1);
     auto row1 = torch::cat({r10, r11, r12}, 1).unsqueeze(1);
     auto row2 = torch::cat({r20, r21, r22}, 1).unsqueeze(1);
-    return torch::cat({row0, row1, row2}, 1);  // [N, 3, 3]
+    return torch::cat({row0, row1, row2}, 1);
   }
 
-  // Apply shape blending: v_template + shapedirs * betas
-  // betas: [1, 10] -> output: [1, 6890, 3]
   torch::Tensor apply_shape_blend(const torch::Tensor& betas) {
-    auto v_shaped = v_template.clone();  // [6890, 3]
+    auto v_shaped = v_template.clone();
 
     if (betas.defined() && betas.numel() > 0) {
-      // shapedirs: [6890, 3, 10], betas: [1, 10] -> [6890, 3]
-      auto shape_disps = torch::matmul(shapedirs, betas.squeeze(0));  // [6890, 3]
+      auto shape_disps = torch::matmul(shapedirs, betas.squeeze(0));
       v_shaped = v_shaped + shape_disps;
     }
 
-    return v_shaped.unsqueeze(0);  // [1, 6890, 3]
+    return v_shaped.unsqueeze(0);
   }
 
-  // Apply pose-dependent vertex deformations
-  // v_shaped: [1, 6890, 3], poses: [B, 69]
   torch::Tensor apply_pose_blend(const torch::Tensor& v_shaped, const torch::Tensor& poses) {
     if (!poses.defined() || poses.numel() == 0) {
       return v_shaped;
     }
 
     int batch_size = poses.size(0);
-    auto poses_reshaped = poses.view({batch_size, 23, 3});  // [B, 23, 3]
+    auto poses_reshaped = poses.view({batch_size, 23, 3});
 
-    // Convert all joint poses to rotation matrices (batch operation)
-    auto rot_mats_3x3 = batch_rodrigues(poses_reshaped.view({-1, 3}));  // [B*23, 3, 3]
-    auto rot_mats = rot_mats_3x3.view({batch_size, 23, 9});             // [B, 23, 9]
+    auto rot_mats_3x3 = batch_rodrigues(poses_reshaped.view({-1, 3}));
+    auto rot_mats = rot_mats_3x3.view({batch_size, 23, 9});
 
-    // Pose feature: rot_mats - Identity
+    // Pose feature: rotation matrices relative to identity
     auto rot_mats_feat = rot_mats.clone();
-    rot_mats_feat.select(2, 0) -= 1.0f;  // R[0,0] -= 1
-    rot_mats_feat.select(2, 4) -= 1.0f;  // R[1,1] -= 1
-    rot_mats_feat.select(2, 8) -= 1.0f;  // R[2,2] -= 1
+    rot_mats_feat.select(2, 0) -= 1.0f;
+    rot_mats_feat.select(2, 4) -= 1.0f;
+    rot_mats_feat.select(2, 8) -= 1.0f;
 
-    // Compute pose-dependent vertex displacements
-    auto pose_feature_flat = rot_mats_feat.view({batch_size, -1});  // [B, 207]
-    // posedirs: [6890, 3, 207], pose_feature: [B, 207] -> [B, 6890, 3]
-    auto posedirs_2d = posedirs.view({-1, 207});  // [6890*3, 207]
-    auto pose_offset = torch::matmul(posedirs_2d, pose_feature_flat.t())
-                           .t()
-                           .view({batch_size, 6890, 3});  // [B, 6890, 3]
+    auto pose_feature_flat = rot_mats_feat.view({batch_size, -1});
+    auto posedirs_2d = posedirs.view({-1, 207});
+    auto pose_offset =
+        torch::matmul(posedirs_2d, pose_feature_flat.t()).t().view({batch_size, 6890, 3});
 
-    // Expand v_shaped to batch size and add pose offset
-    auto v_shaped_expanded = v_shaped.expand({batch_size, -1, -1});  // [B, 6890, 3]
+    auto v_shaped_expanded = v_shaped.expand({batch_size, -1, -1});
     return v_shaped_expanded + pose_offset;
   }
 
-  // Compute Linear Blend Skinning
-  // v_posed: [B, 6890, 3], poses: [B, 69]
   torch::Tensor compute_lbs(const torch::Tensor& v_posed, const torch::Tensor& poses) {
     if (!poses.defined() || poses.numel() == 0) {
       return v_posed;
@@ -331,55 +294,44 @@ class SMPLModel {
 
     int batch_size = poses.size(0);
 
-    // 1. Compute 24 joints from v_posed (batched)
-    // j_regressor: [24, 6890], v_posed: [B, 6890, 3]
-    auto j_regressor_expanded =
-        j_regressor.unsqueeze(0).expand({batch_size, -1, -1});   // [B, 24, 6890]
-    auto joints_24 = torch::bmm(j_regressor_expanded, v_posed);  // [B, 24, 3]
+    auto j_regressor_expanded = j_regressor.unsqueeze(0).expand({batch_size, -1, -1});
+    auto joints_24 = torch::bmm(j_regressor_expanded, v_posed);
 
-    // 2. Build rotation matrices for each joint (batched)
-    auto poses_reshaped = poses.view({batch_size, 23, 3});              // [B, 23, 3]
-    auto rot_mats_3x3 = batch_rodrigues(poses_reshaped.view({-1, 3}));  // [B*23, 3, 3]
-    rot_mats_3x3 = rot_mats_3x3.view({batch_size, 23, 3, 3});           // [B, 23, 3, 3]
+    auto poses_reshaped = poses.view({batch_size, 23, 3});
+    auto rot_mats_3x3 = batch_rodrigues(poses_reshaped.view({-1, 3}));
+    rot_mats_3x3 = rot_mats_3x3.view({batch_size, 23, 3, 3});
 
-    // 3. Build 4x4 transformation matrices for kinematic chain (batched)
+    // Build 4x4 transformation matrices for kinematic chain
     std::vector<torch::Tensor> transform_mats_list;
     for (int j = 0; j < 24; j++) {
-      auto transform_mat = torch::eye(4, poses.options())
-                               .unsqueeze(0)
-                               .expand({batch_size, 4, 4})
-                               .clone();  // [B, 4, 4]
+      auto transform_mat =
+          torch::eye(4, poses.options()).unsqueeze(0).expand({batch_size, 4, 4}).clone();
 
-      auto joint = joints_24.select(1, j);  // [B, 3]
+      auto joint = joints_24.select(1, j);
       torch::Tensor parent_joint = (j == 0) ? torch::zeros({batch_size, 3}, poses.options())
-                                            : joints_24.select(1, parents[j]);  // [B, 3]
-      auto rel_joint = joint - parent_joint;                                    // [B, 3]
+                                            : joints_24.select(1, parents[j]);
+      auto rel_joint = joint - parent_joint;
 
-      // Set rotation part (only for non-root joints)
       if (j > 0) {
-        transform_mat.narrow(1, 0, 3).narrow(2, 0, 3) = rot_mats_3x3.select(1, j - 1);  // [B, 3, 3]
+        transform_mat.narrow(1, 0, 3).narrow(2, 0, 3) = rot_mats_3x3.select(1, j - 1);
       }
 
-      // Set translation part
-      transform_mat.narrow(1, 0, 3).select(2, 3) = rel_joint;  // [B, 3]
+      transform_mat.narrow(1, 0, 3).select(2, 3) = rel_joint;
 
-      // Multiply with parent transformation
       if (j > 0 && parents[j] >= 0) {
-        transform_mat = torch::bmm(transform_mats_list[parents[j]], transform_mat);  // [B, 4, 4]
+        transform_mat = torch::bmm(transform_mats_list[parents[j]], transform_mat);
       }
 
       transform_mats_list.push_back(transform_mat);
     }
 
-    auto transform_mats = torch::stack(transform_mats_list, 1);  // [B, 24, 4, 4]
+    auto transform_mats = torch::stack(transform_mats_list, 1);
 
-    // 4. Convert to relative transformations (batched)
-    auto joints_24_expanded = joints_24.unsqueeze(2).unsqueeze(3);    // [B, 24, 1, 1, 3]
-    auto rot_parts = transform_mats.narrow(2, 0, 3).narrow(3, 0, 3);  // [B, 24, 3, 3]
-    auto trans_parts = transform_mats.narrow(2, 0, 3).select(3, 3);   // [B, 24, 3]
+    auto joints_24_expanded = joints_24.unsqueeze(2).unsqueeze(3);
+    auto rot_parts = transform_mats.narrow(2, 0, 3).narrow(3, 0, 3);
+    auto trans_parts = transform_mats.narrow(2, 0, 3).select(3, 3);
 
-    auto new_trans =
-        trans_parts - torch::matmul(rot_parts, joints_24.unsqueeze(3)).squeeze(3);  // [B, 24, 3]
+    auto new_trans = trans_parts - torch::matmul(rot_parts, joints_24.unsqueeze(3)).squeeze(3);
 
     auto rel_transform_mats = torch::eye(4, poses.options())
                                   .unsqueeze(0)
@@ -389,37 +341,30 @@ class SMPLModel {
     rel_transform_mats.narrow(2, 0, 3).narrow(3, 0, 3) = rot_parts;
     rel_transform_mats.narrow(2, 0, 3).select(3, 3) = new_trans;
 
-    // 5. Blend transformations using skinning weights (batched)
-    // weights: [6890, 24], rel_transform_mats: [B, 24, 4, 4]
-    auto weights_expanded = weights.unsqueeze(0).unsqueeze(3).unsqueeze(4);  // [1, 6890, 24, 1, 1]
-    auto rel_mats_expanded = rel_transform_mats.unsqueeze(1);                // [B, 1, 24, 4, 4]
-    auto blended_mats = (weights_expanded * rel_mats_expanded).sum(2);       // [B, 6890, 4, 4]
+    auto weights_expanded = weights.unsqueeze(0).unsqueeze(3).unsqueeze(4);
+    auto rel_mats_expanded = rel_transform_mats.unsqueeze(1);
+    auto blended_mats = (weights_expanded * rel_mats_expanded).sum(2);
 
-    // 6. Apply blended transformations to vertices (batched)
-    auto v_posed_homo = torch::cat({v_posed, torch::ones({batch_size, 6890, 1}, poses.options())},
-                                   2);  // [B, 6890, 4]
+    auto v_posed_homo =
+        torch::cat({v_posed, torch::ones({batch_size, 6890, 1}, poses.options())}, 2);
     auto verts_homo = torch::bmm(blended_mats.view({-1, 4, 4}), v_posed_homo.view({-1, 4, 1}))
-                          .view({batch_size, 6890, 4});  // [B, 6890, 4]
-    auto verts = verts_homo.narrow(2, 0, 3);             // [B, 6890, 3]
+                          .view({batch_size, 6890, 4});
+    auto verts = verts_homo.narrow(2, 0, 3);
 
     return verts;
   }
 
-  // Apply global rotation (rh) and translation (th)
-  // joints: [B, 25, 3], rh: [B, 3], th: [B, 3]
   torch::Tensor apply_global_transform(torch::Tensor joints, const torch::Tensor& rh,
                                        const torch::Tensor& th) {
     int batch_size = joints.size(0);
 
-    // Apply Rodrigues rotation
     if (rh.defined() && rh.numel() > 0) {
-      auto R = batch_rodrigues(rh);                    // [B, 3, 3]
-      joints = torch::bmm(joints, R.transpose(1, 2));  // [B, 25, 3]
+      auto R = batch_rodrigues(rh);
+      joints = torch::bmm(joints, R.transpose(1, 2));
     }
 
-    // Add translation
     if (th.defined() && th.numel() > 0) {
-      auto th_reshaped = th.unsqueeze(1).expand({batch_size, joints.size(1), 3});  // [B, 25, 3]
+      auto th_reshaped = th.unsqueeze(1).expand({batch_size, joints.size(1), 3});
       joints = joints + th_reshaped;
     }
 
@@ -464,42 +409,28 @@ class SMPLModel {
 
   torch::Tensor forward(torch::Tensor betas, torch::Tensor poses, torch::Tensor rh,
                         torch::Tensor th) {
-    // Ensure input tensors are on correct device and dtype
     if (betas.defined()) betas = betas.to(v_template.device()).to(v_template.dtype());
     if (poses.defined()) poses = poses.to(v_template.device()).to(v_template.dtype());
     if (rh.defined()) rh = rh.to(v_template.device()).to(v_template.dtype());
     if (th.defined()) th = th.to(v_template.device()).to(v_template.dtype());
 
-    // Determine batch size from poses
     int batch_size = poses.size(0);
 
-    // 1. Shape blending: v_template + shapedirs * betas (shared across frames)
-    auto v_shaped = apply_shape_blend(betas);  // [1, 6890, 3]
-
-    // 2. Pose blending: add pose-dependent deformations
-    v_shaped = apply_pose_blend(v_shaped, poses);  // [B, 6890, 3]
-
-    // 3. Linear Blend Skinning: apply joint transformations
+    auto v_shaped = apply_shape_blend(betas);
+    v_shaped = apply_pose_blend(v_shaped, poses);
     auto verts = compute_lbs(v_shaped, poses);
 
-    // 4. Extract body25 keypoints from transformed vertices
-    // verts: [B, 6890, 3], j_regressor_body25: [25, 6890]
-    // Expand j_regressor_body25 to [B, 25, 6890] and use bmm
-    auto j_reg_expanded =
-        j_regressor_body25.unsqueeze(0).expand({batch_size, -1, -1});  // [B, 25, 6890]
-    auto joints = torch::bmm(j_reg_expanded, verts);                   // [B, 25, 3]
+    auto j_reg_expanded = j_regressor_body25.unsqueeze(0).expand({batch_size, -1, -1});
+    auto joints = torch::bmm(j_reg_expanded, verts);
 
-    // 5. Apply global rotation and translation
     joints = apply_global_transform(joints, rh, th);
 
     return joints;
   }
 };
 
-// Limb length loss (matches original implementation)
 torch::Tensor compute_limb_length_loss(const torch::Tensor& pred_keypoints,
                                        const std::vector<float>& target_keypoints) {
-  // Kinematic tree matching original implementation
   std::vector<std::pair<int, int>> kintree = {
       {8, 1}, {2, 5}, {2, 3}, {5, 6}, {3, 4}, {6, 7},  {2, 3},  {5, 6},   {3, 4},   {6, 7},
       {2, 3}, {5, 6}, {3, 4}, {6, 7}, {1, 0}, {9, 12}, {9, 10}, {10, 11}, {12, 13}, {13, 14}};
@@ -507,12 +438,10 @@ torch::Tensor compute_limb_length_loss(const torch::Tensor& pred_keypoints,
   int batch_size = pred_keypoints.size(0);
   int num_keypoints = target_keypoints.size() / (batch_size * 4);
 
-  // Convert target_keypoints to tensor [B, num_keypoints, 4]
   auto target_tensor = torch::from_blob(const_cast<float*>(target_keypoints.data()),
                                         {batch_size, num_keypoints, 4}, torch::kFloat32)
                            .clone();
 
-  // Compute predicted limb lengths (batched)
   std::vector<torch::Tensor> pred_lengths_list;
   std::vector<torch::Tensor> target_lengths_list;
   std::vector<torch::Tensor> confidence_list;
@@ -521,32 +450,28 @@ torch::Tensor compute_limb_length_loss(const torch::Tensor& pred_keypoints,
     int idx1 = kintree[i].first;
     int idx2 = kintree[i].second;
 
-    // Predicted limb length
-    auto v1_pred = pred_keypoints.index({torch::indexing::Slice(), idx1});  // [B, 3]
-    auto v2_pred = pred_keypoints.index({torch::indexing::Slice(), idx2});  // [B, 3]
+    auto v1_pred = pred_keypoints.index({torch::indexing::Slice(), idx1});
+    auto v2_pred = pred_keypoints.index({torch::indexing::Slice(), idx2});
     auto diff_pred = v2_pred - v1_pred;
-    auto length_pred = torch::norm(diff_pred, 2, -1);  // [B]
+    auto length_pred = torch::norm(diff_pred, 2, -1);
     pred_lengths_list.push_back(length_pred);
 
-    // Target limb length (including confidence in calculation - matches original BUG)
-    auto v1_target = target_tensor.index({torch::indexing::Slice(), idx1});  // [B, 4]
-    auto v2_target = target_tensor.index({torch::indexing::Slice(), idx2});  // [B, 4]
-    auto diff_target = v2_target - v1_target;                                // [B, 4]
-    auto length_target = torch::norm(diff_target, 2, -1);                    // [B]
+    auto v1_target = target_tensor.index({torch::indexing::Slice(), idx1});
+    auto v2_target = target_tensor.index({torch::indexing::Slice(), idx2});
+    auto diff_target = v2_target - v1_target;
+    auto length_target = torch::norm(diff_target, 2, -1);
     target_lengths_list.push_back(length_target);
 
-    // Confidence is minimum of both joint confidences
-    auto conf1 = v1_target.select(1, 3);   // [B]
-    auto conf2 = v2_target.select(1, 3);   // [B]
-    auto conf = torch::min(conf1, conf2);  // [B]
+    auto conf1 = v1_target.select(1, 3);
+    auto conf2 = v2_target.select(1, 3);
+    auto conf = torch::min(conf1, conf2);
     confidence_list.push_back(conf);
   }
 
-  auto pred_lengths = torch::stack(pred_lengths_list, 1);      // [B, num_edges]
-  auto target_lengths = torch::stack(target_lengths_list, 1);  // [B, num_edges]
-  auto confidence = torch::stack(confidence_list, 1);          // [B, num_edges]
+  auto pred_lengths = torch::stack(pred_lengths_list, 1);
+  auto target_lengths = torch::stack(target_lengths_list, 1);
+  auto confidence = torch::stack(confidence_list, 1);
 
-  // Compute loss: num += (pred - target)^2 * conf, denom += conf
   auto diff = pred_lengths - target_lengths;
   auto squared_diff = diff * diff;
   auto weighted_error = squared_diff * confidence;
@@ -557,13 +482,10 @@ torch::Tensor compute_limb_length_loss(const torch::Tensor& pred_keypoints,
   return loss;
 }
 
-// Smooth loss for temporal smoothness
 torch::Tensor compute_smooth_loss(const torch::Tensor& values,
                                   const std::vector<float>& window_heights = {0.5f, 0.3f, 0.1f,
                                                                               0.1f},
                                   bool order2 = true) {
-  // values: [frames, num_items, dims]
-  // Matches original implementation exactly
   int num_frames = values.size(0);
   int num_items = values.size(1);
 
@@ -575,8 +497,6 @@ torch::Tensor compute_smooth_loss(const torch::Tensor& values,
     if (order2) {
       if (num_frames < static_cast<int>(k + 3)) continue;
 
-      // Second order differences: (values[b+k+2] - values[b+1]) - (values[b+k+1] - values[b])
-      // Original: d1 = values[b+k+1] - values[b], d2 = values[b+k+2] - values[b+1], d = d2 - d1
       for (int b = 0; b < num_frames - static_cast<int>(k + 2); b++) {
         auto v0 = values[b];
         auto v1 = values[b + k + 1];
@@ -586,19 +506,16 @@ torch::Tensor compute_smooth_loss(const torch::Tensor& values,
         auto d1 = v1 - v0;
         auto d2 = v2 - v_next;
         auto d = d2 - d1;
-        sq_sum += (d * d).sum();  // Just sum, don't divide yet
+        sq_sum += (d * d).sum();
       }
-      // Original: sq_sum /= T((values_shape[0] - (k + 2)) * values_shape[1]);
       sq_sum /= ((num_frames - static_cast<int>(k + 2)) * num_items);
     } else {
       if (num_frames < static_cast<int>(k + 2)) continue;
 
-      // First order differences
       for (int b = 0; b < num_frames - static_cast<int>(k + 1); b++) {
         auto d = values[b + k + 1] - values[b];
-        sq_sum += (d * d).sum();  // Just sum, don't divide yet
+        sq_sum += (d * d).sum();
       }
-      // Original: sq_sum /= T((values_shape[0] - (k + 1)) * values_shape[1]);
       sq_sum /= ((num_frames - static_cast<int>(k + 1)) * num_items);
     }
 
@@ -608,42 +525,34 @@ torch::Tensor compute_smooth_loss(const torch::Tensor& values,
   return total_loss;
 }
 
-// Compute keypoints loss (batched version)
-// pred_keypoints: [B, 25, 3] - batch of predictions
-// target_keypoints: [B, 25, 4] - batch of targets with confidence
-// indices: optional list of keypoint indices to use
 torch::Tensor compute_keypoints_loss(const torch::Tensor& pred_keypoints,
                                      const torch::Tensor& target_keypoints,
                                      const std::vector<int>& indices = {}) {
-  // Extract confidence and xyz from target
-  auto confidence =
-      target_keypoints.index({torch::indexing::Slice(), torch::indexing::Slice(), 3});  // [B, 25]
-  auto target_xyz = target_keypoints.index({torch::indexing::Slice(), torch::indexing::Slice(),
-                                            torch::indexing::Slice(0, 3)});  // [B, 25, 3]
+  auto confidence = target_keypoints.index({torch::indexing::Slice(), torch::indexing::Slice(), 3});
+  auto target_xyz = target_keypoints.index(
+      {torch::indexing::Slice(), torch::indexing::Slice(), torch::indexing::Slice(0, 3)});
 
   torch::Tensor num;
   torch::Tensor denom;
 
   if (indices.empty()) {
-    // Use all keypoints
-    auto diff = pred_keypoints - target_xyz;  // [B, 25, 3]
-    auto sq_dist = (diff * diff).sum(2);      // [B, 25] - sum over xyz
-    auto weighted = sq_dist * confidence;     // [B, 25]
+    auto diff = pred_keypoints - target_xyz;
+    auto sq_dist = (diff * diff).sum(2);
+    auto weighted = sq_dist * confidence;
     num = weighted.sum();
     denom = confidence.sum();
   } else {
-    // Use only specified keypoints
     num = torch::zeros({}, torch::kFloat32);
     denom = torch::zeros({}, torch::kFloat32);
 
     for (int idx : indices) {
-      auto pred_pt = pred_keypoints.index({torch::indexing::Slice(), idx});  // [B, 3]
-      auto target_pt = target_xyz.index({torch::indexing::Slice(), idx});    // [B, 3]
-      auto conf = confidence.index({torch::indexing::Slice(), idx});         // [B]
+      auto pred_pt = pred_keypoints.index({torch::indexing::Slice(), idx});
+      auto target_pt = target_xyz.index({torch::indexing::Slice(), idx});
+      auto conf = confidence.index({torch::indexing::Slice(), idx});
 
-      auto diff = target_pt - pred_pt;      // [B, 3]
-      auto sq_dist = (diff * diff).sum(1);  // [B]
-      auto weighted = sq_dist * conf;       // [B]
+      auto diff = target_pt - pred_pt;
+      auto sq_dist = (diff * diff).sum(1);
+      auto weighted = sq_dist * conf;
       num += weighted.sum();
       denom += conf.sum();
     }
@@ -656,7 +565,6 @@ int main() {
   std::cout << "Starting optimization with LibTorch..." << std::endl;
   auto total_start = std::chrono::high_resolution_clock::now();
 
-  // Load data
   auto keypoints3d = load_tensor_as_torch("../data/opt/observations_keypoints3d.json");
   std::cout << "keypoints3d loaded shape: " << keypoints3d.sizes() << std::endl;
   auto poses = load_tensor_as_torch("../data/opt/params_poses.json");
@@ -664,7 +572,6 @@ int main() {
   auto rh = load_tensor_as_torch("../data/opt/params_Rh.json");
   auto th = load_tensor_as_torch("../data/opt/params_Th.json");
 
-  // Initialize model
   SMPLModel model;
 
   std::cout << "\n=== Phase 1: Fitting shape ===" << std::endl;
@@ -673,7 +580,6 @@ int main() {
     auto shapes_opt = shapes.clone().detach().requires_grad_(true);
     torch::optim::Adam optimizer({shapes_opt}, torch::optim::AdamOptions(0.05));
 
-    // Convert keypoints3d tensor to vector for limb_length_loss
     auto keypoints_vec = std::vector<float>(keypoints3d.data_ptr<float>(),
                                             keypoints3d.data_ptr<float>() + keypoints3d.numel());
 
@@ -685,15 +591,12 @@ int main() {
     for (int i = 0; i < 1000; i++) {
       optimizer.zero_grad();
 
-      // Compute predictions for all frames in one batch
-      // Note: shapes is [1, 10] and applies to all frames
-      auto all_pred_keypoints = model.forward(shapes_opt, poses, rh, th);  // [10, 25, 3]
+      auto all_pred_keypoints = model.forward(shapes_opt, poses, rh, th);
 
-      // Use limb_length_loss + regression_loss (matching original Phase 1)
       auto limb_loss = compute_limb_length_loss(all_pred_keypoints, keypoints_vec);
-      auto reg_loss = (shapes_opt * shapes_opt).sum() / shapes_opt.size(0);  // L2 regularization
+      auto reg_loss = (shapes_opt * shapes_opt).sum() / shapes_opt.size(0);
 
-      auto loss = limb_loss * 100.0f + reg_loss * 0.1f;  // Exact weights from original
+      auto loss = limb_loss * 100.0f + reg_loss * 0.1f;
 
       loss.backward();
       optimizer.step();
@@ -704,7 +607,6 @@ int main() {
                   << std::endl;
       }
 
-      // Dynamic learning rate reduction
       if (current_loss < best_loss - 1e-6f) {
         best_loss = current_loss;
         patience_counter = 0;
@@ -720,7 +622,6 @@ int main() {
         }
       }
 
-      // Relaxed convergence check
       if (std::abs(prev_loss - current_loss) < 1e-5f) {
         std::cout << "Converged at iteration " << i << ": loss = " << current_loss << std::endl;
         break;
@@ -737,14 +638,10 @@ int main() {
   std::cout << "\n=== Phase 2: Initializing RT ===" << std::endl;
   phase_start = std::chrono::high_resolution_clock::now();
   {
-    // Phase 2 optimizes rh and th for all frames simultaneously
-    // rh: [10, 3], th: [10, 3]
     auto rh_opt = rh.clone().requires_grad_(true);
     auto th_opt = th.clone().requires_grad_(true);
-    // Use Adam optimizer with higher learning rate
     torch::optim::Adam optimizer({rh_opt, th_opt}, torch::optim::AdamOptions(0.05));
 
-    // Phase 2 uses only 4 keypoints: indices {2, 5, 9, 12}
     std::vector<int> phase2_indices = {2, 5, 9, 12};
 
     float prev_loss = std::numeric_limits<float>::max();
@@ -755,21 +652,16 @@ int main() {
     for (int iteration = 0; iteration < 1000; iteration++) {
       optimizer.zero_grad();
 
-      // Compute keypoints for all frames in one batch
-      // Note: shapes is [1, 10] and applies to all frames
-      auto all_pred_keypoints = model.forward(shapes, poses, rh_opt, th_opt);  // [10, 25, 3]
+      auto all_pred_keypoints = model.forward(shapes, poses, rh_opt, th_opt);
 
-      // Compute keypoints3d loss (batched)
       auto keypoints3d_loss =
           compute_keypoints_loss(all_pred_keypoints, keypoints3d, phase2_indices);
 
-      // Compute smooth losses
       auto smooth_keypoints_loss =
           compute_smooth_loss(all_pred_keypoints, {0.5f, 0.3f, 0.1f, 0.1f});
-      auto th_reshaped = th_opt.unsqueeze(1);  // [10, 1, 3]
+      auto th_reshaped = th_opt.unsqueeze(1);
       auto smooth_th_loss = compute_smooth_loss(th_reshaped, {0.5f, 0.3f, 0.1f, 0.1f});
 
-      // Total loss
       auto loss = keypoints3d_loss * 100.0f +
                   (smooth_keypoints_loss * 10.0f + smooth_th_loss * 100.0f) * 1.0f;
 
@@ -782,7 +674,6 @@ int main() {
                   << ", lr = " << current_lr << std::endl;
       }
 
-      // Dynamic learning rate reduction
       if (current_loss < best_loss - 1e-6f) {
         best_loss = current_loss;
         patience_counter = 0;
@@ -798,7 +689,6 @@ int main() {
         }
       }
 
-      // Relaxed convergence check
       if (std::abs(prev_loss - current_loss) < 1e-5f) {
         std::cout << "Converged at iteration " << iteration << ": loss = " << current_loss
                   << std::endl;
@@ -816,10 +706,9 @@ int main() {
   std::cout << "\n=== Phase 3: Refining pose ===" << std::endl;
   phase_start = std::chrono::high_resolution_clock::now();
   {
-    // Initialize prior loss
     PriorLoss prior_loss;
 
-    auto poses_opt = poses.clone().requires_grad_(true);  // [10, 69]
+    auto poses_opt = poses.clone().requires_grad_(true);
     auto rh_opt = rh.clone().requires_grad_(true);
     auto th_opt = th.clone().requires_grad_(true);
     torch::optim::Adam optimizer({poses_opt, rh_opt, th_opt}, torch::optim::AdamOptions(0.02));
@@ -832,31 +721,21 @@ int main() {
     for (int i = 0; i < 1000; i++) {
       optimizer.zero_grad();
 
-      // Compute keypoints for all frames in one batch
-      // Note: shapes is [1, 10] and applies to all frames
-      auto all_pred_keypoints = model.forward(shapes, poses_opt, rh_opt, th_opt);  // [10, 25, 3]
+      auto all_pred_keypoints = model.forward(shapes, poses_opt, rh_opt, th_opt);
 
-      // Compute keypoints3d loss (all 25 keypoints in Phase 3, batched)
       auto keypoints3d_loss = compute_keypoints_loss(all_pred_keypoints, keypoints3d);
 
-      // Compute smooth losses
-      // smooth_poses: poses_opt is [10, 69], reshape to [10, 1, 69]
-      auto poses_reshaped = poses_opt.unsqueeze(1);  // [10, 1, 69]
+      auto poses_reshaped = poses_opt.unsqueeze(1);
       auto smooth_poses_loss = compute_smooth_loss(poses_reshaped, {0.5f, 0.3f, 0.1f, 0.1f});
 
-      // smooth_keypoints: [10, 25, 3]
       auto smooth_keypoints_loss =
           compute_smooth_loss(all_pred_keypoints, {0.5f, 0.3f, 0.1f, 0.1f});
 
-      // smooth_th: [10, 1, 3]
       auto th_reshaped = th_opt.unsqueeze(1);
       auto smooth_th_loss = compute_smooth_loss(th_reshaped, {0.5f, 0.3f, 0.1f, 0.1f});
 
-      // Compute prior loss
       auto prior_loss_value = prior_loss.compute(poses_opt);
 
-      // Total loss matching original implementation
-      // keypoints3d_loss * 1000 + smooth_loss * 1 + prior_loss * 0.1
       auto smooth_loss =
           smooth_poses_loss * 100.0f + smooth_keypoints_loss * 10.0f + smooth_th_loss * 10.0f;
       auto loss = keypoints3d_loss * 1000.0f + smooth_loss * 1.0f + prior_loss_value * 0.1f;
@@ -870,7 +749,6 @@ int main() {
                   << std::endl;
       }
 
-      // Dynamic learning rate reduction
       if (current_loss < best_loss - 1e-4f) {
         best_loss = current_loss;
         patience_counter = 0;
@@ -886,7 +764,6 @@ int main() {
         }
       }
 
-      // Relaxed convergence check using relative change
       float relative_change = std::abs(prev_loss - current_loss) / (prev_loss + 1e-8f);
       if (relative_change < 1e-5f) {
         std::cout << "Converged at iteration " << i << ": loss = " << current_loss << std::endl;
