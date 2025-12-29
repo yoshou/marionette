@@ -39,7 +39,7 @@ static std::tuple<std::vector<T>, std::vector<uint32_t>> load_tensor(const std::
   return std::forward_as_tuple(data, shape);
 }
 
-Tensor load_tensor_as_tensor(const std::string& file_name) {
+tensor_t load_tensor_as_tensor(const std::string& file_name) {
   auto [data, shape] = load_tensor<float>(file_name);
 
   std::vector<int64_t> shape_i64;
@@ -47,10 +47,10 @@ Tensor load_tensor_as_tensor(const std::string& file_name) {
     shape_i64.push_back(static_cast<int64_t>(s));
   }
 
-  return Tensor::from_blob(data.data(), shape_i64);
+  return tensor_t::from_blob(data.data(), shape_i64);
 }
 
-Tensor load_dense_matrix_as_tensor(const std::string& file_name) {
+tensor_t load_dense_matrix_as_tensor(const std::string& file_name) {
   std::ifstream ifs;
   ifs.open(file_name, std::ios::in);
   nlohmann::json j = nlohmann::json::parse(ifs);
@@ -63,15 +63,15 @@ Tensor load_dense_matrix_as_tensor(const std::string& file_name) {
     throw std::runtime_error("Invalid shape");
   }
 
-  Tensor tensor;
+  tensor_t tensor;
   if (type_str == "float64") {
     const auto data = data_vec.get<std::vector<double>>();
-    tensor = Tensor::from_blob(data.data(),
-                               {static_cast<int64_t>(shape[0]), static_cast<int64_t>(shape[1])});
+    tensor = tensor_t::from_blob(data.data(),
+                                 {static_cast<int64_t>(shape[0]), static_cast<int64_t>(shape[1])});
   } else if (type_str == "float32") {
     const auto data = data_vec.get<std::vector<float>>();
-    tensor = Tensor::from_blob(data.data(),
-                               {static_cast<int64_t>(shape[0]), static_cast<int64_t>(shape[1])});
+    tensor = tensor_t::from_blob(data.data(),
+                                 {static_cast<int64_t>(shape[0]), static_cast<int64_t>(shape[1])});
   } else {
     throw std::runtime_error("Unsupported type: " + type_str);
   }
@@ -79,7 +79,7 @@ Tensor load_dense_matrix_as_tensor(const std::string& file_name) {
   return tensor.to_float32();
 }
 
-Tensor load_sparse_matrix_as_tensor(const std::string& file_name) {
+tensor_t load_sparse_matrix_as_tensor(const std::string& file_name) {
   std::ifstream ifs;
   ifs.open(file_name, std::ios::in);
   nlohmann::json j = nlohmann::json::parse(ifs);
@@ -93,7 +93,8 @@ Tensor load_sparse_matrix_as_tensor(const std::string& file_name) {
     throw std::runtime_error("Invalid shape");
   }
 
-  Tensor dense = Tensor::zeros({static_cast<int64_t>(shape[0]), static_cast<int64_t>(shape[1])});
+  tensor_t dense =
+      tensor_t::zeros({static_cast<int64_t>(shape[0]), static_cast<int64_t>(shape[1])});
 
   if (type_str == "float64") {
     const auto data = j["data"].get<std::vector<double>>();
@@ -112,48 +113,48 @@ Tensor load_sparse_matrix_as_tensor(const std::string& file_name) {
   return dense;
 }
 
-class PriorLoss {
+class prior_loss {
  public:
-  Tensor gmm_means;
-  Tensor gmm_precisions;
-  Tensor nll_weights;
+  tensor_t gmm_means;
+  tensor_t gmm_precisions;
+  tensor_t nll_weights;
 
-  PriorLoss() {
+  prior_loss() {
     using path = std::filesystem::path;
     path param_dir("../data/opt/");
 
     auto [means_data, means_shape] =
         load_tensor<double>((param_dir / "gmm_means.json").generic_string());
-    gmm_means = Tensor::from_blob(means_data.data(), {static_cast<int64_t>(means_shape[0]),
-                                                      static_cast<int64_t>(means_shape[1])})
+    gmm_means = tensor_t::from_blob(means_data.data(), {static_cast<int64_t>(means_shape[0]),
+                                                        static_cast<int64_t>(means_shape[1])})
                     .to_float32();
 
     auto [covs_data, covs_shape] =
         load_tensor<double>((param_dir / "gmm_covars.json").generic_string());
-    const auto covs = Tensor::from_blob(
+    const auto covs = tensor_t::from_blob(
         covs_data.data(), {static_cast<int64_t>(covs_shape[0]), static_cast<int64_t>(covs_shape[1]),
                            static_cast<int64_t>(covs_shape[2])});
 
     auto [weights_data, weights_shape] =
         load_tensor<double>((param_dir / "gmm_weights.json").generic_string());
     const auto gmm_weights =
-        Tensor::from_blob(weights_data.data(), {static_cast<int64_t>(weights_shape[0])});
+        tensor_t::from_blob(weights_data.data(), {static_cast<int64_t>(weights_shape[0])});
 
     const auto num_gaussians = covs.size(0);
-    std::vector<Tensor> precisions_list;
+    std::vector<tensor_t> precisions_list;
     std::vector<double> sqrdets;
 
     for (int m = 0; m < num_gaussians; m++) {
       const auto cov = covs.select(0, m).to_float64();
-      const auto det = Tensor::det(cov).item_double();
+      const auto det = tensor_t::det(cov).item_double();
       const auto sqrdet = std::sqrt(det);
       sqrdets.push_back(sqrdet);
 
-      const auto precision = Tensor::inverse(cov);
+      const auto precision = tensor_t::inverse(cov);
       precisions_list.push_back(precision);
     }
 
-    gmm_precisions = Tensor::stack(precisions_list, 0).to_float32();
+    gmm_precisions = tensor_t::stack(precisions_list, 0).to_float32();
 
     constexpr double pi = 3.141592653589793;
     constexpr int pose_dim = 69;  // 23 joints * 3 dimensions
@@ -167,17 +168,17 @@ class PriorLoss {
       nll_weights_vec.push_back(static_cast<float>(nll));
     }
 
-    nll_weights = Tensor::from_blob(nll_weights_vec.data(), {num_gaussians});
+    nll_weights = tensor_t::from_blob(nll_weights_vec.data(), {num_gaussians});
   }
 
-  Tensor compute(const Tensor& poses) {
+  tensor_t compute(const tensor_t& poses) {
     const auto poses_expanded = poses.unsqueeze(1);
     const auto means_expanded = gmm_means.unsqueeze(0);
     const auto d = poses_expanded - means_expanded;
 
     const auto d_expanded = d.unsqueeze(2);
     const auto prec_expanded = gmm_precisions.unsqueeze(0);
-    const auto prec_d = Tensor::matmul(d_expanded, prec_expanded).squeeze(2);
+    const auto prec_d = tensor_t::matmul(d_expanded, prec_expanded).squeeze(2);
 
     const auto prec_dd = (d * prec_d).sum(2);
 
@@ -190,18 +191,18 @@ class PriorLoss {
   }
 };
 
-class SMPLModel {
+class smpl_model {
  public:
-  Tensor v_template;
-  Tensor weights;
-  Tensor j_regressor;
-  Tensor j_regressor_body25;
-  Tensor shapedirs;
-  Tensor posedirs;
+  tensor_t v_template;
+  tensor_t weights;
+  tensor_t j_regressor;
+  tensor_t j_regressor_body25;
+  tensor_t shapedirs;
+  tensor_t posedirs;
   std::vector<int32_t> parents;
 
  private:
-  Tensor batch_rodrigues(const Tensor& pose_vec) {
+  tensor_t batch_rodrigues(const tensor_t& pose_vec) {
     const auto pose_reshaped = pose_vec.dim() == 1 ? pose_vec.unsqueeze(0) : pose_vec;
 
     const auto theta2 = (pose_reshaped * pose_reshaped).sum(1, true);
@@ -227,43 +228,43 @@ class SMPLModel {
     const auto r21 = wx * sin_theta + wy * wz * one_minus_cos;
     const auto r22 = cos_theta + wz * wz * one_minus_cos;
 
-    std::vector<Tensor> row0_vec;
+    std::vector<tensor_t> row0_vec;
     row0_vec.push_back(r00);
     row0_vec.push_back(r01);
     row0_vec.push_back(r02);
-    const auto row0 = Tensor::cat(row0_vec, 1).unsqueeze(1);
+    const auto row0 = tensor_t::cat(row0_vec, 1).unsqueeze(1);
 
-    std::vector<Tensor> row1_vec;
+    std::vector<tensor_t> row1_vec;
     row1_vec.push_back(r10);
     row1_vec.push_back(r11);
     row1_vec.push_back(r12);
-    const auto row1 = Tensor::cat(row1_vec, 1).unsqueeze(1);
+    const auto row1 = tensor_t::cat(row1_vec, 1).unsqueeze(1);
 
-    std::vector<Tensor> row2_vec;
+    std::vector<tensor_t> row2_vec;
     row2_vec.push_back(r20);
     row2_vec.push_back(r21);
     row2_vec.push_back(r22);
-    const auto row2 = Tensor::cat(row2_vec, 1).unsqueeze(1);
+    const auto row2 = tensor_t::cat(row2_vec, 1).unsqueeze(1);
 
-    std::vector<Tensor> rows_vec;
+    std::vector<tensor_t> rows_vec;
     rows_vec.push_back(row0);
     rows_vec.push_back(row1);
     rows_vec.push_back(row2);
-    return Tensor::cat(rows_vec, 1);
+    return tensor_t::cat(rows_vec, 1);
   }
 
-  Tensor apply_shape_blend(const Tensor& betas) {
+  tensor_t apply_shape_blend(const tensor_t& betas) {
     auto v_shaped = v_template.clone();
 
     if (betas.defined() && betas.numel() > 0) {
-      const auto shape_disps = Tensor::matmul(shapedirs, betas.squeeze(0));
+      const auto shape_disps = tensor_t::matmul(shapedirs, betas.squeeze(0));
       v_shaped = v_shaped + shape_disps;
     }
 
     return v_shaped.unsqueeze(0);
   }
 
-  Tensor apply_pose_blend(const Tensor& v_shaped, const Tensor& poses) {
+  tensor_t apply_pose_blend(const tensor_t& v_shaped, const tensor_t& poses) {
     if (!poses.defined() || poses.numel() == 0) {
       return v_shaped;
     }
@@ -287,7 +288,7 @@ class SMPLModel {
     constexpr int pose_blend_dim = num_body_joints * rot_mat_dim;  // 23 * 9 = 207
     const auto posedirs_2d = posedirs.view({-1, pose_blend_dim});
     const auto num_vertices = v_shaped.size(1);  // 6890 vertices in SMPL model
-    const auto pose_offset = Tensor::matmul(posedirs_2d, pose_feature_flat.t())
+    const auto pose_offset = tensor_t::matmul(posedirs_2d, pose_feature_flat.t())
                                  .t()
                                  .view({batch_size, num_vertices, axis_angle_dim});
 
@@ -295,7 +296,7 @@ class SMPLModel {
     return v_shaped_expanded + pose_offset;
   }
 
-  Tensor compute_lbs(const Tensor& v_posed, const Tensor& poses) {
+  tensor_t compute_lbs(const tensor_t& v_posed, const tensor_t& poses) {
     if (!poses.defined() || poses.numel() == 0) {
       return v_posed;
     }
@@ -308,23 +309,24 @@ class SMPLModel {
     constexpr int transform_mat_size = 4;  // 4x4 transformation matrix
 
     const auto j_regressor_expanded = j_regressor.unsqueeze(0).expand({batch_size, -1, -1});
-    const auto joints_24 = Tensor::bmm(j_regressor_expanded, v_posed);
+    const auto joints_24 = tensor_t::bmm(j_regressor_expanded, v_posed);
 
     const auto poses_reshaped = poses.view({batch_size, num_body_joints, xyz_dim});
     auto rot_mats_3x3 = batch_rodrigues(poses_reshaped.view({-1, xyz_dim}));
     rot_mats_3x3 = rot_mats_3x3.view({batch_size, num_body_joints, xyz_dim, xyz_dim});
 
     // Build 4x4 transformation matrices for kinematic chain
-    std::vector<Tensor> transform_mats_list;
+    std::vector<tensor_t> transform_mats_list;
     for (int j = 0; j < num_total_joints; j++) {
-      auto transform_mat = Tensor::eye(transform_mat_size, poses.options())
+      auto transform_mat = tensor_t::eye(transform_mat_size, poses.options())
                                .unsqueeze(0)
                                .expand({batch_size, transform_mat_size, transform_mat_size})
                                .clone();
 
       const auto joint = joints_24.select(1, j);
-      const Tensor parent_joint = (j == 0) ? Tensor::zeros({batch_size, xyz_dim}, poses.options())
-                                           : joints_24.select(1, parents[j]);
+      const tensor_t parent_joint = (j == 0)
+                                        ? tensor_t::zeros({batch_size, xyz_dim}, poses.options())
+                                        : joints_24.select(1, parents[j]);
       const auto rel_joint = joint - parent_joint;
 
       if (j > 0) {
@@ -334,23 +336,23 @@ class SMPLModel {
       transform_mat.narrow(1, 0, xyz_dim).select(2, xyz_dim) = rel_joint;
 
       if (j > 0 && parents[j] >= 0) {
-        transform_mat = Tensor::bmm(transform_mats_list[parents[j]], transform_mat);
+        transform_mat = tensor_t::bmm(transform_mats_list[parents[j]], transform_mat);
       }
 
       transform_mats_list.push_back(transform_mat);
     }
 
-    const auto transform_mats = Tensor::stack(transform_mats_list, 1);
+    const auto transform_mats = tensor_t::stack(transform_mats_list, 1);
 
     const auto joints_24_expanded = joints_24.unsqueeze(2).unsqueeze(3);
     const auto rot_parts = transform_mats.narrow(2, 0, xyz_dim).narrow(3, 0, xyz_dim);
     const auto trans_parts = transform_mats.narrow(2, 0, xyz_dim).select(3, xyz_dim);
 
     const auto new_trans =
-        trans_parts - Tensor::matmul(rot_parts, joints_24.unsqueeze(3)).squeeze(3);
+        trans_parts - tensor_t::matmul(rot_parts, joints_24.unsqueeze(3)).squeeze(3);
 
     auto rel_transform_mats =
-        Tensor::eye(transform_mat_size, poses.options())
+        tensor_t::eye(transform_mat_size, poses.options())
             .unsqueeze(0)
             .unsqueeze(0)
             .expand({batch_size, num_total_joints, transform_mat_size, transform_mat_size})
@@ -363,25 +365,25 @@ class SMPLModel {
     const auto blended_mats = (weights_expanded * rel_mats_expanded).sum(2);
 
     const auto num_vertices = v_posed.size(1);  // 6890 vertices in SMPL model
-    std::vector<Tensor> cat_list;
+    std::vector<tensor_t> cat_list;
     cat_list.push_back(v_posed);
-    cat_list.push_back(Tensor::ones({batch_size, num_vertices, 1}, poses.options()));
-    const auto v_posed_homo = Tensor::cat(cat_list, 2);
+    cat_list.push_back(tensor_t::ones({batch_size, num_vertices, 1}, poses.options()));
+    const auto v_posed_homo = tensor_t::cat(cat_list, 2);
     const auto verts_homo =
-        Tensor::bmm(blended_mats.view({-1, transform_mat_size, transform_mat_size}),
-                    v_posed_homo.view({-1, transform_mat_size, 1}))
+        tensor_t::bmm(blended_mats.view({-1, transform_mat_size, transform_mat_size}),
+                      v_posed_homo.view({-1, transform_mat_size, 1}))
             .view({batch_size, num_vertices, transform_mat_size});
     const auto verts = verts_homo.narrow(2, 0, xyz_dim);
 
     return verts;
   }
 
-  Tensor apply_global_transform(Tensor joints, const Tensor& rh, const Tensor& th) {
+  tensor_t apply_global_transform(tensor_t joints, const tensor_t& rh, const tensor_t& th) {
     const auto batch_size = joints.size(0);
 
     if (rh.defined() && rh.numel() > 0) {
       const auto R = batch_rodrigues(rh);
-      joints = Tensor::bmm(joints, R.transpose(1, 2));
+      joints = tensor_t::bmm(joints, R.transpose(1, 2));
     }
 
     if (th.defined() && th.numel() > 0) {
@@ -394,7 +396,7 @@ class SMPLModel {
   }
 
  public:
-  SMPLModel() {
+  smpl_model() {
     using path = std::filesystem::path;
     path param_dir("../data/opt/");
 
@@ -411,13 +413,13 @@ class SMPLModel {
         load_tensor<double>((param_dir / "SMPL_NEUTRAL_posedirs.json").generic_string());
     std::vector<int64_t> posedirs_shape_i64;
     for (const auto s : posedirs_shape) posedirs_shape_i64.push_back(static_cast<int64_t>(s));
-    posedirs = Tensor::from_blob(posedirs_data.data(), posedirs_shape_i64).to_float32();
+    posedirs = tensor_t::from_blob(posedirs_data.data(), posedirs_shape_i64).to_float32();
 
     auto [shapedirs_data, shapedirs_shape] =
         load_tensor<double>((param_dir / "SMPL_NEUTRAL_shapedirs.json").generic_string());
     std::vector<int64_t> shapedirs_shape_i64;
     for (const auto s : shapedirs_shape) shapedirs_shape_i64.push_back(static_cast<int64_t>(s));
-    shapedirs = Tensor::from_blob(shapedirs_data.data(), shapedirs_shape_i64).to_float32();
+    shapedirs = tensor_t::from_blob(shapedirs_data.data(), shapedirs_shape_i64).to_float32();
 
     auto [kintree_table_data, kintree_table_shape] =
         load_tensor<uint32_t>((param_dir / "SMPL_NEUTRAL_kintree_table.json").generic_string());
@@ -425,7 +427,7 @@ class SMPLModel {
                 std::back_inserter(parents));
   }
 
-  Tensor forward(Tensor betas, Tensor poses, Tensor rh, Tensor th) {
+  tensor_t forward(tensor_t betas, tensor_t poses, tensor_t rh, tensor_t th) {
     // Type conversions are handled by the current backend
     const auto batch_size = poses.size(0);
 
@@ -434,7 +436,7 @@ class SMPLModel {
     auto verts = compute_lbs(v_shaped, poses);
 
     const auto j_reg_expanded = j_regressor_body25.unsqueeze(0).expand({batch_size, -1, -1});
-    auto joints = Tensor::bmm(j_reg_expanded, verts);
+    auto joints = tensor_t::bmm(j_reg_expanded, verts);
 
     joints = apply_global_transform(joints, rh, th);
 
@@ -442,8 +444,8 @@ class SMPLModel {
   }
 };
 
-Tensor compute_limb_length_loss(const Tensor& pred_keypoints,
-                                const std::vector<float>& target_keypoints) {
+tensor_t compute_limb_length_loss(const tensor_t& pred_keypoints,
+                                  const std::vector<float>& target_keypoints) {
   const std::vector<std::pair<int, int>> kintree = {
       {8, 1}, {2, 5}, {2, 3}, {5, 6}, {3, 4}, {6, 7},  {2, 3},  {5, 6},   {3, 4},   {6, 7},
       {2, 3}, {5, 6}, {3, 4}, {6, 7}, {1, 0}, {9, 12}, {9, 10}, {10, 11}, {12, 13}, {13, 14}};
@@ -454,11 +456,11 @@ Tensor compute_limb_length_loss(const Tensor& pred_keypoints,
       static_cast<int64_t>(target_keypoints.size() / (batch_size * xyzc_dim));
 
   const auto target_tensor =
-      Tensor::from_blob(target_keypoints.data(), {batch_size, num_keypoints, xyzc_dim});
+      tensor_t::from_blob(target_keypoints.data(), {batch_size, num_keypoints, xyzc_dim});
 
-  std::vector<Tensor> pred_lengths_list;
-  std::vector<Tensor> target_lengths_list;
-  std::vector<Tensor> confidence_list;
+  std::vector<tensor_t> pred_lengths_list;
+  std::vector<tensor_t> target_lengths_list;
+  std::vector<tensor_t> confidence_list;
 
   for (size_t i = 0; i < kintree.size(); i++) {
     const auto idx1 = kintree[i].first;
@@ -479,13 +481,13 @@ Tensor compute_limb_length_loss(const Tensor& pred_keypoints,
     constexpr int confidence_idx = 3;  // Index of confidence value in xyzc
     const auto conf1 = v1_target.select(1, confidence_idx);
     const auto conf2 = v2_target.select(1, confidence_idx);
-    const auto conf = Tensor::min(conf1, conf2);
+    const auto conf = tensor_t::min(conf1, conf2);
     confidence_list.push_back(conf);
   }
 
-  const auto pred_lengths = Tensor::stack(pred_lengths_list, 1);
-  const auto target_lengths = Tensor::stack(target_lengths_list, 1);
-  const auto confidence = Tensor::stack(confidence_list, 1);
+  const auto pred_lengths = tensor_t::stack(pred_lengths_list, 1);
+  const auto target_lengths = tensor_t::stack(target_lengths_list, 1);
+  const auto confidence = tensor_t::stack(confidence_list, 1);
 
   const auto diff = pred_lengths - target_lengths;
   const auto squared_diff = diff * diff;
@@ -498,16 +500,16 @@ Tensor compute_limb_length_loss(const Tensor& pred_keypoints,
   return loss;
 }
 
-Tensor compute_smooth_loss(const Tensor& values,
-                           const std::vector<float>& window_heights = {0.5f, 0.3f, 0.1f, 0.1f},
-                           bool order2 = true) {
+tensor_t compute_smooth_loss(const tensor_t& values,
+                             const std::vector<float>& window_heights = {0.5f, 0.3f, 0.1f, 0.1f},
+                             bool order2 = true) {
   const auto num_frames = values.size(0);
   const auto num_items = values.size(1);
 
-  Tensor total_loss = Tensor::zeros({}, values.options());
+  tensor_t total_loss = tensor_t::zeros({}, values.options());
 
   for (size_t k = 0; k < window_heights.size(); k++) {
-    Tensor sq_sum = Tensor::zeros({}, values.options());
+    tensor_t sq_sum = tensor_t::zeros({}, values.options());
 
     if (order2) {
       if (num_frames < static_cast<int>(k + 3)) continue;
@@ -540,15 +542,15 @@ Tensor compute_smooth_loss(const Tensor& values,
   return total_loss;
 }
 
-Tensor compute_keypoints_loss(const Tensor& pred_keypoints, const Tensor& target_keypoints,
-                              const std::vector<int>& indices = {}) {
+tensor_t compute_keypoints_loss(const tensor_t& pred_keypoints, const tensor_t& target_keypoints,
+                                const std::vector<int>& indices = {}) {
   constexpr int xyz_dim = 3;         // 3D coordinate dimension
   constexpr int confidence_idx = 3;  // Index of confidence value
   const auto confidence = target_keypoints.select(2, confidence_idx);
   const auto target_xyz = target_keypoints.narrow(2, 0, xyz_dim);
 
-  Tensor num;
-  Tensor denom;
+  tensor_t num;
+  tensor_t denom;
 
   if (indices.empty()) {
     const auto diff = pred_keypoints - target_xyz;
@@ -557,8 +559,8 @@ Tensor compute_keypoints_loss(const Tensor& pred_keypoints, const Tensor& target
     num = weighted.sum();
     denom = confidence.sum();
   } else {
-    num = Tensor::zeros({});
-    denom = Tensor::zeros({});
+    num = tensor_t::zeros({});
+    denom = tensor_t::zeros({});
 
     for (const auto idx : indices) {
       const auto pred_pt = pred_keypoints.select(1, idx);
@@ -578,7 +580,7 @@ Tensor compute_keypoints_loss(const Tensor& pred_keypoints, const Tensor& target
 }
 
 template <typename OptimizerFunc>
-void optimize_loop(Adam& optimizer, OptimizerFunc compute_loss, float initial_lr,
+void optimize_loop(adam_optimizer& optimizer, OptimizerFunc compute_loss, float initial_lr,
                    int max_iterations, int patience, float convergence_threshold,
                    bool use_relative_change = false) {
   float prev_loss = std::numeric_limits<float>::max();
@@ -632,14 +634,14 @@ int main() {
   std::cout << "Starting optimization..." << std::endl;
   auto total_start = std::chrono::high_resolution_clock::now();
 
-  Tensor keypoints3d = load_tensor_as_tensor("../data/opt/observations_keypoints3d.json");
+  tensor_t keypoints3d = load_tensor_as_tensor("../data/opt/observations_keypoints3d.json");
   std::cout << "keypoints3d loaded shape: " << keypoints3d.sizes() << std::endl;
-  Tensor poses = load_tensor_as_tensor("../data/opt/params_poses.json");
-  Tensor shapes = load_tensor_as_tensor("../data/opt/params_shapes.json");
-  Tensor rh = load_tensor_as_tensor("../data/opt/params_Rh.json");
-  Tensor th = load_tensor_as_tensor("../data/opt/params_Th.json");
+  tensor_t poses = load_tensor_as_tensor("../data/opt/params_poses.json");
+  tensor_t shapes = load_tensor_as_tensor("../data/opt/params_shapes.json");
+  tensor_t rh = load_tensor_as_tensor("../data/opt/params_Rh.json");
+  tensor_t th = load_tensor_as_tensor("../data/opt/params_Th.json");
 
-  SMPLModel model;
+  smpl_model model;
 
   std::cout << "\n=== Phase 1: Fitting shape ===" << std::endl;
   auto phase_start = std::chrono::high_resolution_clock::now();
@@ -649,12 +651,12 @@ int main() {
     constexpr int patience = 20;
     constexpr float convergence_threshold = 1e-5f;
 
-    Tensor shapes_opt = shapes.clone().detach().requires_grad(true);
-    AdamOptions adam_options;
+    tensor_t shapes_opt = shapes.clone().detach().requires_grad(true);
+    adam_options adam_options;
     adam_options.lr = learning_rate;
-    std::vector<Tensor> params1;
+    std::vector<tensor_t> params1;
     params1.push_back(shapes_opt);
-    Adam optimizer(params1, adam_options);
+    adam_optimizer optimizer(params1, adam_options);
 
     const auto keypoints_vec = std::vector<float>(
         keypoints3d.data_ptr<float>(), keypoints3d.data_ptr<float>() + keypoints3d.numel());
@@ -686,14 +688,14 @@ int main() {
     constexpr int patience = 20;
     constexpr float convergence_threshold = 1e-5f;
 
-    Tensor rh_opt = rh.clone().requires_grad(true);
-    Tensor th_opt = th.clone().requires_grad(true);
-    AdamOptions adam_options;
+    tensor_t rh_opt = rh.clone().requires_grad(true);
+    tensor_t th_opt = th.clone().requires_grad(true);
+    adam_options adam_options;
     adam_options.lr = learning_rate;
-    std::vector<Tensor> params2;
+    std::vector<tensor_t> params2;
     params2.push_back(rh_opt);
     params2.push_back(th_opt);
-    Adam optimizer(params2, adam_options);
+    adam_optimizer optimizer(params2, adam_options);
 
     const std::vector<int> phase2_indices = {2, 5, 9, 12};  // Shoulder and hip keypoints
 
@@ -704,7 +706,7 @@ int main() {
           const auto keypoints3d_loss =
               compute_keypoints_loss(all_pred_keypoints, keypoints3d, phase2_indices);
           const auto smooth_keypoints_loss = compute_smooth_loss(all_pred_keypoints);
-          const Tensor th_reshaped = th_opt.unsqueeze(1);
+          const tensor_t th_reshaped = th_opt.unsqueeze(1);
           const auto smooth_th_loss = compute_smooth_loss(th_reshaped);
           constexpr float keypoints3d_weight = 100.0f;
           constexpr float smooth_keypoints_weight = 10.0f;
@@ -733,18 +735,18 @@ int main() {
     constexpr float convergence_threshold = 1e-5f;
     constexpr bool use_relative_change = true;
 
-    PriorLoss prior_loss;
+    prior_loss prior_loss;
 
-    Tensor poses_opt = poses.clone().requires_grad(true);
-    Tensor rh_opt = rh.clone().requires_grad(true);
-    Tensor th_opt = th.clone().requires_grad(true);
-    AdamOptions adam_options;
+    tensor_t poses_opt = poses.clone().requires_grad(true);
+    tensor_t rh_opt = rh.clone().requires_grad(true);
+    tensor_t th_opt = th.clone().requires_grad(true);
+    adam_options adam_options;
     adam_options.lr = learning_rate;
-    std::vector<Tensor> params3;
+    std::vector<tensor_t> params3;
     params3.push_back(poses_opt);
     params3.push_back(rh_opt);
     params3.push_back(th_opt);
-    Adam optimizer(params3, adam_options);
+    adam_optimizer optimizer(params3, adam_options);
 
     optimize_loop(
         optimizer,
@@ -752,10 +754,10 @@ int main() {
           const auto all_pred_keypoints = model.forward(shapes, poses_opt, rh_opt, th_opt);
           const auto keypoints3d_loss = compute_keypoints_loss(all_pred_keypoints, keypoints3d);
 
-          const Tensor poses_reshaped = poses_opt.unsqueeze(1);
+          const tensor_t poses_reshaped = poses_opt.unsqueeze(1);
           const auto smooth_poses_loss = compute_smooth_loss(poses_reshaped);
           const auto smooth_keypoints_loss = compute_smooth_loss(all_pred_keypoints);
-          const Tensor th_reshaped = th_opt.unsqueeze(1);
+          const tensor_t th_reshaped = th_opt.unsqueeze(1);
           const auto smooth_th_loss = compute_smooth_loss(th_reshaped);
           const auto prior_loss_value = prior_loss.compute(poses_opt);
 

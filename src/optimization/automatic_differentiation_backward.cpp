@@ -7,307 +7,325 @@ namespace marionette {
 namespace optimization {
 
 // ============================================================================
-// TensorOptions implementation
+// tensor_options implementation
 // ============================================================================
 
-TensorOptions::TensorOptions() : options_(torch::TensorOptions()) {}
+tensor_options::tensor_options() : options_(torch::TensorOptions()) {}
 
-TensorOptions::TensorOptions(torch::TensorOptions options) : options_(std::move(options)) {}
+tensor_options::tensor_options(torch::TensorOptions options) : options_(std::move(options)) {}
 
-TensorOptions::~TensorOptions() = default;
+tensor_options::~tensor_options() = default;
 
-TensorOptions TensorOptions::float32() {
-  return TensorOptions(torch::TensorOptions().dtype(torch::kFloat32));
+tensor_options tensor_options::float32() {
+  return tensor_options(torch::TensorOptions().dtype(torch::kFloat32));
 }
 
-TensorOptions TensorOptions::float64() {
-  return TensorOptions(torch::TensorOptions().dtype(torch::kFloat64));
+tensor_options tensor_options::float64() {
+  return tensor_options(torch::TensorOptions().dtype(torch::kFloat64));
 }
 
-TensorOptions TensorOptions::device_cpu() const {
-  return TensorOptions(options_.device(torch::kCPU));
+tensor_options tensor_options::device_cpu() const {
+  return tensor_options(options_.device(torch::kCPU));
 }
 
-TensorOptions TensorOptions::device_cuda(int device_index) const {
-  return TensorOptions(options_.device(torch::Device(torch::kCUDA, device_index)));
+tensor_options tensor_options::device_cuda(int device_index) const {
+  return tensor_options(options_.device(torch::Device(torch::kCUDA, device_index)));
 }
 
-const torch::TensorOptions& TensorOptions::torch_options() const { return options_; }
+const torch::TensorOptions& tensor_options::torch_options() const { return options_; }
 
 // ============================================================================
-// Tensor implementation
+// tensor_t implementation
 // ============================================================================
 
-Tensor::Tensor() : tensor_() {}
+tensor_t::tensor_t() : tensor_() {}
 
-Tensor::Tensor(torch::Tensor tensor) : tensor_(std::move(tensor)) {}
+tensor_t::tensor_t(torch::Tensor tensor) : tensor_(std::move(tensor)) {}
 
-Tensor::~Tensor() = default;
+tensor_t::~tensor_t() = default;
 
 // Factory methods
-Tensor Tensor::zeros(const std::vector<int64_t>& shape) {
-  return Tensor(torch::zeros(shape, torch::kFloat32));
+tensor_t tensor_t::zeros(const std::vector<int64_t>& shape) {
+  return tensor_t(torch::zeros(shape, torch::kFloat32));
 }
 
-Tensor Tensor::zeros(const std::vector<int64_t>& shape, const TensorOptions& options) {
-  return Tensor(torch::zeros(shape, options.torch_options()));
+tensor_t tensor_t::zeros(const std::vector<int64_t>& shape, const tensor_options& options) {
+  return tensor_t(torch::zeros(shape, options.torch_options()));
 }
 
-Tensor Tensor::ones(const std::vector<int64_t>& shape) {
-  return Tensor(torch::ones(shape, torch::kFloat32));
+tensor_t tensor_t::ones(const std::vector<int64_t>& shape) {
+  return tensor_t(torch::ones(shape, torch::kFloat32));
 }
 
-Tensor Tensor::ones(const std::vector<int64_t>& shape, const TensorOptions& options) {
-  return Tensor(torch::ones(shape, options.torch_options()));
+tensor_t tensor_t::ones(const std::vector<int64_t>& shape, const tensor_options& options) {
+  return tensor_t(torch::ones(shape, options.torch_options()));
 }
 
-Tensor Tensor::eye(int64_t n) { return Tensor(torch::eye(n, torch::kFloat32)); }
+tensor_t tensor_t::eye(int64_t n) { return tensor_t(torch::eye(n, torch::kFloat32)); }
 
-Tensor Tensor::eye(int64_t n, const TensorOptions& options) {
-  return Tensor(torch::eye(n, options.torch_options()));
+tensor_t tensor_t::eye(int64_t n, const tensor_options& options) {
+  return tensor_t(torch::eye(n, options.torch_options()));
 }
 
-Tensor Tensor::zeros_like(const Tensor& other) { return Tensor(torch::zeros_like(other.tensor_)); }
-
-Tensor Tensor::from_blob(const float* data, const std::vector<int64_t>& shape) {
-  return Tensor(torch::from_blob(const_cast<float*>(data), shape, torch::kFloat32).clone());
+tensor_t tensor_t::zeros_like(const tensor_t& other) {
+  return tensor_t(torch::zeros_like(other.tensor_));
 }
 
-Tensor Tensor::from_blob(const double* data, const std::vector<int64_t>& shape) {
-  return Tensor(torch::from_blob(const_cast<double*>(data), shape, torch::kFloat64).clone());
+tensor_t tensor_t::from_blob(const float* data, const std::vector<int64_t>& shape) {
+  return tensor_t(torch::from_blob(const_cast<float*>(data), shape, torch::kFloat32).clone());
+}
+
+tensor_t tensor_t::from_blob(const double* data, const std::vector<int64_t>& shape) {
+  return tensor_t(torch::from_blob(const_cast<double*>(data), shape, torch::kFloat64).clone());
 }
 
 // Shape and size operations
-std::vector<int64_t> Tensor::sizes() const {
+std::vector<int64_t> tensor_t::sizes() const {
   auto sizes = tensor_.sizes();
   return std::vector<int64_t>(sizes.begin(), sizes.end());
 }
 
-int64_t Tensor::size(int64_t dim) const { return tensor_.size(dim); }
+int64_t tensor_t::size(int64_t dim) const { return tensor_.size(dim); }
 
-int64_t Tensor::dim() const { return tensor_.dim(); }
+int64_t tensor_t::dim() const { return tensor_.dim(); }
 
-int64_t Tensor::numel() const { return tensor_.numel(); }
+int64_t tensor_t::numel() const { return tensor_.numel(); }
 
 // Data type operations
-Tensor Tensor::to_float32() const { return Tensor(tensor_.to(torch::kFloat32)); }
+tensor_t tensor_t::to_float32() const { return tensor_t(tensor_.to(torch::kFloat32)); }
 
-Tensor Tensor::to_float64() const { return Tensor(tensor_.to(torch::kFloat64)); }
+tensor_t tensor_t::to_float64() const { return tensor_t(tensor_.to(torch::kFloat64)); }
 
 // Autograd operations
-Tensor Tensor::requires_grad(bool requires_grad) const {
+tensor_t tensor_t::requires_grad(bool requires_grad) const {
   auto new_tensor = tensor_.clone();
   new_tensor.requires_grad_(requires_grad);
-  return Tensor(new_tensor);
+  return tensor_t(new_tensor);
 }
 
-Tensor Tensor::requires_grad(bool requires_grad) {
+tensor_t tensor_t::requires_grad(bool requires_grad) {
   tensor_.requires_grad_(requires_grad);
   return *this;
 }
 
-bool Tensor::requires_grad() const { return tensor_.requires_grad(); }
+bool tensor_t::requires_grad() const { return tensor_.requires_grad(); }
 
-Tensor Tensor::detach() const { return Tensor(tensor_.detach()); }
+tensor_t tensor_t::detach() const { return tensor_t(tensor_.detach()); }
 
-void Tensor::backward() const { tensor_.backward(); }
+void tensor_t::backward() const { tensor_.backward(); }
 
-Tensor Tensor::grad() const {
+tensor_t tensor_t::grad() const {
   if (!tensor_.grad().defined()) {
-    return Tensor();
+    return tensor_t();
   }
-  return Tensor(tensor_.grad());
+  return tensor_t(tensor_.grad());
 }
 
-void Tensor::zero_grad() {
+void tensor_t::zero_grad() {
   if (tensor_.grad().defined()) {
     tensor_.grad().zero_();
   }
 }
 
 // Validity check
-bool Tensor::defined() const { return tensor_.defined(); }
+bool tensor_t::defined() const { return tensor_.defined(); }
 
 // Options
-TensorOptions Tensor::options() const { return TensorOptions(tensor_.options()); }
+tensor_options tensor_t::options() const { return tensor_options(tensor_.options()); }
 
 // Clone and reshape operations
-Tensor Tensor::clone() const { return Tensor(tensor_.clone()); }
+tensor_t tensor_t::clone() const { return tensor_t(tensor_.clone()); }
 
-Tensor Tensor::view(const std::vector<int64_t>& shape) const { return Tensor(tensor_.view(shape)); }
-
-Tensor Tensor::reshape(const std::vector<int64_t>& shape) const {
-  return Tensor(tensor_.reshape(shape));
+tensor_t tensor_t::view(const std::vector<int64_t>& shape) const {
+  return tensor_t(tensor_.view(shape));
 }
 
-Tensor Tensor::unsqueeze(int64_t dim) const { return Tensor(tensor_.unsqueeze(dim)); }
-
-Tensor Tensor::squeeze(int64_t dim) const { return Tensor(tensor_.squeeze(dim)); }
-
-Tensor Tensor::expand(const std::vector<int64_t>& shape) const {
-  return Tensor(tensor_.expand(shape));
+tensor_t tensor_t::reshape(const std::vector<int64_t>& shape) const {
+  return tensor_t(tensor_.reshape(shape));
 }
 
-Tensor Tensor::transpose(int64_t dim0, int64_t dim1) const {
-  return Tensor(tensor_.transpose(dim0, dim1));
+tensor_t tensor_t::unsqueeze(int64_t dim) const { return tensor_t(tensor_.unsqueeze(dim)); }
+
+tensor_t tensor_t::squeeze(int64_t dim) const { return tensor_t(tensor_.squeeze(dim)); }
+
+tensor_t tensor_t::expand(const std::vector<int64_t>& shape) const {
+  return tensor_t(tensor_.expand(shape));
+}
+
+tensor_t tensor_t::transpose(int64_t dim0, int64_t dim1) const {
+  return tensor_t(tensor_.transpose(dim0, dim1));
 }
 
 // Indexing operations
-Tensor Tensor::select(int64_t dim, int64_t index) const {
-  return Tensor(tensor_.select(dim, index));
+tensor_t tensor_t::select(int64_t dim, int64_t index) const {
+  return tensor_t(tensor_.select(dim, index));
 }
 
-Tensor Tensor::narrow(int64_t dim, int64_t start, int64_t length) const {
-  return Tensor(tensor_.narrow(dim, start, length));
+tensor_t tensor_t::narrow(int64_t dim, int64_t start, int64_t length) const {
+  return tensor_t(tensor_.narrow(dim, start, length));
 }
 
 // Unary operators
-Tensor Tensor::operator-() const { return Tensor(-tensor_); }
+tensor_t tensor_t::operator-() const { return tensor_t(-tensor_); }
 
 // Element-wise arithmetic operations
-Tensor Tensor::operator+(const Tensor& other) const { return Tensor(tensor_ + other.tensor_); }
+tensor_t tensor_t::operator+(const tensor_t& other) const {
+  return tensor_t(tensor_ + other.tensor_);
+}
 
-Tensor Tensor::operator-(const Tensor& other) const { return Tensor(tensor_ - other.tensor_); }
+tensor_t tensor_t::operator-(const tensor_t& other) const {
+  return tensor_t(tensor_ - other.tensor_);
+}
 
-Tensor Tensor::operator*(const Tensor& other) const { return Tensor(tensor_ * other.tensor_); }
+tensor_t tensor_t::operator*(const tensor_t& other) const {
+  return tensor_t(tensor_ * other.tensor_);
+}
 
-Tensor Tensor::operator/(const Tensor& other) const { return Tensor(tensor_ / other.tensor_); }
+tensor_t tensor_t::operator/(const tensor_t& other) const {
+  return tensor_t(tensor_ / other.tensor_);
+}
 
-Tensor Tensor::operator+(float scalar) const { return Tensor(tensor_ + scalar); }
+tensor_t tensor_t::operator+(float scalar) const { return tensor_t(tensor_ + scalar); }
 
-Tensor Tensor::operator-(float scalar) const { return Tensor(tensor_ - scalar); }
+tensor_t tensor_t::operator-(float scalar) const { return tensor_t(tensor_ - scalar); }
 
-Tensor Tensor::operator*(float scalar) const { return Tensor(tensor_ * scalar); }
+tensor_t tensor_t::operator*(float scalar) const { return tensor_t(tensor_ * scalar); }
 
-Tensor Tensor::operator/(float scalar) const { return Tensor(tensor_ / scalar); }
+tensor_t tensor_t::operator/(float scalar) const { return tensor_t(tensor_ / scalar); }
 
 // In-place operations
-Tensor& Tensor::operator+=(const Tensor& other) {
+tensor_t& tensor_t::operator+=(const tensor_t& other) {
   tensor_ += other.tensor_;
   return *this;
 }
 
-Tensor& Tensor::operator-=(const Tensor& other) {
+tensor_t& tensor_t::operator-=(const tensor_t& other) {
   tensor_ -= other.tensor_;
   return *this;
 }
 
-Tensor& Tensor::operator*=(const Tensor& other) {
+tensor_t& tensor_t::operator*=(const tensor_t& other) {
   tensor_ *= other.tensor_;
   return *this;
 }
 
-Tensor& Tensor::operator/=(const Tensor& other) {
+tensor_t& tensor_t::operator/=(const tensor_t& other) {
   tensor_ /= other.tensor_;
   return *this;
 }
 
-Tensor& Tensor::operator-=(float scalar) {
+tensor_t& tensor_t::operator-=(float scalar) {
   tensor_ -= scalar;
   return *this;
 }
 
-Tensor& Tensor::operator+=(float scalar) {
+tensor_t& tensor_t::operator+=(float scalar) {
   tensor_ += scalar;
   return *this;
 }
 
 // Reduction operations
-Tensor Tensor::sum() const { return Tensor(tensor_.sum()); }
+tensor_t tensor_t::sum() const { return tensor_t(tensor_.sum()); }
 
-Tensor Tensor::sum(int64_t dim, bool keepdim) const { return Tensor(tensor_.sum(dim, keepdim)); }
+tensor_t tensor_t::sum(int64_t dim, bool keepdim) const {
+  return tensor_t(tensor_.sum(dim, keepdim));
+}
 
-Tensor Tensor::mean() const { return Tensor(tensor_.mean()); }
+tensor_t tensor_t::mean() const { return tensor_t(tensor_.mean()); }
 
-Tensor Tensor::mean(int64_t dim, bool keepdim) const { return Tensor(tensor_.mean(dim, keepdim)); }
+tensor_t tensor_t::mean(int64_t dim, bool keepdim) const {
+  return tensor_t(tensor_.mean(dim, keepdim));
+}
 
-Tensor Tensor::min(int64_t dim) const { return Tensor(std::get<0>(tensor_.min(dim))); }
+tensor_t tensor_t::min(int64_t dim) const { return tensor_t(std::get<0>(tensor_.min(dim))); }
 
-Tensor Tensor::max(int64_t dim) const { return Tensor(std::get<0>(tensor_.max(dim))); }
+tensor_t tensor_t::max(int64_t dim) const { return tensor_t(std::get<0>(tensor_.max(dim))); }
 
 // Mathematical operations
-Tensor Tensor::sqrt() const { return Tensor(torch::sqrt(tensor_)); }
+tensor_t tensor_t::sqrt() const { return tensor_t(torch::sqrt(tensor_)); }
 
-Tensor Tensor::cos() const { return Tensor(torch::cos(tensor_)); }
+tensor_t tensor_t::cos() const { return tensor_t(torch::cos(tensor_)); }
 
-Tensor Tensor::sin() const { return Tensor(torch::sin(tensor_)); }
+tensor_t tensor_t::sin() const { return tensor_t(torch::sin(tensor_)); }
 
-Tensor Tensor::norm(int64_t p, int64_t dim) const { return Tensor(torch::norm(tensor_, p, dim)); }
+tensor_t tensor_t::norm(int64_t p, int64_t dim) const {
+  return tensor_t(torch::norm(tensor_, p, dim));
+}
 
 // Matrix operations
-Tensor Tensor::matmul(const Tensor& a, const Tensor& b) {
-  return Tensor(torch::matmul(a.tensor_, b.tensor_));
+tensor_t tensor_t::matmul(const tensor_t& a, const tensor_t& b) {
+  return tensor_t(torch::matmul(a.tensor_, b.tensor_));
 }
 
-Tensor Tensor::bmm(const Tensor& a, const Tensor& b) {
-  return Tensor(torch::bmm(a.tensor_, b.tensor_));
+tensor_t tensor_t::bmm(const tensor_t& a, const tensor_t& b) {
+  return tensor_t(torch::bmm(a.tensor_, b.tensor_));
 }
 
-Tensor Tensor::det(const Tensor& a) { return Tensor(torch::det(a.tensor_)); }
+tensor_t tensor_t::det(const tensor_t& a) { return tensor_t(torch::det(a.tensor_)); }
 
-Tensor Tensor::inverse(const Tensor& a) { return Tensor(torch::inverse(a.tensor_)); }
+tensor_t tensor_t::inverse(const tensor_t& a) { return tensor_t(torch::inverse(a.tensor_)); }
 
-Tensor Tensor::t() const { return Tensor(tensor_.t()); }
+tensor_t tensor_t::t() const { return tensor_t(tensor_.t()); }
 
 // Concatenation and stacking
-Tensor Tensor::cat(const std::vector<Tensor>& tensors, int64_t dim) {
+tensor_t tensor_t::cat(const std::vector<tensor_t>& tensors, int64_t dim) {
   std::vector<torch::Tensor> torch_tensors;
   for (const auto& t : tensors) {
     torch_tensors.push_back(t.tensor_);
   }
-  return Tensor(torch::cat(torch_tensors, dim));
+  return tensor_t(torch::cat(torch_tensors, dim));
 }
 
-Tensor Tensor::cat(std::initializer_list<Tensor> tensors, int64_t dim) {
-  return cat(std::vector<Tensor>(tensors), dim);
+tensor_t tensor_t::cat(std::initializer_list<tensor_t> tensors, int64_t dim) {
+  return cat(std::vector<tensor_t>(tensors), dim);
 }
 
-Tensor Tensor::stack(const std::vector<Tensor>& tensors, int64_t dim) {
+tensor_t tensor_t::stack(const std::vector<tensor_t>& tensors, int64_t dim) {
   std::vector<torch::Tensor> torch_tensors;
   for (const auto& t : tensors) {
     torch_tensors.push_back(t.tensor_);
   }
-  return Tensor(torch::stack(torch_tensors, dim));
+  return tensor_t(torch::stack(torch_tensors, dim));
 }
 
 // Minimum/Maximum
-Tensor Tensor::min(const Tensor& a, const Tensor& b) {
-  return Tensor(torch::min(a.tensor_, b.tensor_));
+tensor_t tensor_t::min(const tensor_t& a, const tensor_t& b) {
+  return tensor_t(torch::min(a.tensor_, b.tensor_));
 }
 
-Tensor Tensor::max(const Tensor& a, const Tensor& b) {
-  return Tensor(torch::max(a.tensor_, b.tensor_));
+tensor_t tensor_t::max(const tensor_t& a, const tensor_t& b) {
+  return tensor_t(torch::max(a.tensor_, b.tensor_));
 }
 
 // Data access
-float Tensor::item_float() const { return tensor_.item<float>(); }
+float tensor_t::item_float() const { return tensor_.item<float>(); }
 
-double Tensor::item_double() const { return tensor_.item<double>(); }
+double tensor_t::item_double() const { return tensor_.item<double>(); }
 
-const float* Tensor::data_ptr_float() const { return tensor_.data_ptr<float>(); }
+const float* tensor_t::data_ptr_float() const { return tensor_.data_ptr<float>(); }
 
-const double* Tensor::data_ptr_double() const { return tensor_.data_ptr<double>(); }
+const double* tensor_t::data_ptr_double() const { return tensor_.data_ptr<double>(); }
 
-float* Tensor::mutable_data_ptr_float() { return tensor_.data_ptr<float>(); }
+float* tensor_t::mutable_data_ptr_float() { return tensor_.data_ptr<float>(); }
 
-double* Tensor::mutable_data_ptr_double() { return tensor_.data_ptr<double>(); }
+double* tensor_t::mutable_data_ptr_double() { return tensor_.data_ptr<double>(); }
 
 template <typename T>
-const T* Tensor::data_ptr() const {
+const T* tensor_t::data_ptr() const {
   return tensor_.data_ptr<T>();
 }
 
 // Explicit instantiations
-template const float* Tensor::data_ptr<float>() const;
-template const double* Tensor::data_ptr<double>() const;
+template const float* tensor_t::data_ptr<float>() const;
+template const double* tensor_t::data_ptr<double>() const;
 
 // Debugging
-std::string Tensor::to_string() const {
+std::string tensor_t::to_string() const {
   if (!tensor_.defined()) {
-    return "Tensor(undefined)";
+    return "tensor_t(undefined)";
   }
   std::ostringstream oss;
-  oss << "Tensor(shape=[";
+  oss << "tensor_t(shape=[";
   auto sizes = tensor_.sizes();
   for (size_t i = 0; i < sizes.size(); ++i) {
     oss << sizes[i];
@@ -317,43 +335,44 @@ std::string Tensor::to_string() const {
   return oss.str();
 }
 
-Tensor Tensor::operator[](int64_t index) const { return Tensor(tensor_[index]); }
+tensor_t tensor_t::operator[](int64_t index) const { return tensor_t(tensor_[index]); }
 
-Tensor&& Tensor::operator=(const Tensor& other) && {
+tensor_t&& tensor_t::operator=(const tensor_t& other) && {
   tensor_.copy_(other.tensor_);
   return std::move(*this);
 }
 
-Tensor&& Tensor::operator=(Tensor&& other) && noexcept {
+tensor_t&& tensor_t::operator=(tensor_t&& other) && noexcept {
   tensor_.copy_(other.tensor_);
   return std::move(*this);
 }
 
-Tensor& Tensor::operator=(float scalar) & {
+tensor_t& tensor_t::operator=(float scalar) & {
   tensor_.fill_(scalar);
   return *this;
 }
 
-Tensor&& Tensor::operator=(float scalar) && {
+tensor_t&& tensor_t::operator=(float scalar) && {
   tensor_.fill_(scalar);
   return std::move(*this);
 }
 
-Tensor& Tensor::operator=(double scalar) & {
+tensor_t& tensor_t::operator=(double scalar) & {
   tensor_.fill_(scalar);
   return *this;
 }
 
-Tensor&& Tensor::operator=(double scalar) && {
+tensor_t&& tensor_t::operator=(double scalar) && {
   tensor_.fill_(scalar);
   return std::move(*this);
 }
 
 // ============================================================================
-// Adam implementation
+// adam_optimizer implementation
 // ============================================================================
 
-Adam::Adam(const std::vector<Tensor>& parameters, const AdamOptions& options) : options_(options) {
+adam_optimizer::adam_optimizer(const std::vector<tensor_t>& parameters, const adam_options& options)
+    : options_(options) {
   std::vector<torch::Tensor> torch_params;
   for (const auto& param : parameters) {
     torch_params.push_back(param.tensor_);
@@ -367,36 +386,49 @@ Adam::Adam(const std::vector<Tensor>& parameters, const AdamOptions& options) : 
   optimizer_ = std::make_shared<torch::optim::Adam>(torch_params, torch_options);
 }
 
-Adam::Adam(std::initializer_list<Tensor> parameters, const AdamOptions& options)
-    : Adam(std::vector<Tensor>(parameters), options) {}
+adam_optimizer::adam_optimizer(std::initializer_list<tensor_t> parameters,
+                               const adam_options& options)
+    : adam_optimizer(std::vector<tensor_t>(parameters), options) {}
 
-Adam::~Adam() = default;
+adam_optimizer::~adam_optimizer() = default;
 
-void Adam::zero_grad() { optimizer_->zero_grad(); }
+void adam_optimizer::zero_grad() { optimizer_->zero_grad(); }
 
-void Adam::step() { optimizer_->step(); }
+void adam_optimizer::step() { optimizer_->step(); }
 
-void Adam::set_learning_rate(float lr) {
+void adam_optimizer::set_learning_rate(float lr) {
   options_.lr = lr;
   for (auto& param_group : optimizer_->param_groups()) {
     static_cast<torch::optim::AdamOptions&>(param_group.options()).lr(lr);
   }
 }
 
-float Adam::get_learning_rate() const { return options_.lr; }
+float adam_optimizer::get_learning_rate() const { return options_.lr; }
 
 // Global operators
-Tensor operator-(float scalar, const Tensor& tensor) { return Tensor(scalar - tensor.tensor_); }
+tensor_t operator-(float scalar, const tensor_t& tensor) {
+  return tensor_t(scalar - tensor.tensor_);
+}
 
-Tensor operator-(double scalar, const Tensor& tensor) { return Tensor(scalar - tensor.tensor_); }
+tensor_t operator-(double scalar, const tensor_t& tensor) {
+  return tensor_t(scalar - tensor.tensor_);
+}
 
-Tensor operator*(float scalar, const Tensor& tensor) { return Tensor(scalar * tensor.tensor_); }
+tensor_t operator*(float scalar, const tensor_t& tensor) {
+  return tensor_t(scalar * tensor.tensor_);
+}
 
-Tensor operator*(double scalar, const Tensor& tensor) { return Tensor(scalar * tensor.tensor_); }
+tensor_t operator*(double scalar, const tensor_t& tensor) {
+  return tensor_t(scalar * tensor.tensor_);
+}
 
-Tensor operator+(float scalar, const Tensor& tensor) { return Tensor(scalar + tensor.tensor_); }
+tensor_t operator+(float scalar, const tensor_t& tensor) {
+  return tensor_t(scalar + tensor.tensor_);
+}
 
-Tensor operator+(double scalar, const Tensor& tensor) { return Tensor(scalar + tensor.tensor_); }
+tensor_t operator+(double scalar, const tensor_t& tensor) {
+  return tensor_t(scalar + tensor.tensor_);
+}
 
 }  // namespace optimization
 }  // namespace marionette

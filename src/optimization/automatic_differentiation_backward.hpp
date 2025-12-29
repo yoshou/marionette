@@ -12,70 +12,70 @@ namespace marionette {
 namespace optimization {
 
 // Forward declaration
-class Adam;
+class adam_optimizer;
 
 /**
- * @brief TensorOptions for configuring tensor creation
+ * @brief tensor_options for configuring tensor creation
  */
-class TensorOptions {
+class tensor_options {
  public:
-  TensorOptions();
-  ~TensorOptions();
+  tensor_options();
+  ~tensor_options();
 
   // Friend declaration
-  friend class Tensor;
+  friend class tensor_t;
 
   // Factory methods for dtype
-  static TensorOptions float32();
-  static TensorOptions float64();
+  static tensor_options float32();
+  static tensor_options float64();
 
   // Device selection
-  TensorOptions device_cpu() const;
-  TensorOptions device_cuda(int device_index = 0) const;
+  tensor_options device_cpu() const;
+  tensor_options device_cuda(int device_index = 0) const;
 
  private:
-  explicit TensorOptions(torch::TensorOptions options);
+  explicit tensor_options(torch::TensorOptions options);
   const torch::TensorOptions& torch_options() const;
   torch::TensorOptions options_;
 };
 
 /**
- * @brief Tensor class for automatic differentiation with backward propagation
+ * @brief tensor_t class for automatic differentiation with backward propagation
  *
  * This class provides a clean interface for tensor operations with autograd support.
  */
-class Tensor {
+class tensor_t {
  public:
-  Tensor();
-  ~Tensor();
+  tensor_t();
+  ~tensor_t();
 
   // Friend declarations for global operators and internal classes
-  friend class Adam;
-  friend Tensor operator-(float scalar, const Tensor& tensor);
-  friend Tensor operator-(double scalar, const Tensor& tensor);
-  friend Tensor operator*(float scalar, const Tensor& tensor);
-  friend Tensor operator*(double scalar, const Tensor& tensor);
-  friend Tensor operator+(float scalar, const Tensor& tensor);
-  friend Tensor operator+(double scalar, const Tensor& tensor);
+  friend class adam_optimizer;
+  friend tensor_t operator-(float scalar, const tensor_t& tensor);
+  friend tensor_t operator-(double scalar, const tensor_t& tensor);
+  friend tensor_t operator*(float scalar, const tensor_t& tensor);
+  friend tensor_t operator*(double scalar, const tensor_t& tensor);
+  friend tensor_t operator+(float scalar, const tensor_t& tensor);
+  friend tensor_t operator+(double scalar, const tensor_t& tensor);
 
   // Copy and move operations
-  Tensor(const Tensor& other) = default;
-  Tensor(Tensor&& other) noexcept = default;
-  Tensor& operator=(const Tensor& other) & = default;
-  Tensor& operator=(Tensor&& other) & noexcept = default;
-  Tensor&& operator=(const Tensor& other) &&;
-  Tensor&& operator=(Tensor&& other) && noexcept;
+  tensor_t(const tensor_t& other) = default;
+  tensor_t(tensor_t&& other) noexcept = default;
+  tensor_t& operator=(const tensor_t& other) & = default;
+  tensor_t& operator=(tensor_t&& other) & noexcept = default;
+  tensor_t&& operator=(const tensor_t& other) &&;
+  tensor_t&& operator=(tensor_t&& other) && noexcept;
 
   // Factory methods
-  static Tensor zeros(const std::vector<int64_t>& shape);
-  static Tensor zeros(const std::vector<int64_t>& shape, const TensorOptions& options);
-  static Tensor ones(const std::vector<int64_t>& shape);
-  static Tensor ones(const std::vector<int64_t>& shape, const TensorOptions& options);
-  static Tensor eye(int64_t n);
-  static Tensor eye(int64_t n, const TensorOptions& options);
-  static Tensor zeros_like(const Tensor& other);
-  static Tensor from_blob(const float* data, const std::vector<int64_t>& shape);
-  static Tensor from_blob(const double* data, const std::vector<int64_t>& shape);
+  static tensor_t zeros(const std::vector<int64_t>& shape);
+  static tensor_t zeros(const std::vector<int64_t>& shape, const tensor_options& options);
+  static tensor_t ones(const std::vector<int64_t>& shape);
+  static tensor_t ones(const std::vector<int64_t>& shape, const tensor_options& options);
+  static tensor_t eye(int64_t n);
+  static tensor_t eye(int64_t n, const tensor_options& options);
+  static tensor_t zeros_like(const tensor_t& other);
+  static tensor_t from_blob(const float* data, const std::vector<int64_t>& shape);
+  static tensor_t from_blob(const double* data, const std::vector<int64_t>& shape);
 
   // Shape and size operations
   std::vector<int64_t> sizes() const;
@@ -84,87 +84,87 @@ class Tensor {
   int64_t numel() const;
 
   // Data type operations
-  Tensor to_float32() const;
-  Tensor to_float64() const;
+  tensor_t to_float32() const;
+  tensor_t to_float64() const;
 
   // Options (for tensor creation)
-  TensorOptions options() const;
+  tensor_options options() const;
 
   // Autograd operations
-  Tensor requires_grad(bool requires_grad = true) const;
-  Tensor requires_grad(bool requires_grad = true);
+  tensor_t requires_grad(bool requires_grad = true) const;
+  tensor_t requires_grad(bool requires_grad = true);
   bool requires_grad() const;
-  Tensor detach() const;
+  tensor_t detach() const;
   void backward() const;
-  Tensor grad() const;
+  tensor_t grad() const;
   void zero_grad();
 
   // Validity check
   bool defined() const;
 
   // Clone and reshape operations
-  Tensor clone() const;
-  Tensor view(const std::vector<int64_t>& shape) const;
-  Tensor reshape(const std::vector<int64_t>& shape) const;
-  Tensor unsqueeze(int64_t dim) const;
-  Tensor squeeze(int64_t dim) const;
-  Tensor expand(const std::vector<int64_t>& shape) const;
-  Tensor transpose(int64_t dim0, int64_t dim1) const;
-  Tensor narrow(int64_t dim, int64_t start, int64_t length) const;
+  tensor_t clone() const;
+  tensor_t view(const std::vector<int64_t>& shape) const;
+  tensor_t reshape(const std::vector<int64_t>& shape) const;
+  tensor_t unsqueeze(int64_t dim) const;
+  tensor_t squeeze(int64_t dim) const;
+  tensor_t expand(const std::vector<int64_t>& shape) const;
+  tensor_t transpose(int64_t dim0, int64_t dim1) const;
+  tensor_t narrow(int64_t dim, int64_t start, int64_t length) const;
 
   // Indexing operations
-  Tensor select(int64_t dim, int64_t index) const;
+  tensor_t select(int64_t dim, int64_t index) const;
 
   // Unary operators
-  Tensor operator-() const;
+  tensor_t operator-() const;
 
   // Element-wise arithmetic operations
-  Tensor operator+(const Tensor& other) const;
-  Tensor operator-(const Tensor& other) const;
-  Tensor operator*(const Tensor& other) const;
-  Tensor operator/(const Tensor& other) const;
-  Tensor operator+(float scalar) const;
-  Tensor operator-(float scalar) const;
-  Tensor operator*(float scalar) const;
-  Tensor operator/(float scalar) const;
+  tensor_t operator+(const tensor_t& other) const;
+  tensor_t operator-(const tensor_t& other) const;
+  tensor_t operator*(const tensor_t& other) const;
+  tensor_t operator/(const tensor_t& other) const;
+  tensor_t operator+(float scalar) const;
+  tensor_t operator-(float scalar) const;
+  tensor_t operator*(float scalar) const;
+  tensor_t operator/(float scalar) const;
 
   // In-place operations
-  Tensor& operator+=(const Tensor& other);
-  Tensor& operator-=(const Tensor& other);
-  Tensor& operator*=(const Tensor& other);
-  Tensor& operator/=(const Tensor& other);
-  Tensor& operator-=(float scalar);
-  Tensor& operator+=(float scalar);
+  tensor_t& operator+=(const tensor_t& other);
+  tensor_t& operator-=(const tensor_t& other);
+  tensor_t& operator*=(const tensor_t& other);
+  tensor_t& operator/=(const tensor_t& other);
+  tensor_t& operator-=(float scalar);
+  tensor_t& operator+=(float scalar);
 
   // Reduction operations
-  Tensor sum() const;
-  Tensor sum(int64_t dim, bool keepdim = false) const;
-  Tensor mean() const;
-  Tensor mean(int64_t dim, bool keepdim = false) const;
-  Tensor min(int64_t dim) const;
-  Tensor max(int64_t dim) const;
+  tensor_t sum() const;
+  tensor_t sum(int64_t dim, bool keepdim = false) const;
+  tensor_t mean() const;
+  tensor_t mean(int64_t dim, bool keepdim = false) const;
+  tensor_t min(int64_t dim) const;
+  tensor_t max(int64_t dim) const;
 
   // Mathematical operations
-  Tensor sqrt() const;
-  Tensor cos() const;
-  Tensor sin() const;
-  Tensor norm(int64_t p, int64_t dim) const;
+  tensor_t sqrt() const;
+  tensor_t cos() const;
+  tensor_t sin() const;
+  tensor_t norm(int64_t p, int64_t dim) const;
 
   // Matrix operations
-  static Tensor matmul(const Tensor& a, const Tensor& b);
-  static Tensor bmm(const Tensor& a, const Tensor& b);
-  static Tensor det(const Tensor& a);
-  static Tensor inverse(const Tensor& a);
-  Tensor t() const;  // Transpose
+  static tensor_t matmul(const tensor_t& a, const tensor_t& b);
+  static tensor_t bmm(const tensor_t& a, const tensor_t& b);
+  static tensor_t det(const tensor_t& a);
+  static tensor_t inverse(const tensor_t& a);
+  tensor_t t() const;  // Transpose
 
   // Concatenation and stacking
-  static Tensor cat(const std::vector<Tensor>& tensors, int64_t dim);
-  static Tensor cat(std::initializer_list<Tensor> tensors, int64_t dim);
-  static Tensor stack(const std::vector<Tensor>& tensors, int64_t dim);
+  static tensor_t cat(const std::vector<tensor_t>& tensors, int64_t dim);
+  static tensor_t cat(std::initializer_list<tensor_t> tensors, int64_t dim);
+  static tensor_t stack(const std::vector<tensor_t>& tensors, int64_t dim);
 
   // Minimum/Maximum
-  static Tensor min(const Tensor& a, const Tensor& b);
-  static Tensor max(const Tensor& a, const Tensor& b);
+  static tensor_t min(const tensor_t& a, const tensor_t& b);
+  static tensor_t max(const tensor_t& a, const tensor_t& b);
 
   // Data access
   float item_float() const;
@@ -179,25 +179,25 @@ class Tensor {
   // Debugging
   std::string to_string() const;
 
-  // Indexing with [] operator (returns Tensor for chaining)
-  Tensor operator[](int64_t index) const;
+  // Indexing with [] operator (returns tensor_t for chaining)
+  tensor_t operator[](int64_t index) const;
 
   // Assignment operators for scalar values (for dense[i][j] = value pattern)
-  Tensor& operator=(float scalar) &;
-  Tensor&& operator=(float scalar) &&;
-  Tensor& operator=(double scalar) &;
-  Tensor&& operator=(double scalar) &&;
+  tensor_t& operator=(float scalar) &;
+  tensor_t&& operator=(float scalar) &&;
+  tensor_t& operator=(double scalar) &;
+  tensor_t&& operator=(double scalar) &&;
 
  private:
-  explicit Tensor(torch::Tensor tensor);
+  explicit tensor_t(torch::Tensor tensor);
 
   torch::Tensor tensor_;
 };
 
 /**
- * @brief Adam optimizer options
+ * @brief adam_optimizer optimizer options
  */
-struct AdamOptions {
+struct adam_options {
   float lr = 0.001f;
   float beta1 = 0.9f;
   float beta2 = 0.999f;
@@ -206,13 +206,13 @@ struct AdamOptions {
 };
 
 /**
- * @brief Adam optimizer for gradient-based optimization
+ * @brief adam_optimizer optimizer for gradient-based optimization
  */
-class Adam {
+class adam_optimizer {
  public:
-  Adam(const std::vector<Tensor>& parameters, const AdamOptions& options);
-  Adam(std::initializer_list<Tensor> parameters, const AdamOptions& options);
-  ~Adam();
+  adam_optimizer(const std::vector<tensor_t>& parameters, const adam_options& options);
+  adam_optimizer(std::initializer_list<tensor_t> parameters, const adam_options& options);
+  ~adam_optimizer();
 
   void zero_grad();
   void step();
@@ -221,16 +221,16 @@ class Adam {
 
  private:
   std::shared_ptr<torch::optim::Adam> optimizer_;
-  AdamOptions options_;
+  adam_options options_;
 };
 
 // Global operators for scalar operations
-Tensor operator-(float scalar, const Tensor& tensor);
-Tensor operator-(double scalar, const Tensor& tensor);
-Tensor operator*(float scalar, const Tensor& tensor);
-Tensor operator*(double scalar, const Tensor& tensor);
-Tensor operator+(float scalar, const Tensor& tensor);
-Tensor operator+(double scalar, const Tensor& tensor);
+tensor_t operator-(float scalar, const tensor_t& tensor);
+tensor_t operator-(double scalar, const tensor_t& tensor);
+tensor_t operator*(float scalar, const tensor_t& tensor);
+tensor_t operator*(double scalar, const tensor_t& tensor);
+tensor_t operator+(float scalar, const tensor_t& tensor);
+tensor_t operator+(double scalar, const tensor_t& tensor);
 
 }  // namespace optimization
 }  // namespace marionette
