@@ -25,38 +25,8 @@ struct config_t {
   std::string hrnet_model_path;
 };
 
-void save_keypoints3d_per_frame(const std::vector<std::vector<Eigen::Vector4d>>& keypoints3d_all,
-                                const std::string& output_dir, int start_frame, int frame_step) {
-  fs::create_directories(output_dir);
-
-  for (size_t frame_idx = 0; frame_idx < keypoints3d_all.size(); ++frame_idx) {
-    int frame_number = start_frame + frame_idx * frame_step;
-
-    nlohmann::json j;
-    j["type"] = "float32";
-    j["shape"] = {static_cast<int>(keypoints3d_all[frame_idx].size()), 4};
-
-    std::vector<float> data;
-    for (const auto& kpt : keypoints3d_all[frame_idx]) {
-      data.push_back(static_cast<float>(kpt(0)));
-      data.push_back(static_cast<float>(kpt(1)));
-      data.push_back(static_cast<float>(kpt(2)));
-      data.push_back(static_cast<float>(kpt(3)));
-    }
-    j["data"] = data;
-
-    std::string filename = output_dir + "/keypoints3d_" + std::to_string(frame_number) + ".json";
-    std::ofstream ofs(filename);
-    ofs << j.dump(2);
-    ofs.close();
-
-    std::cout << "Saved: " << filename << std::endl;
-  }
-}
-
-void save_keypoints3d_for_init_params(
-    const std::vector<std::vector<Eigen::Vector4d>>& keypoints3d_all,
-    const std::string& output_file) {
+void save_keypoints3d(const std::vector<std::vector<Eigen::Vector4d>>& keypoints3d_all,
+                      const std::string& output_file) {
   if (keypoints3d_all.empty()) {
     std::cerr << "Error: No keypoints3d data to save" << std::endl;
     return;
@@ -124,7 +94,7 @@ int main() {
   config.image_root = "../data/street_dance/images";
   config.intri_file = "../data/street_dance/intri.yml";
   config.extri_file = "../data/street_dance/extri.yml";
-  config.output_dir = "../data/output_cpp";
+  config.output_dir = "../data/opt";
   config.start_frame = 0;
   config.end_frame = 10;
   config.frame_step = 1;
@@ -251,19 +221,13 @@ int main() {
 
   std::cout << "\nSaving results to " << config.output_dir << " ..." << std::endl;
 
-  std::string keypoints3d_dir = config.output_dir + "/keypoints3d";
-  save_keypoints3d_per_frame(keypoints3d_all_frames, keypoints3d_dir, config.start_frame,
-                             config.frame_step);
-
-  std::string init_params_file = config.output_dir + "/init_params_input_keypoints3d.json";
-  save_keypoints3d_for_init_params(keypoints3d_all_frames, init_params_file);
+  std::string keypoints3d_file = config.output_dir + "/keypoints3d.json";
+  save_keypoints3d(keypoints3d_all_frames, keypoints3d_file);
 
   std::cout << "\n=== Processing Complete ===" << std::endl;
   std::cout << "Output saved to: " << config.output_dir << std::endl;
-  std::cout << "  - Per-frame keypoints: " << keypoints3d_dir << "/" << std::endl;
-  std::cout << "  - Init params input: " << init_params_file << std::endl;
-  std::cout << "You can now use init_params_input_keypoints3d.json with test_fitting_backward"
-            << std::endl;
+  std::cout << "  - Keypoints 3D: " << keypoints3d_file << std::endl;
+  std::cout << "You can now use keypoints3d.json with test_fitting_backward" << std::endl;
 
   return 0;
 }
