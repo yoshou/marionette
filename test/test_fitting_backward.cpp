@@ -1,3 +1,4 @@
+#include <Eigen/Core>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -630,16 +631,136 @@ void optimize_loop(adam_optimizer& optimizer, OptimizerFunc compute_loss, float 
   }
 }
 
-int main() {
+struct smpl_params_t {
+  std::vector<Eigen::Vector3f> rh;
+  std::vector<Eigen::Vector3f> th;
+  std::vector<std::vector<float>> poses;
+  std::vector<std::vector<float>> shapes;
+
+  int num_frames;
+  int num_poses;
+  int num_shapes;
+};
+
+smpl_params_t init_smpl_params(const std::vector<std::vector<Eigen::Vector4d>>& keypoints3d,
+                               int num_poses = 69, int num_shapes = 10, int root_id = 8,
+                               bool share_shape = true) {
+  if (keypoints3d.empty()) {
+    throw std::runtime_error("keypoints3d is empty");
+  }
+
+  const int num_frames = static_cast<int>(keypoints3d.size());
+  const int num_joints = static_cast<int>(keypoints3d[0].size());
+
+  if (root_id < 0 || root_id >= num_joints) {
+    throw std::runtime_error("root_id is out of range: " + std::to_string(root_id));
+  }
+
+  smpl_params_t params;
+  params.num_frames = num_frames;
+  params.num_poses = num_poses;
+  params.num_shapes = num_shapes;
+
+  params.rh.resize(num_frames, Eigen::Vector3f::Zero());
+
+  params.th.resize(num_frames);
+  for (int i = 0; i < num_frames; ++i) {
+    const auto& root_joint = keypoints3d[i][root_id];
+    params.th[i] =
+        Eigen::Vector3f(static_cast<float>(root_joint(0)), static_cast<float>(root_joint(1)),
+                        static_cast<float>(root_joint(2)));
+  }
+
+  params.poses.resize(num_frames, std::vector<float>(num_poses, 0.0f));
+
+  if (share_shape) {
+    params.shapes.resize(1, std::vector<float>(num_shapes, 0.0f));
+  } else {
+    params.shapes.resize(num_frames, std::vector<float>(num_shapes, 0.0f));
+  }
+
+  return params;
+}
+
+struct fitting_params_t {
+  tensor_t poses;
+  tensor_t shapes;
+  tensor_t rh;
+  tensor_t th;
+};
+
+fitting_params_t initialize_params_from_keypoints3d(const tensor_t& keypoints3d) {
+  std::cout << "\n=== Initializing parameters using init_params ===" << std::endl;
+
+  const int num_frames = keypoints3d.size(0);
+  const int num_joints = keypoints3d.size(1);
+  std::vector<std::vector<Eigen::Vector4d>> keypoints3d_vec(num_frames);
+
+  auto keypoints_data = keypoints3d.data_ptr<float>();
+  for (int i = 0; i < num_frames; ++i) {
+    keypoints3d_vec[i].resize(num_joints);
+    for (int j = 0; j < num_joints; ++j) {
+      int idx = i * num_joints * 4 + j * 4;
+      keypoints3d_vec[i][j] = Eigen::Vector4d(static_cast<double>(keypoints_data[idx + 0]),
+                                              static_cast<double>(keypoints_data[idx + 1]),
+                                              static_cast<double>(keypoints_data[idx + 2]),
+                                              static_cast<double>(keypoints_data[idx + 3]));
+    }
+  }
+
+  auto params = init_smpl_params(keypoints3d_vec, 69, 10, 8, true);
+
+  std::cout << "Initialized parameters:" << std::endl;
+  std::cout << "  num_frames: " << params.num_frames << std::endl;
+  std::cout << "  num_poses: " << params.num_poses << std::endl;
+  std::cout << "  num_shapes: " << params.num_shapes << std::endl;
+  std::cout << "  th[0]: [" << params.th[0].transpose() << "]" << std::endl;
+
+  fitting_params_t tensors;
+
+  std::vector<float> poses_data(num_frames * params.num_poses, 0.0f);
+  tensors.poses = tensor_t::from_blob(poses_data.data(), {num_frames, params.num_poses}).clone();
+
+  std::vector<float> shapes_data(params.num_shapes, 0.0f);
+  tensors.shapes = tensor_t::from_blob(shapes_data.data(), {1, params.num_shapes}).clone();
+
+  std::vector<float> rh_data;
+  for (const auto& r : params.rh) {
+    rh_data.push_back(r(0));
+    rh_data.push_back(r(1));
+    rh_data.push_back(r(2));
+  }
+  tensors.rh = tensor_t::from_blob(rh_data.data(), {num_frames, 3}).clone();
+
+  std::vector<float> th_data;
+  for (const auto& t : params.th) {
+    th_data.push_back(t(0));
+    th_data.push_back(t(1));
+    th_data.push_back(t(2));
+  }
+  tensors.th = tensor_t::from_blob(th_data.data(), {num_frames, 3}).clone();
+
+  std::cout << "Converted to tensors:" << std::endl;
+  std::cout << "  poses shape: " << tensors.poses.sizes() << std::endl;
+  std::cout << "  shapes shape: " << tensors.shapes.sizes() << std::endl;
+  std::cout << "  rh shape: " << tensors.rh.sizes() << std::endl;
+  std::cout << "  th shape: " << tensors.th.sizes() << std::endl;
+
+  return tensors;
+}
+
+int main(int argc, char** argv) {
   std::cout << "Starting optimization..." << std::endl;
   auto total_start = std::chrono::high_resolution_clock::now();
 
   tensor_t keypoints3d = load_tensor_as_tensor("../data/opt/observations_keypoints3d.json");
   std::cout << "keypoints3d loaded shape: " << keypoints3d.sizes() << std::endl;
-  tensor_t poses = load_tensor_as_tensor("../data/opt/params_poses.json");
-  tensor_t shapes = load_tensor_as_tensor("../data/opt/params_shapes.json");
-  tensor_t rh = load_tensor_as_tensor("../data/opt/params_Rh.json");
-  tensor_t th = load_tensor_as_tensor("../data/opt/params_Th.json");
+
+  auto params = initialize_params_from_keypoints3d(keypoints3d);
+  tensor_t poses = params.poses;
+  tensor_t shapes = params.shapes;
+  tensor_t rh = params.rh;
+  tensor_t th = params.th;
 
   smpl_model model;
 
