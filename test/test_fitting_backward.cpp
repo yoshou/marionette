@@ -7,7 +7,7 @@
 #include <tuple>
 #include <vector>
 
-#include "../src/optimization/tensor_wrapper.hpp"
+#include "automatic_differentiation_backward.hpp"
 
 using namespace marionette::optimization;
 
@@ -649,7 +649,7 @@ int main() {
     constexpr int patience = 20;
     constexpr float convergence_threshold = 1e-5f;
 
-    Tensor shapes_opt = shapes.clone().detach().requires_grad_(true);
+    Tensor shapes_opt = shapes.clone().detach().requires_grad(true);
     AdamOptions adam_options;
     adam_options.lr = learning_rate;
     std::vector<Tensor> params1;
@@ -686,8 +686,8 @@ int main() {
     constexpr int patience = 20;
     constexpr float convergence_threshold = 1e-5f;
 
-    Tensor rh_opt = rh.clone().requires_grad_(true);
-    Tensor th_opt = th.clone().requires_grad_(true);
+    Tensor rh_opt = rh.clone().requires_grad(true);
+    Tensor th_opt = th.clone().requires_grad(true);
     AdamOptions adam_options;
     adam_options.lr = learning_rate;
     std::vector<Tensor> params2;
@@ -735,9 +735,9 @@ int main() {
 
     PriorLoss prior_loss;
 
-    Tensor poses_opt = poses.clone().requires_grad_(true);
-    Tensor rh_opt = rh.clone().requires_grad_(true);
-    Tensor th_opt = th.clone().requires_grad_(true);
+    Tensor poses_opt = poses.clone().requires_grad(true);
+    Tensor rh_opt = rh.clone().requires_grad(true);
+    Tensor th_opt = th.clone().requires_grad(true);
     AdamOptions adam_options;
     adam_options.lr = learning_rate;
     std::vector<Tensor> params3;

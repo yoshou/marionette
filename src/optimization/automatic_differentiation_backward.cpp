@@ -1,4 +1,4 @@
-#include "tensor_wrapper.hpp"
+#include "automatic_differentiation_backward.hpp"
 
 #include <sstream>
 #include <stdexcept>
@@ -73,7 +73,7 @@ Tensor Tensor::requires_grad(bool requires_grad) const {
   return Tensor(new_tensor);
 }
 
-Tensor Tensor::requires_grad_(bool requires_grad) {
+Tensor Tensor::requires_grad(bool requires_grad) {
   tensor_.requires_grad_(requires_grad);
   return *this;
 }

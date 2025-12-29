@@ -23,7 +23,6 @@ class Adam;
 class Tensor {
  public:
   Tensor();
-  explicit Tensor(torch::Tensor tensor);
   ~Tensor();
 
   // Friend declarations for global operators and internal classes
@@ -69,7 +68,7 @@ class Tensor {
 
   // Autograd operations
   Tensor requires_grad(bool requires_grad = true) const;
-  Tensor requires_grad_(bool requires_grad = true);
+  Tensor requires_grad(bool requires_grad = true);
   bool requires_grad() const;
   Tensor detach() const;
   void backward() const;
@@ -166,6 +165,8 @@ class Tensor {
   Tensor&& operator=(double scalar) &&;
 
  private:
+  explicit Tensor(torch::Tensor tensor);
+
   torch::Tensor tensor_;
 };
 

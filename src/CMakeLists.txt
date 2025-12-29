@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 find_package(unofficial-openfbx CONFIG REQUIRED)
+find_package(Torch REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -18,6 +19,7 @@ endif ()
 
 # find_package(CUDA 11 REQUIRED)
 add_library(marionette
+    ${CMAKE_CURRENT_LIST_DIR}/optimization/automatic_differentiation_backward.cpp
     ${CMAKE_CURRENT_LIST_DIR}/optimization/global_registeration.cpp
     ${CMAKE_CURRENT_LIST_DIR}/optimization/articulation_solver.cpp
     ${CMAKE_CURRENT_LIST_DIR}/optimization/icp_3d_2d_optimizer.cpp
@@ -51,6 +53,7 @@ target_link_libraries(marionette
     PUBLIC stargazer_sensor_grpc_proto
     PRIVATE unoffical::openfbx::openfbx
     PUBLIC Ceres::ceres
+    PUBLIC ${TORCH_LIBRARIES}
 
     # ${CUDA_CUFFT_LIBRARIES}
     # ${CUDA_CUBLAS_LIBRARIES}
@@ -97,6 +100,7 @@ target_sources(marionette
     ${CMAKE_CURRENT_LIST_DIR}/optimization/alignment.hpp
     ${CMAKE_CURRENT_LIST_DIR}/optimization/articulation_solver.hpp
     ${CMAKE_CURRENT_LIST_DIR}/optimization/automatic_differentiation.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/optimization/automatic_differentiation_backward.hpp
     ${CMAKE_CURRENT_LIST_DIR}/utils/debug.hpp
     ${CMAKE_CURRENT_LIST_DIR}/tracking/features.hpp
     ${CMAKE_CURRENT_LIST_DIR}/core/frame.hpp
