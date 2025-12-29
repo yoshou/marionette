@@ -54,5 +54,4 @@ target_link_libraries(test_fitting_backward
     nlohmann_json::nlohmann_json
 )
 
-target_link_options(test_fitting_backward PRIVATE -Wl,--allow-multiple-definition)
 set_property(TARGET test_fitting_backward PROPERTY CXX_STANDARD 17)
