@@ -56,3 +56,21 @@ target_link_libraries(test_fitting_backward
     ${TORCH_LIBRARIES}
     nlohmann_json::nlohmann_json
 )
+
+# Detect and Triangulate App
+find_package(OpenCV REQUIRED)
+find_package(yaml-cpp CONFIG REQUIRED)
+find_package(onnxruntime CONFIG REQUIRED)
+
+add_executable(detect_triangulate_app
+    ${CMAKE_CURRENT_LIST_DIR}/detect_triangulate_app.cpp
+)
+
+target_link_libraries(detect_triangulate_app
+    PRIVATE
+    ${OpenCV_LIBS}
+    yaml-cpp::yaml-cpp
+    Eigen3::Eigen
+    nlohmann_json::nlohmann_json
+    onnxruntime::onnxruntime
+)
