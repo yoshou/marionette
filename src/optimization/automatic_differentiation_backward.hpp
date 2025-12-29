@@ -15,10 +15,34 @@ namespace optimization {
 class Adam;
 
 /**
- * @brief Tensor class wrapping torch::Tensor
+ * @brief TensorOptions for configuring tensor creation
+ */
+class TensorOptions {
+ public:
+  TensorOptions();
+  ~TensorOptions();
+
+  // Friend declaration
+  friend class Tensor;
+
+  // Factory methods for dtype
+  static TensorOptions float32();
+  static TensorOptions float64();
+
+  // Device selection
+  TensorOptions device_cpu() const;
+  TensorOptions device_cuda(int device_index = 0) const;
+
+ private:
+  explicit TensorOptions(torch::TensorOptions options);
+  const torch::TensorOptions& torch_options() const;
+  torch::TensorOptions options_;
+};
+
+/**
+ * @brief Tensor class for automatic differentiation with backward propagation
  *
- * This class provides a clean interface for tensor operations,
- * wrapping PyTorch's torch::Tensor directly.
+ * This class provides a clean interface for tensor operations with autograd support.
  */
 class Tensor {
  public:
@@ -44,11 +68,11 @@ class Tensor {
 
   // Factory methods
   static Tensor zeros(const std::vector<int64_t>& shape);
-  static Tensor zeros(const std::vector<int64_t>& shape, const torch::TensorOptions& options);
+  static Tensor zeros(const std::vector<int64_t>& shape, const TensorOptions& options);
   static Tensor ones(const std::vector<int64_t>& shape);
-  static Tensor ones(const std::vector<int64_t>& shape, const torch::TensorOptions& options);
+  static Tensor ones(const std::vector<int64_t>& shape, const TensorOptions& options);
   static Tensor eye(int64_t n);
-  static Tensor eye(int64_t n, const torch::TensorOptions& options);
+  static Tensor eye(int64_t n, const TensorOptions& options);
   static Tensor zeros_like(const Tensor& other);
   static Tensor from_blob(const float* data, const std::vector<int64_t>& shape);
   static Tensor from_blob(const double* data, const std::vector<int64_t>& shape);
@@ -64,7 +88,7 @@ class Tensor {
   Tensor to_float64() const;
 
   // Options (for tensor creation)
-  torch::TensorOptions options() const;
+  TensorOptions options() const;
 
   // Autograd operations
   Tensor requires_grad(bool requires_grad = true) const;
@@ -182,7 +206,7 @@ struct AdamOptions {
 };
 
 /**
- * @brief Adam optimizer wrapping torch::optim::Adam
+ * @brief Adam optimizer for gradient-based optimization
  */
 class Adam {
  public:
@@ -194,9 +218,6 @@ class Adam {
   void step();
   void set_learning_rate(float lr);
   float get_learning_rate() const;
-
-  // Access to parameter groups for advanced usage
-  std::vector<torch::optim::OptimizerParamGroup>& param_groups();
 
  private:
   std::shared_ptr<torch::optim::Adam> optimizer_;

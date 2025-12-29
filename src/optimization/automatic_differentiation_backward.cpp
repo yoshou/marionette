@@ -7,6 +7,34 @@ namespace marionette {
 namespace optimization {
 
 // ============================================================================
+// TensorOptions implementation
+// ============================================================================
+
+TensorOptions::TensorOptions() : options_(torch::TensorOptions()) {}
+
+TensorOptions::TensorOptions(torch::TensorOptions options) : options_(std::move(options)) {}
+
+TensorOptions::~TensorOptions() = default;
+
+TensorOptions TensorOptions::float32() {
+  return TensorOptions(torch::TensorOptions().dtype(torch::kFloat32));
+}
+
+TensorOptions TensorOptions::float64() {
+  return TensorOptions(torch::TensorOptions().dtype(torch::kFloat64));
+}
+
+TensorOptions TensorOptions::device_cpu() const {
+  return TensorOptions(options_.device(torch::kCPU));
+}
+
+TensorOptions TensorOptions::device_cuda(int device_index) const {
+  return TensorOptions(options_.device(torch::Device(torch::kCUDA, device_index)));
+}
+
+const torch::TensorOptions& TensorOptions::torch_options() const { return options_; }
+
+// ============================================================================
 // Tensor implementation
 // ============================================================================
 
@@ -21,22 +49,22 @@ Tensor Tensor::zeros(const std::vector<int64_t>& shape) {
   return Tensor(torch::zeros(shape, torch::kFloat32));
 }
 
-Tensor Tensor::zeros(const std::vector<int64_t>& shape, const torch::TensorOptions& options) {
-  return Tensor(torch::zeros(shape, options));
+Tensor Tensor::zeros(const std::vector<int64_t>& shape, const TensorOptions& options) {
+  return Tensor(torch::zeros(shape, options.torch_options()));
 }
 
 Tensor Tensor::ones(const std::vector<int64_t>& shape) {
   return Tensor(torch::ones(shape, torch::kFloat32));
 }
 
-Tensor Tensor::ones(const std::vector<int64_t>& shape, const torch::TensorOptions& options) {
-  return Tensor(torch::ones(shape, options));
+Tensor Tensor::ones(const std::vector<int64_t>& shape, const TensorOptions& options) {
+  return Tensor(torch::ones(shape, options.torch_options()));
 }
 
 Tensor Tensor::eye(int64_t n) { return Tensor(torch::eye(n, torch::kFloat32)); }
 
-Tensor Tensor::eye(int64_t n, const torch::TensorOptions& options) {
-  return Tensor(torch::eye(n, options));
+Tensor Tensor::eye(int64_t n, const TensorOptions& options) {
+  return Tensor(torch::eye(n, options.torch_options()));
 }
 
 Tensor Tensor::zeros_like(const Tensor& other) { return Tensor(torch::zeros_like(other.tensor_)); }
@@ -101,7 +129,7 @@ void Tensor::zero_grad() {
 bool Tensor::defined() const { return tensor_.defined(); }
 
 // Options
-torch::TensorOptions Tensor::options() const { return tensor_.options(); }
+TensorOptions Tensor::options() const { return TensorOptions(tensor_.options()); }
 
 // Clone and reshape operations
 Tensor Tensor::clone() const { return Tensor(tensor_.clone()); }
@@ -356,10 +384,6 @@ void Adam::set_learning_rate(float lr) {
 }
 
 float Adam::get_learning_rate() const { return options_.lr; }
-
-std::vector<torch::optim::OptimizerParamGroup>& Adam::param_groups() {
-  return optimizer_->param_groups();
-}
 
 // Global operators
 Tensor operator-(float scalar, const Tensor& tensor) { return Tensor(scalar - tensor.tensor_); }
