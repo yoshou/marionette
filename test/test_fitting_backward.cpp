@@ -41,14 +41,33 @@ static std::tuple<std::vector<T>, std::vector<uint32_t>> load_tensor(const std::
 }
 
 tensor_t load_tensor_as_tensor(const std::string& file_name) {
-  auto [data, shape] = load_tensor<float>(file_name);
+  std::ifstream ifs;
+  ifs.open(file_name, std::ios::in);
+  if (!ifs.is_open()) {
+    throw std::runtime_error("Failed to open file: " + file_name);
+  }
+  nlohmann::json j = nlohmann::json::parse(ifs);
+
+  const auto type_str = j["type"].get<std::string>();
+  const auto shape = j["shape"].get<std::vector<uint32_t>>();
 
   std::vector<int64_t> shape_i64;
   for (auto s : shape) {
     shape_i64.push_back(static_cast<int64_t>(s));
   }
 
-  return tensor_t::from_blob(data.data(), shape_i64);
+  tensor_t tensor;
+  if (type_str == "float64") {
+    const auto data = j["data"].get<std::vector<double>>();
+    tensor = tensor_t::from_blob(data.data(), shape_i64);
+  } else if (type_str == "float32") {
+    const auto data = j["data"].get<std::vector<float>>();
+    tensor = tensor_t::from_blob(data.data(), shape_i64);
+  } else {
+    throw std::runtime_error("Unsupported type: " + type_str);
+  }
+
+  return tensor.to_float32();
 }
 
 tensor_t load_dense_matrix_as_tensor(const std::string& file_name) {
@@ -753,7 +772,7 @@ int main(int argc, char** argv) {
   std::cout << "Starting optimization..." << std::endl;
   auto total_start = std::chrono::high_resolution_clock::now();
 
-  tensor_t keypoints3d = load_tensor_as_tensor("../data/opt/observations_keypoints3d.json");
+  tensor_t keypoints3d = load_tensor_as_tensor("../data/opt/keypoints3d.json");
   std::cout << "keypoints3d loaded shape: " << keypoints3d.sizes() << std::endl;
 
   auto params = initialize_params_from_keypoints3d(keypoints3d);
