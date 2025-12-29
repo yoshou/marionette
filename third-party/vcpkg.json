@@ -30,6 +30,10 @@
     "nuklear",
     "tinygltf",
     "gtest",
-    "openfbx"
+    "openfbx",
+    {
+      "name": "libtorch",
+      "features": ["zstd", "opencv"]
+    }
   ]
 }
