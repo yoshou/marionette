@@ -62,11 +62,11 @@ find_package(OpenCV REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 find_package(onnxruntime CONFIG REQUIRED)
 
-add_executable(detect_triangulate_app
-    ${CMAKE_CURRENT_LIST_DIR}/detect_triangulate_app.cpp
+add_executable(test_detect_triangulate
+    ${CMAKE_CURRENT_LIST_DIR}/test_detect_triangulate.cpp
 )
 
-target_link_libraries(detect_triangulate_app
+target_link_libraries(test_detect_triangulate
     PRIVATE
     ${OpenCV_LIBS}
     yaml-cpp::yaml-cpp

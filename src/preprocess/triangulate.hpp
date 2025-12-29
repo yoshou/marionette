@@ -6,13 +6,11 @@
 namespace marionette {
 namespace preprocess {
 
-class Triangulator {
+class triangulator_t {
  public:
   static std::vector<Eigen::Vector4d> triangulate_keypoints(
       const std::vector<std::vector<Eigen::Vector3d>>& keypoints2d,
-      const std::vector<Eigen::Matrix<double, 3, 4>>& projection_matrices,
-      int min_views = 2) {
-    
+      const std::vector<Eigen::Matrix<double, 3, 4>>& projection_matrices, int min_views = 2) {
     if (keypoints2d.empty() || projection_matrices.empty()) {
       return {};
     }
@@ -72,7 +70,7 @@ class Triangulator {
   }
 
   static Eigen::Vector3d project_point(const Eigen::Matrix<double, 3, 4>& P,
-                                      const Eigen::Vector3d& X) {
+                                       const Eigen::Vector3d& X) {
     Eigen::Vector4d Xh;
     Xh.head<3>() = X;
     Xh(3) = 1.0;
@@ -82,9 +80,8 @@ class Triangulator {
   }
 
   static bool triangulate_point_dlt(const std::vector<Eigen::Vector3d>& kpts2d,
-                                   const std::vector<Eigen::Matrix<double, 3, 4>>& Pall,
-                                   const std::vector<int>& view_indices,
-                                   Eigen::Vector4d& out_X) {
+                                    const std::vector<Eigen::Matrix<double, 3, 4>>& Pall,
+                                    const std::vector<int>& view_indices, Eigen::Vector4d& out_X) {
     if (view_indices.size() < 2) {
       return false;
     }
@@ -141,11 +138,8 @@ class Triangulator {
 
   static std::vector<int> robust_select_views_for_joint(
       const std::vector<Eigen::Vector3d>& kpts2d_by_view,
-      const std::vector<Eigen::Matrix<double, 3, 4>>& Pall,
-      const std::vector<int>& valid_views,
-      double dist_max,
-      int min_views) {
-
+      const std::vector<Eigen::Matrix<double, 3, 4>>& Pall, const std::vector<int>& valid_views,
+      double dist_max, int min_views) {
     if (static_cast<int>(valid_views.size()) < min_views) {
       return {};
     }
@@ -247,9 +241,8 @@ class Triangulator {
           candidates.push_back(v);
         }
       }
-      std::sort(candidates.begin(), candidates.end(), [&](int a, int b) {
-        return kpts2d_by_view[a](2) > kpts2d_by_view[b](2);
-      });
+      std::sort(candidates.begin(), candidates.end(),
+                [&](int a, int b) { return kpts2d_by_view[a](2) > kpts2d_by_view[b](2); });
     }
 
     for (int v : candidates) {
@@ -283,15 +276,9 @@ class Triangulator {
 
   static std::vector<Eigen::Vector4d> iterative_triangulate(
       const std::vector<std::vector<Eigen::Vector3d>>& keypoints2d,
-      const std::vector<Eigen::Matrix<double, 3, 4>>& projection_matrices,
-      double dist_max = 25.0,
-      int min_views = 3,
-      double min_conf = 0.1,
-      double thres_outlier_view = 0.4,
-      double thres_outlier_joint = 0.4,
-      int max_iterations = 30,
-      int min_joints = 3) {
-
+      const std::vector<Eigen::Matrix<double, 3, 4>>& projection_matrices, double dist_max = 25.0,
+      int min_views = 3, double min_conf = 0.1, double thres_outlier_view = 0.4,
+      double thres_outlier_joint = 0.4, int max_iterations = 30, int min_joints = 3) {
     if (keypoints2d.empty() || projection_matrices.empty()) {
       return {};
     }
@@ -366,7 +353,8 @@ class Triangulator {
       double best_score = -1.0;
       for (size_t v = 0; v < n_views; ++v) {
         if (valid_cnt_view[v] <= 0) continue;
-        double ratio = static_cast<double>(out_cnt_view[v]) / (1e-5 + static_cast<double>(valid_cnt_view[v]));
+        double ratio =
+            static_cast<double>(out_cnt_view[v]) / (1e-5 + static_cast<double>(valid_cnt_view[v]));
         if (ratio <= thres_outlier_view) continue;
         double mean_dist = dist_sum_view[v] / (1e-5 + static_cast<double>(valid_cnt_view[v]));
         if (mean_dist > best_score) {
@@ -384,7 +372,8 @@ class Triangulator {
       int removed_any_joint = 0;
       for (size_t j = 0; j < n_joints; ++j) {
         if (valid_cnt_joint[j] <= 0) continue;
-        double ratio = static_cast<double>(out_cnt_joint[j]) / (1e-5 + static_cast<double>(valid_cnt_joint[j]));
+        double ratio = static_cast<double>(out_cnt_joint[j]) /
+                       (1e-5 + static_cast<double>(valid_cnt_joint[j]));
         if (ratio <= thres_outlier_joint) continue;
 
         std::vector<int> valid_views;
@@ -407,8 +396,8 @@ class Triangulator {
           kpts_by_view[v] = kpts2d[v][j];
         }
 
-        const auto selected_views = robust_select_views_for_joint(
-            kpts_by_view, projection_matrices, valid_views, dist_max, min_views);
+        const auto selected_views = robust_select_views_for_joint(kpts_by_view, projection_matrices,
+                                                                  valid_views, dist_max, min_views);
 
         std::vector<char> keep(n_views, 0);
         for (int v : selected_views) {

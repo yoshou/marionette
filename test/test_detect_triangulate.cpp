@@ -1,19 +1,19 @@
-#include <iostream>
-#include <vector>
-#include <string>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <opencv2/opencv.hpp>
+#include <string>
+#include <vector>
 
 #include "preprocess/camera_utils.hpp"
-#include "preprocess/triangulate.hpp"
 #include "preprocess/onnx_inference.hpp"
+#include "preprocess/triangulate.hpp"
 
 using namespace marionette::preprocess;
 namespace fs = std::filesystem;
 
-struct Config {
+struct config_t {
   std::string image_root;
   std::string intri_file;
   std::string extri_file;
@@ -26,17 +26,16 @@ struct Config {
 };
 
 void save_keypoints3d_per_frame(const std::vector<std::vector<Eigen::Vector4d>>& keypoints3d_all,
-                                 const std::string& output_dir,
-                                 int start_frame, int frame_step) {
+                                const std::string& output_dir, int start_frame, int frame_step) {
   fs::create_directories(output_dir);
 
   for (size_t frame_idx = 0; frame_idx < keypoints3d_all.size(); ++frame_idx) {
     int frame_number = start_frame + frame_idx * frame_step;
-    
+
     nlohmann::json j;
     j["type"] = "float32";
     j["shape"] = {static_cast<int>(keypoints3d_all[frame_idx].size()), 4};
-    
+
     std::vector<float> data;
     for (const auto& kpt : keypoints3d_all[frame_idx]) {
       data.push_back(static_cast<float>(kpt(0)));
@@ -46,8 +45,7 @@ void save_keypoints3d_per_frame(const std::vector<std::vector<Eigen::Vector4d>>&
     }
     j["data"] = data;
 
-    std::string filename = output_dir + "/keypoints3d_" + 
-                           std::to_string(frame_number) + ".json";
+    std::string filename = output_dir + "/keypoints3d_" + std::to_string(frame_number) + ".json";
     std::ofstream ofs(filename);
     ofs << j.dump(2);
     ofs.close();
@@ -56,8 +54,9 @@ void save_keypoints3d_per_frame(const std::vector<std::vector<Eigen::Vector4d>>&
   }
 }
 
-void save_keypoints3d_for_init_params(const std::vector<std::vector<Eigen::Vector4d>>& keypoints3d_all,
-                                       const std::string& output_file) {
+void save_keypoints3d_for_init_params(
+    const std::vector<std::vector<Eigen::Vector4d>>& keypoints3d_all,
+    const std::string& output_file) {
   if (keypoints3d_all.empty()) {
     std::cerr << "Error: No keypoints3d data to save" << std::endl;
     return;
@@ -65,14 +64,14 @@ void save_keypoints3d_for_init_params(const std::vector<std::vector<Eigen::Vecto
 
   nlohmann::json j;
   j["type"] = "float64";
-  
+
   int num_frames = keypoints3d_all.size();
   int num_joints = keypoints3d_all[0].size();
   j["shape"] = {num_frames, num_joints, 4};
-  
+
   std::vector<double> data;
   data.reserve(num_frames * num_joints * 4);
-  
+
   for (const auto& frame_kpts : keypoints3d_all) {
     for (const auto& kpt : frame_kpts) {
       data.push_back(kpt(0));  // x
@@ -94,8 +93,8 @@ void save_keypoints3d_for_init_params(const std::vector<std::vector<Eigen::Vecto
 }
 
 std::vector<Eigen::Vector3d> coco17_to_body25(const std::vector<Eigen::Vector3d>& coco17) {
-  static const std::vector<int> COCO17_IN_BODY25 = 
-      {0, 16, 15, 18, 17, 5, 2, 6, 3, 7, 4, 12, 9, 13, 10, 14, 11};
+  static const std::vector<int> COCO17_IN_BODY25 = {0, 16, 15, 18, 17, 5,  2,  6, 3,
+                                                    7, 4,  12, 9,  13, 10, 14, 11};
 
   std::vector<Eigen::Vector3d> body25(25, Eigen::Vector3d::Zero());
 
@@ -120,7 +119,7 @@ std::vector<Eigen::Vector3d> coco17_to_body25(const std::vector<Eigen::Vector3d>
 }
 
 int main() {
-  Config config;
+  config_t config;
 
   config.image_root = "../data/street_dance/images";
   config.intri_file = "../data/street_dance/intri.yml";
@@ -135,14 +134,14 @@ int main() {
   std::cout << "=== Detection and Triangulation (C++) ===" << std::endl;
   std::cout << "Image root: " << config.image_root << std::endl;
   std::cout << "Output dir: " << config.output_dir << std::endl;
-  std::cout << "Frame range: " << config.start_frame << " to " << config.end_frame 
-            << " (step " << config.frame_step << ")" << std::endl;
+  std::cout << "Frame range: " << config.start_frame << " to " << config.end_frame << " (step "
+            << config.frame_step << ")" << std::endl;
 
   std::cout << "\nLoading camera parameters..." << std::endl;
-  auto all_cameras = CameraLoader::load_cameras(config.intri_file, config.extri_file);
+  auto all_cameras = camera_loader_t::load_cameras(config.intri_file, config.extri_file);
 
-  std::vector<CameraParams> cameras = all_cameras;
-  
+  std::vector<camera_params_t> cameras = all_cameras;
+
   std::cout << "Loaded " << cameras.size() << " cameras: ";
   for (const auto& cam : cameras) {
     std::cout << cam.name << " ";
@@ -154,8 +153,7 @@ int main() {
   std::cout << "  python ../scripts/export_yolo_onnx.py" << std::endl;
   std::cout << "  python ../scripts/export_hrnet_onnx.py" << std::endl;
 
-  bool models_exist = fs::exists(config.yolo_model_path) && 
-                      fs::exists(config.hrnet_model_path);
+  bool models_exist = fs::exists(config.yolo_model_path) && fs::exists(config.hrnet_model_path);
 
   if (!models_exist) {
     std::cerr << "\nError: ONNX model files not found." << std::endl;
@@ -164,8 +162,8 @@ int main() {
     return 1;
   }
 
-  YOLODetector yolo(config.yolo_model_path);
-  HRNetPoseEstimator hrnet(config.hrnet_model_path);
+  yolo_detector_t yolo(config.yolo_model_path);
+  hrnet_pose_estimator_t hrnet(config.hrnet_model_path);
 
   std::cout << "Models loaded successfully." << std::endl;
 
@@ -177,8 +175,9 @@ int main() {
     std::vector<std::vector<Eigen::Vector3d>> keypoints2d_all_views;
 
     for (const auto& cam : cameras) {
-      std::string image_path = config.image_root + "/" + cam.name + 
-                               "/" + std::to_string(frame).insert(0, 6 - std::to_string(frame).length(), '0') + ".jpg";
+      std::string image_path =
+          config.image_root + "/" + cam.name + "/" +
+          std::to_string(frame).insert(0, 6 - std::to_string(frame).length(), '0') + ".jpg";
 
       if (!fs::exists(image_path)) {
         std::cerr << "Warning: Image not found: " << image_path << std::endl;
@@ -194,8 +193,8 @@ int main() {
       }
 
       auto detections = yolo.detect(image);
-      
-      std::vector<YOLODetector::Detection> person_detections;
+
+      std::vector<yolo_detector_t::detection_t> person_detections;
       for (const auto& det : detections) {
         if (det.class_id == 0) {
           person_detections.push_back(det);
@@ -215,11 +214,11 @@ int main() {
         }
       }
 
-      std::cout << "  Camera " << cam.name << ": Person detected (conf: " 
-                << best_detection.confidence << ")" << std::endl;
+      std::cout << "  Camera " << cam.name
+                << ": Person detected (conf: " << best_detection.confidence << ")" << std::endl;
 
-      std::vector<float> bbox = {best_detection.x1, best_detection.y1, 
-                                  best_detection.x2, best_detection.y2};
+      std::vector<float> bbox = {best_detection.x1, best_detection.y1, best_detection.x2,
+                                 best_detection.y2};
       auto keypoints2d = hrnet.estimate_pose(image, bbox);
 
       auto keypoints2d_body25 = coco17_to_body25(keypoints2d);
@@ -239,12 +238,11 @@ int main() {
 
     std::vector<Eigen::Matrix<double, 3, 4>> projection_matrices;
     for (const auto& cam : cameras) {
-      projection_matrices.push_back(cam.P);
+      projection_matrices.push_back(cam.p);
     }
 
-    auto keypoints3d = Triangulator::iterative_triangulate(
-      keypoints2d_all_views, projection_matrices,
-      25.0, 3, 0.1);
+    auto keypoints3d = triangulator_t::iterative_triangulate(keypoints2d_all_views,
+                                                             projection_matrices, 25.0, 3, 0.1);
 
     keypoints3d_all_frames.push_back(keypoints3d);
 
@@ -252,11 +250,11 @@ int main() {
   }
 
   std::cout << "\nSaving results to " << config.output_dir << " ..." << std::endl;
-  
+
   std::string keypoints3d_dir = config.output_dir + "/keypoints3d";
-  save_keypoints3d_per_frame(keypoints3d_all_frames, keypoints3d_dir,
-                              config.start_frame, config.frame_step);
-  
+  save_keypoints3d_per_frame(keypoints3d_all_frames, keypoints3d_dir, config.start_frame,
+                             config.frame_step);
+
   std::string init_params_file = config.output_dir + "/init_params_input_keypoints3d.json";
   save_keypoints3d_for_init_params(keypoints3d_all_frames, init_params_file);
 
@@ -264,7 +262,8 @@ int main() {
   std::cout << "Output saved to: " << config.output_dir << std::endl;
   std::cout << "  - Per-frame keypoints: " << keypoints3d_dir << "/" << std::endl;
   std::cout << "  - Init params input: " << init_params_file << std::endl;
-  std::cout << "You can now use init_params_input_keypoints3d.json with test_fitting_backward" << std::endl;
+  std::cout << "You can now use init_params_input_keypoints3d.json with test_fitting_backward"
+            << std::endl;
 
   return 0;
 }

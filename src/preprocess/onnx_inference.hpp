@@ -1,11 +1,12 @@
 #pragma once
 
 #include <onnxruntime/onnxruntime_cxx_api.h>
-#include <opencv2/opencv.hpp>
+
 #include <Eigen/Dense>
-#include <vector>
-#include <string>
 #include <iostream>
+#include <opencv2/opencv.hpp>
+#include <string>
+#include <vector>
 
 namespace marionette {
 namespace preprocess {
@@ -13,7 +14,7 @@ namespace preprocess {
 /**
  * ONNX Runtime wrapper for a YOLO-style detector.
  */
-class YOLODetector {
+class yolo_detector_t {
  private:
   std::unique_ptr<Ort::Env> env_;
   std::unique_ptr<Ort::Session> session_;
@@ -25,15 +26,15 @@ class YOLODetector {
   int input_width_;
 
  public:
-  struct Detection {
+  struct detection_t {
     float x1, y1, x2, y2;  // bounding box (xyxy)
     float confidence;
     int class_id;
   };
 
-  YOLODetector(const std::string& model_path, int input_size = 640)
+  yolo_detector_t(const std::string& model_path, int input_size = 640)
       : input_height_(input_size), input_width_(input_size) {
-    env_ = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "YOLODetector");
+    env_ = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "yolo_detector_t");
 
     Ort::SessionOptions session_options;
     session_options.SetIntraOpNumThreads(1);
@@ -43,7 +44,7 @@ class YOLODetector {
 
     // Cache input/output node names.
     Ort::AllocatorWithDefaultOptions allocator;
-    
+
     size_t num_input_nodes = session_->GetInputCount();
     input_names_.reserve(num_input_nodes);
     for (size_t i = 0; i < num_input_nodes; i++) {
@@ -69,8 +70,8 @@ class YOLODetector {
     }
   }
 
-  std::vector<Detection> detect(const cv::Mat& image, float conf_threshold = 0.25, 
-                                 float nms_threshold = 0.45) {
+  std::vector<detection_t> detect(const cv::Mat& image, float conf_threshold = 0.25,
+                                  float nms_threshold = 0.45) {
     // Preprocess: letterbox resize to input_size x input_size.
     // Keeps aspect ratio, pads remaining area.
     const int orig_w = image.cols;
@@ -87,8 +88,7 @@ class YOLODetector {
 
     cv::Mat boxed(input_height_, input_width_, image.type(), cv::Scalar(114, 114, 114));
     resized.copyTo(boxed(cv::Rect(static_cast<int>(std::floor(pad_x)),
-                                 static_cast<int>(std::floor(pad_y)),
-                                 new_w, new_h)));
+                                  static_cast<int>(std::floor(pad_y)), new_w, new_h)));
 
     cv::cvtColor(boxed, boxed, cv::COLOR_BGR2RGB);
 
@@ -109,21 +109,21 @@ class YOLODetector {
     // Inference
     std::vector<int64_t> input_shape = {1, 3, input_height_, input_width_};
     auto memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
-    
-    Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
-        memory_info, input_tensor_values.data(), input_tensor_values.size(),
-        input_shape.data(), input_shape.size());
 
-    auto output_tensors = session_->Run(Ort::RunOptions{nullptr},
-                                        input_name_ptrs_.data(), &input_tensor, 1,
-                                        output_name_ptrs_.data(), output_name_ptrs_.size());
+    Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
+        memory_info, input_tensor_values.data(), input_tensor_values.size(), input_shape.data(),
+        input_shape.size());
+
+    auto output_tensors =
+        session_->Run(Ort::RunOptions{nullptr}, input_name_ptrs_.data(), &input_tensor, 1,
+                      output_name_ptrs_.data(), output_name_ptrs_.size());
 
     // Postprocess
     float* output = output_tensors[0].GetTensorMutableData<float>();
     auto output_shape = output_tensors[0].GetTensorTypeAndShapeInfo().GetShape();
 
-    std::vector<Detection> detections;
-    
+    std::vector<detection_t> detections;
+
     // Output format: [batch, num_detections, num_elements]
     // Common case: num_elements = 4 (bbox) + 1 (obj_conf) + num_classes
     int num_detections = output_shape[1];
@@ -134,7 +134,7 @@ class YOLODetector {
 
     for (int i = 0; i < num_detections; ++i) {
       float* detection = output + i * num_elements;
-      
+
       float obj_conf = detection[4];
       if (obj_conf < conf_threshold) {
         continue;
@@ -156,7 +156,7 @@ class YOLODetector {
       }
 
       // Map bbox from network input space back to the original image.
-      Detection det;
+      detection_t det;
       float cx = detection[0];
       float cy = detection[1];
       float w = detection[2];
@@ -197,9 +197,9 @@ class YOLODetector {
   }
 
  private:
-  std::vector<Detection> apply_nms(const std::vector<Detection>& detections,
-                                    float nms_threshold) {
-    std::vector<Detection> result;
+  std::vector<detection_t> apply_nms(const std::vector<detection_t>& detections,
+                                     float nms_threshold) {
+    std::vector<detection_t> result;
     std::vector<bool> suppressed(detections.size(), false);
 
     for (size_t i = 0; i < detections.size(); ++i) {
@@ -228,7 +228,7 @@ class YOLODetector {
     return result;
   }
 
-  float compute_iou(const Detection& a, const Detection& b) {
+  float compute_iou(const detection_t& a, const detection_t& b) {
     float x1 = std::max(a.x1, b.x1);
     float y1 = std::max(a.y1, b.y1);
     float x2 = std::min(a.x2, b.x2);
@@ -246,7 +246,7 @@ class YOLODetector {
 /**
  * ONNX Runtime wrapper for a heatmap-based 2D pose model.
  */
-class HRNetPoseEstimator {
+class hrnet_pose_estimator_t {
  private:
   std::unique_ptr<Ort::Env> env_;
   std::unique_ptr<Ort::Session> session_;
@@ -264,10 +264,8 @@ class HRNetPoseEstimator {
     return cv::Point2f(pt.x * cs - pt.y * sn, pt.x * sn + pt.y * cs);
   }
 
-  static void gen_trans_from_patch_cv(float c_x, float c_y,
-                                      float src_width, float src_height,
-                                      float dst_width, float dst_height,
-                                      float scale, float rot,
+  static void gen_trans_from_patch_cv(float c_x, float c_y, float src_width, float src_height,
+                                      float dst_width, float dst_height, float scale, float rot,
                                       cv::Mat& trans, cv::Mat& inv_trans) {
     float src_w = src_width * scale;
     float src_h = src_height * scale;
@@ -303,10 +301,10 @@ class HRNetPoseEstimator {
   }
 
  public:
-  HRNetPoseEstimator(const std::string& model_path, int num_joints = 17,
-                     int input_height = 384, int input_width = 288)
+  hrnet_pose_estimator_t(const std::string& model_path, int num_joints = 17, int input_height = 384,
+                         int input_width = 288)
       : input_height_(input_height), input_width_(input_width), num_joints_(num_joints) {
-    env_ = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "HRNetPoseEstimator");
+    env_ = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "hrnet_pose_estimator_t");
 
     Ort::SessionOptions session_options;
     session_options.SetIntraOpNumThreads(1);
@@ -316,7 +314,7 @@ class HRNetPoseEstimator {
 
     // Cache input/output node names.
     Ort::AllocatorWithDefaultOptions allocator;
-    
+
     size_t num_input_nodes = session_->GetInputCount();
     input_names_.reserve(num_input_nodes);
     for (size_t i = 0; i < num_input_nodes; i++) {
@@ -349,9 +347,8 @@ class HRNetPoseEstimator {
    * @param bbox_scale Box scale factor
    * @return Keypoints [num_joints](x, y, confidence)
    */
-  std::vector<Eigen::Vector3d> estimate_pose(const cv::Mat& image,
-                                              const std::vector<float>& bbox,
-                                              float bbox_scale = 1.25) {
+  std::vector<Eigen::Vector3d> estimate_pose(const cv::Mat& image, const std::vector<float>& bbox,
+                                             float bbox_scale = 1.25) {
     // Preprocess: xyxy -> (cx, cy, w, h), then match the network input aspect ratio.
     float x1 = bbox[0];
     float y1 = bbox[1];
@@ -372,16 +369,15 @@ class HRNetPoseEstimator {
     }
 
     cv::Mat trans, inv_trans;
-    gen_trans_from_patch_cv(cx, cy, w, h,
-                            static_cast<float>(input_width_), static_cast<float>(input_height_),
-                            bbox_scale, 0.0f, trans, inv_trans);
+    gen_trans_from_patch_cv(cx, cy, w, h, static_cast<float>(input_width_),
+                            static_cast<float>(input_height_), bbox_scale, 0.0f, trans, inv_trans);
 
     cv::Mat rgb;
     cv::cvtColor(image, rgb, cv::COLOR_BGR2RGB);
 
     cv::Mat resized;
-    cv::warpAffine(rgb, resized, trans, cv::Size(input_width_, input_height_),
-                   cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+    cv::warpAffine(rgb, resized, trans, cv::Size(input_width_, input_height_), cv::INTER_LINEAR,
+                   cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
 
     // Normalize (RGB, 0-1, (x-mean)/std)
     resized.convertTo(resized, CV_32F, 1.0 / 255.0);
@@ -402,13 +398,13 @@ class HRNetPoseEstimator {
     // Inference
     std::vector<int64_t> input_shape = {1, 3, input_height_, input_width_};
     auto memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
-    
-    Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
-        memory_info, input_tensor_values.data(), input_tensor_values.size(),
-        input_shape.data(), input_shape.size());
 
-    auto output_tensors = session_->Run(Ort::RunOptions{nullptr},
-                      input_name_ptrs_.data(), &input_tensor, 1,
+    Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
+        memory_info, input_tensor_values.data(), input_tensor_values.size(), input_shape.data(),
+        input_shape.size());
+
+    auto output_tensors =
+        session_->Run(Ort::RunOptions{nullptr}, input_name_ptrs_.data(), &input_tensor, 1,
                       output_name_ptrs_.data(), output_name_ptrs_.size());
 
     // Decode heatmaps into 2D keypoints
