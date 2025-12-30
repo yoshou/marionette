@@ -30,6 +30,19 @@ static std::string get_typename() {
 }
 
 template <typename T>
+static void save_tensor(const std::string &filename, const std::vector<T> &data,
+                        const std::vector<uint32_t> &shape) {
+  nlohmann::json j;
+  j["type"] = get_typename<T>();
+  j["data"] = data;
+  j["shape"] = shape;
+  std::ofstream ofs(filename);
+  ofs << j.dump(2);
+  ofs.close();
+  std::cout << "Saved to " << filename << std::endl;
+}
+
+template <typename T>
 using MatrixX = Eigen::Matrix<T, -1, -1, Eigen::RowMajor>;
 using MatrixXf = Eigen::Matrix<float, -1, -1, Eigen::RowMajor>;
 using MatrixXd = Eigen::Matrix<double, -1, -1, Eigen::RowMajor>;
@@ -1646,6 +1659,31 @@ int main() {
       std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
   std::cout << "\n=== Total optimization time: " << total_duration.count()
             << " ms ===" << std::endl;
+
+  // Save optimized parameters to JSON
+  std::cout << "\n=== Saving optimized parameters ===" << std::endl;
+  save_tensor("../data/opt/optimized_poses.json", poses_data, poses_shape);
+  save_tensor("../data/opt/optimized_shapes.json", shapes_data, shapes_shape);
+  save_tensor("../data/opt/optimized_rh.json", rh_data, rh_shape);
+  save_tensor("../data/opt/optimized_th.json", th_data, th_shape);
+
+  // Compute final joints and vertices
+  std::cout << "\n=== Computing final joints and vertices ===" << std::endl;
+  const auto [final_verts, final_joints] = model.draw<float, float, float, float>(
+      shapes_data, shapes_shape, poses_data, poses_shape, rh_data, th_data);
+
+  // Calculate sizes
+  const auto num_frames = poses_shape[0];
+  const auto num_joints = final_joints.size() / (num_frames * 3);
+  const auto num_verts = final_verts.size() / (num_frames * 3);
+
+  std::vector<uint32_t> joints_shape = {static_cast<uint32_t>(num_frames),
+                                        static_cast<uint32_t>(num_joints), 3};
+  std::vector<uint32_t> verts_shape = {static_cast<uint32_t>(num_frames),
+                                       static_cast<uint32_t>(num_verts), 3};
+
+  save_tensor("../data/opt/optimized_joints.json", final_joints, joints_shape);
+  save_tensor("../data/opt/optimized_vertices.json", final_verts, verts_shape);
 
   return 0;
 }

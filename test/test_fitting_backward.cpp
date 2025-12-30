@@ -12,6 +12,28 @@
 
 using namespace marionette::optimization;
 
+static void save_tensor(const std::string& filename, const tensor_t& tensor) {
+  const auto num_elements = tensor.numel();
+  const auto data_ptr = tensor.data_ptr<float>();
+
+  std::vector<float> data(data_ptr, data_ptr + num_elements);
+  std::vector<uint32_t> shape;
+  const auto ndim = tensor.dim();
+  for (int i = 0; i < ndim; i++) {
+    shape.push_back(static_cast<uint32_t>(tensor.size(i)));
+  }
+
+  nlohmann::json j;
+  j["type"] = "float32";
+  j["data"] = data;
+  j["shape"] = shape;
+
+  std::ofstream ofs(filename);
+  ofs << j.dump(2);
+  ofs.close();
+  std::cout << "Saved to " << filename << std::endl;
+}
+
 template <typename T>
 static std::string get_typename() {
   if constexpr (std::is_same_v<T, float>) {
@@ -461,6 +483,35 @@ class smpl_model {
     joints = apply_global_transform(joints, rh, th);
 
     return joints;
+  }
+
+  std::pair<tensor_t, tensor_t> forward_with_vertices(tensor_t betas, tensor_t poses, tensor_t rh,
+                                                      tensor_t th) {
+    const auto batch_size = poses.size(0);
+
+    auto v_shaped = apply_shape_blend(betas);
+    v_shaped = apply_pose_blend(v_shaped, poses);
+    auto verts = compute_lbs(v_shaped, poses);
+
+    const auto j_reg_expanded = j_regressor_body25.unsqueeze(0).expand({batch_size, -1, -1});
+    auto joints = tensor_t::bmm(j_reg_expanded, verts);
+
+    // Apply global transformations to joints
+    joints = apply_global_transform(joints, rh, th);
+
+    // Apply global transformations to vertices
+    if (rh.defined() && rh.numel() > 0) {
+      const auto R = batch_rodrigues(rh);
+      verts = tensor_t::bmm(verts, R.transpose(1, 2));
+    }
+
+    if (th.defined() && th.numel() > 0) {
+      constexpr int xyz_dim = 3;
+      const auto th_reshaped = th.unsqueeze(1).expand({batch_size, verts.size(1), xyz_dim});
+      verts = verts + th_reshaped;
+    }
+
+    return {verts, joints};
   }
 };
 
@@ -929,6 +980,20 @@ int main(int argc, char** argv) {
       std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
   std::cout << "\n=== Total optimization time: " << total_duration.count()
             << " ms ===" << std::endl;
+
+  // Save optimized parameters to JSON
+  std::cout << "\n=== Saving optimized parameters ===" << std::endl;
+  save_tensor("../data/opt/optimized_poses_backward.json", poses);
+  save_tensor("../data/opt/optimized_shapes_backward.json", shapes);
+  save_tensor("../data/opt/optimized_rh_backward.json", rh);
+  save_tensor("../data/opt/optimized_th_backward.json", th);
+
+  // Compute final joints and vertices
+  std::cout << "\n=== Computing final joints and vertices ===" << std::endl;
+  const auto [verts, joints] = model.forward_with_vertices(shapes, poses, rh, th);
+
+  save_tensor("../data/opt/optimized_joints_backward.json", joints);
+  save_tensor("../data/opt/optimized_vertices_backward.json", verts);
 
   return 0;
 }
