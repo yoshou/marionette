@@ -6,6 +6,7 @@
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -370,6 +371,135 @@ static std::tuple<std::vector<T>, std::vector<T>> batch_rigid_transform(
     }
   }
   return std::forward_as_tuple(posed_joints, rel_transform_mats);
+}
+
+struct smpl_params_t {
+  int num_frames;
+  int num_poses;
+  int num_shapes;
+  std::vector<Eigen::Vector3f> rh;
+  std::vector<Eigen::Vector3f> th;
+  std::vector<std::vector<float>> poses;
+  std::vector<std::vector<float>> shapes;
+};
+
+smpl_params_t init_smpl_params(const std::vector<std::vector<Eigen::Vector4d>> &keypoints3d,
+                               int num_poses = 69, int num_shapes = 10, int root_id = 8,
+                               bool share_shape = true) {
+  if (keypoints3d.empty()) {
+    throw std::runtime_error("keypoints3d is empty");
+  }
+
+  const int num_frames = static_cast<int>(keypoints3d.size());
+  const int num_joints = static_cast<int>(keypoints3d[0].size());
+
+  if (root_id < 0 || root_id >= num_joints) {
+    throw std::runtime_error("root_id is out of range: " + std::to_string(root_id));
+  }
+
+  smpl_params_t params;
+  params.num_frames = num_frames;
+  params.num_poses = num_poses;
+  params.num_shapes = num_shapes;
+
+  params.rh.resize(num_frames, Eigen::Vector3f::Zero());
+
+  params.th.resize(num_frames);
+  for (int i = 0; i < num_frames; ++i) {
+    const auto &root_joint = keypoints3d[i][root_id];
+    params.th[i] =
+        Eigen::Vector3f(static_cast<float>(root_joint(0)), static_cast<float>(root_joint(1)),
+                        static_cast<float>(root_joint(2)));
+  }
+
+  params.poses.resize(num_frames, std::vector<float>(num_poses, 0.0f));
+
+  if (share_shape) {
+    params.shapes.resize(1, std::vector<float>(num_shapes, 0.0f));
+  } else {
+    params.shapes.resize(num_frames, std::vector<float>(num_shapes, 0.0f));
+  }
+
+  return params;
+}
+
+struct fitting_params_t {
+  std::vector<float> poses;
+  std::vector<uint32_t> poses_shape;
+  std::vector<float> shapes;
+  std::vector<uint32_t> shapes_shape;
+  std::vector<float> rh;
+  std::vector<uint32_t> rh_shape;
+  std::vector<float> th;
+  std::vector<uint32_t> th_shape;
+};
+
+fitting_params_t initialize_params_from_keypoints3d(
+    const std::vector<float> &keypoints3d_data, const std::vector<uint32_t> &keypoints3d_shape) {
+  std::cout << "\n=== Initializing parameters using init_params ===" << std::endl;
+
+  if (keypoints3d_shape.size() != 3 || keypoints3d_shape[2] != 4) {
+    throw std::runtime_error("Invalid keypoints3d shape");
+  }
+
+  const int num_frames = keypoints3d_shape[0];
+  const int num_joints = keypoints3d_shape[1];
+  std::vector<std::vector<Eigen::Vector4d>> keypoints3d_vec(num_frames);
+
+  for (int i = 0; i < num_frames; ++i) {
+    keypoints3d_vec[i].resize(num_joints);
+    for (int j = 0; j < num_joints; ++j) {
+      int idx = i * num_joints * 4 + j * 4;
+      keypoints3d_vec[i][j] = Eigen::Vector4d(static_cast<double>(keypoints3d_data[idx + 0]),
+                                              static_cast<double>(keypoints3d_data[idx + 1]),
+                                              static_cast<double>(keypoints3d_data[idx + 2]),
+                                              static_cast<double>(keypoints3d_data[idx + 3]));
+    }
+  }
+
+  auto params = init_smpl_params(keypoints3d_vec, 69, 10, 8, true);
+
+  std::cout << "Initialized parameters:" << std::endl;
+  std::cout << "  num_frames: " << params.num_frames << std::endl;
+  std::cout << "  num_poses: " << params.num_poses << std::endl;
+  std::cout << "  num_shapes: " << params.num_shapes << std::endl;
+  std::cout << "  th[0]: [" << params.th[0].transpose() << "]" << std::endl;
+
+  fitting_params_t result;
+
+  result.poses_shape = {static_cast<uint32_t>(num_frames), static_cast<uint32_t>(params.num_poses)};
+  result.poses.resize(num_frames * params.num_poses, 0.0f);
+
+  result.shapes_shape = {1, static_cast<uint32_t>(params.num_shapes)};
+  result.shapes.resize(params.num_shapes, 0.0f);
+
+  result.rh_shape = {static_cast<uint32_t>(num_frames), 3};
+  result.rh.resize(num_frames * 3);
+  for (int i = 0; i < num_frames; ++i) {
+    result.rh[i * 3 + 0] = params.rh[i](0);
+    result.rh[i * 3 + 1] = params.rh[i](1);
+    result.rh[i * 3 + 2] = params.rh[i](2);
+  }
+
+  result.th_shape = {static_cast<uint32_t>(num_frames), 3};
+  result.th.resize(num_frames * 3);
+  for (int i = 0; i < num_frames; ++i) {
+    result.th[i * 3 + 0] = params.th[i](0);
+    result.th[i * 3 + 1] = params.th[i](1);
+    result.th[i * 3 + 2] = params.th[i](2);
+  }
+
+  std::cout << "Converted to vectors:" << std::endl;
+  std::cout << "  poses shape: [" << result.poses_shape[0] << ", " << result.poses_shape[1] << "]"
+            << std::endl;
+  std::cout << "  shapes shape: [" << result.shapes_shape[0] << ", " << result.shapes_shape[1]
+            << "]" << std::endl;
+  std::cout << "  rh shape: [" << result.rh_shape[0] << ", " << result.rh_shape[1] << "]"
+            << std::endl;
+  std::cout << "  th shape: [" << result.th_shape[0] << ", " << result.th_shape[1] << "]"
+            << std::endl;
+
+  return result;
 }
 
 class smpl_model {
@@ -1305,8 +1435,6 @@ class lbgfs_optimizer {
 
       alpha = strong_wolfe(func, params_v, grad_v, d_v, alpha);
 
-      std::cout << "loss = " << loss << ", alpha = " << alpha << std::endl;
-
       Eigen::VectorXd next_params_v = params_v + alpha * d_v;
 
       Eigen::VectorXd next_grad_v(num_params);
@@ -1345,22 +1473,35 @@ class lbgfs_optimizer {
       }
     }
 
-    std::cout << "loss = " << loss << ", alpha = " << alpha << std::endl;
-
     return std::abs(loss - init_loss);
   }
 };
 
 int main() {
+  std::cout << "Starting optimization..." << std::endl;
+  auto total_start = std::chrono::high_resolution_clock::now();
+
+  // Load keypoints3d and initialize parameters
   const auto [keypoints3d_data, keypoints3d_shape] =
-      load_tensor<float>("../data/opt/observations_keypoints3d.json");
-  auto [poses_data, poses_shape] = load_tensor<float>("../data/opt/params_poses.json");
-  auto [shapes_data, shapes_shape] = load_tensor<float>("../data/opt/params_shapes.json");
-  auto [rh_data, rh_shape] = load_tensor<float>("../data/opt/params_Rh.json");
-  auto [th_data, th_shape] = load_tensor<float>("../data/opt/params_Th.json");
+      load_tensor<float>("../data/opt/keypoints3d.json");
+
+  std::cout << "keypoints3d loaded shape: " << keypoints3d_shape[0] << " " << keypoints3d_shape[1]
+            << " " << keypoints3d_shape[2] << std::endl;
+
+  auto params = initialize_params_from_keypoints3d(keypoints3d_data, keypoints3d_shape);
+  auto poses_data = params.poses;
+  auto poses_shape = params.poses_shape;
+  auto shapes_data = params.shapes;
+  auto shapes_shape = params.shapes_shape;
+  auto rh_data = params.rh;
+  auto rh_shape = params.rh_shape;
+  auto th_data = params.th;
+  auto th_shape = params.th_shape;
 
   smpl_model model;
 
+  std::cout << "\n=== Phase 1: Fitting shape ===" << std::endl;
+  auto phase_start = std::chrono::high_resolution_clock::now();
   {
     fit_shape_obj_func loss_func(&model, keypoints3d_data, keypoints3d_shape, shapes_shape,
                                  poses_data, poses_shape, rh_data, th_data);
@@ -1375,9 +1516,16 @@ int main() {
     lbgfs_optimizer optimizer;
     optimizer.set_params(shapes_double.data(), shapes_double.size());
 
+    // Display initial loss
+    double init_loss = residual->eval(shapes_double.data(), shapes_double.size());
+    std::cout << "Iteration 0: loss = " << init_loss << std::endl;
+
     for (int i = 0; i < 1000; i++) {
       const auto loss_change = optimizer.step(residual.get());
       if (loss_change < 1.0e-7) {
+        optimizer.get_params(shapes_double.data(), shapes_double.size());
+        double final_loss = residual->eval(shapes_double.data(), shapes_double.size());
+        std::cout << "Converged at iteration " << (i + 1) << ": loss = " << final_loss << std::endl;
         break;
       }
     }
@@ -1386,7 +1534,13 @@ int main() {
 
     std::copy(shapes_double.begin(), shapes_double.end(), shapes_data.begin());
   }
+  auto phase_end = std::chrono::high_resolution_clock::now();
+  auto phase_duration =
+      std::chrono::duration_cast<std::chrono::milliseconds>(phase_end - phase_start);
+  std::cout << "Phase 1 completed in " << phase_duration.count() << " ms" << std::endl;
 
+  std::cout << "\n=== Phase 2: Initializing RT ===" << std::endl;
+  phase_start = std::chrono::high_resolution_clock::now();
   {
     init_rt_obj_func loss_func(&model, keypoints3d_data, keypoints3d_shape, shapes_data,
                                shapes_shape, poses_data, poses_shape, rh_data, th_data);
@@ -1402,26 +1556,38 @@ int main() {
 
     const auto residual = make_auto_diff_function_term(loss_func, rh_params, th_params);
 
-    std::vector<double> params;
-    std::copy(th_double.begin(), th_double.end(), std::back_inserter(params));
-    std::copy(rh_double.begin(), rh_double.end(), std::back_inserter(params));
+    std::vector<double> opt_params;
+    std::copy(th_double.begin(), th_double.end(), std::back_inserter(opt_params));
+    std::copy(rh_double.begin(), rh_double.end(), std::back_inserter(opt_params));
 
     lbgfs_optimizer optimizer;
-    optimizer.set_params(params.data(), params.size());
+    optimizer.set_params(opt_params.data(), opt_params.size());
+
+    // Display initial loss
+    double init_loss = residual->eval(opt_params.data(), opt_params.size());
+    std::cout << "Iteration 0: loss = " << init_loss << std::endl;
 
     for (int i = 0; i < 1000; i++) {
       const auto loss_change = optimizer.step(residual.get());
       if (loss_change < 1.0e-7) {
+        optimizer.get_params(opt_params.data(), opt_params.size());
+        double final_loss = residual->eval(opt_params.data(), opt_params.size());
+        std::cout << "Converged at iteration " << (i + 1) << ": loss = " << final_loss << std::endl;
         break;
       }
     }
 
-    optimizer.get_params(params.data(), params.size());
+    optimizer.get_params(opt_params.data(), opt_params.size());
 
-    std::copy_n(params.begin(), th_data.size(), th_data.begin());
-    std::copy_n(params.begin() + th_data.size(), rh_data.size(), rh_data.begin());
+    std::copy_n(opt_params.begin(), th_data.size(), th_data.begin());
+    std::copy_n(opt_params.begin() + th_data.size(), rh_data.size(), rh_data.begin());
   }
+  phase_end = std::chrono::high_resolution_clock::now();
+  phase_duration = std::chrono::duration_cast<std::chrono::milliseconds>(phase_end - phase_start);
+  std::cout << "Phase 2 completed in " << phase_duration.count() << " ms" << std::endl;
 
+  std::cout << "\n=== Phase 3: Refining pose ===" << std::endl;
+  phase_start = std::chrono::high_resolution_clock::now();
   {
     refine_pose_obj_func loss_func(&model, keypoints3d_data, keypoints3d_shape, shapes_data,
                                    shapes_shape, poses_shape, rh_data, th_data);
@@ -1442,27 +1608,44 @@ int main() {
     const auto residual =
         make_auto_diff_function_term(loss_func, poses_params, rh_params, th_params);
 
-    std::vector<double> params;
-    std::copy(poses_double.begin(), poses_double.end(), std::back_inserter(params));
-    std::copy(rh_double.begin(), rh_double.end(), std::back_inserter(params));
-    std::copy(th_double.begin(), th_double.end(), std::back_inserter(params));
+    std::vector<double> opt_params;
+    std::copy(poses_double.begin(), poses_double.end(), std::back_inserter(opt_params));
+    std::copy(rh_double.begin(), rh_double.end(), std::back_inserter(opt_params));
+    std::copy(th_double.begin(), th_double.end(), std::back_inserter(opt_params));
 
     lbgfs_optimizer optimizer;
-    optimizer.set_params(params.data(), params.size());
+    optimizer.set_params(opt_params.data(), opt_params.size());
+
+    // Display initial loss
+    double init_loss = residual->eval(opt_params.data(), opt_params.size());
+    std::cout << "Iteration 0: loss = " << init_loss << std::endl;
 
     for (int i = 0; i < 1000; i++) {
       const auto loss_change = optimizer.step(residual.get());
       if (loss_change < 1.0e-7) {
+        optimizer.get_params(opt_params.data(), opt_params.size());
+        double final_loss = residual->eval(opt_params.data(), opt_params.size());
+        std::cout << "Converged at iteration " << (i + 1) << ": loss = " << final_loss << std::endl;
         break;
       }
     }
 
-    optimizer.get_params(params.data(), params.size());
+    optimizer.get_params(opt_params.data(), opt_params.size());
 
-    std::copy_n(params.begin(), poses_data.size(), poses_data.begin());
-    std::copy_n(params.begin() + poses_data.size(), rh_data.size(), rh_data.begin());
-    std::copy_n(params.begin() + poses_data.size() + rh_data.size(), th_data.size(),
+    std::copy_n(opt_params.begin(), poses_data.size(), poses_data.begin());
+    std::copy_n(opt_params.begin() + poses_data.size(), rh_data.size(), rh_data.begin());
+    std::copy_n(opt_params.begin() + poses_data.size() + rh_data.size(), th_data.size(),
                 th_data.begin());
   }
+  phase_end = std::chrono::high_resolution_clock::now();
+  phase_duration = std::chrono::duration_cast<std::chrono::milliseconds>(phase_end - phase_start);
+  std::cout << "Phase 3 completed in " << phase_duration.count() << " ms" << std::endl;
+
+  auto total_end = std::chrono::high_resolution_clock::now();
+  auto total_duration =
+      std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
+  std::cout << "\n=== Total optimization time: " << total_duration.count()
+            << " ms ===" << std::endl;
+
   return 0;
 }
