@@ -248,7 +248,7 @@ void widget_drawer::initialize(void *handle, std::size_t width, std::size_t heig
     struct nk_font_atlas *atlas;
     nk_glfw3_font_stash_begin(&pimpl->glfw, &atlas);
     struct nk_font *roboto =
-        nk_font_atlas_add_from_file(atlas, "../fonts/mplus/fonts/ttf/Mplus2-Regular.ttf", 16, 0);
+        nk_font_atlas_add_from_file(atlas, "../fonts/mplus/fonts/MPLUS2/ttf/MPLUS2-Regular.ttf", 16, 0);
     nk_glfw3_font_stash_end(&pimpl->glfw);
     nk_style_set_font(pimpl->ctx, &roboto->handle);
   }
